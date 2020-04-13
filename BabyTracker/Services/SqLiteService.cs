@@ -14,6 +14,7 @@ namespace BabyTracker.Services
             entries.AddRange(GetDiapers(path));
             entries.AddRange(GetJoy(path));
             entries.AddRange(GetActivity(path));
+            entries.AddRange(GetMilestone(path));
 
             return entries;
         }
@@ -89,6 +90,34 @@ namespace BabyTracker.Services
                     Filename = GetString(reader, 2),
                     Duration = reader.GetInt32(3).ToString(),
                     OtherActivity = GetString(reader, 4)
+                });
+            }
+
+            return entries;
+        }
+
+        private static List<EntryModel> GetMilestone(string path)
+        {
+            var entries = new List<EntryModel>();
+
+            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
+            connection.Open();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name " +
+                "FROM Milestone " +
+                "LEFT JOIN Picture ON Milestone.Id == activityid " +
+                "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new MilestoneModel
+                {
+                    Time = reader.GetDateTime(0),
+                    Note = reader.GetString(1),
+                    Filename = GetString(reader, 2),
+                    Milestone = GetString(reader, 3)
                 });
             }
 

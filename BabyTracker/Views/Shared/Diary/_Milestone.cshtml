@@ -1,0 +1,19 @@
+﻿@model MilestoneModel
+
+<tr>
+    <td>
+        <img src="~/img/icon_review_milestone.png" width="32" />
+    </td>
+    <td>
+        @Model.Time.ToShortTimeString()<br />
+        @Model.Milestone<br />
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+        @if (!string.IsNullOrEmpty(Model.Filename))
+        {
+            <br /><a href="~/picture/@Model.Filename" target="_blank"><img src="~/picture/@Model.Filename/thumbnail" width="200" /></a>
+        }
+    </td>
+</tr>

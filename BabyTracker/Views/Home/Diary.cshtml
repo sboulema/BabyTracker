@@ -72,7 +72,7 @@
                 }
                 else if (entry is MilestoneModel milestone)
                 {
-                    <tr>@milestone.Time: @milestone.Milestone, @milestone.Note</tr>
+                    @await Html.PartialAsync("Diary/_Milestone", milestone)
                 }
                 else if (entry is ActivityModel activity)
                 {
