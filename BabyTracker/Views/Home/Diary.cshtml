@@ -1,0 +1,81 @@
+﻿@model DiaryViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@foreach (var day in Model.Days)
+{
+    <p>
+        <b>@day.Key.ToShortDateString()</b><br />
+        <table>
+            @foreach (var entry in day.ToList())
+            {
+                if (entry is Diaper diaper)
+                {
+                    <tr>
+                        <td>
+                            <img src="~/img/icon_review_diaper.png" width="32" />
+                        </td>
+                        <td>
+                            @diaper.Time.ToShortTimeString()<br />
+                            @diaper.Status
+                            @if (!string.IsNullOrEmpty(diaper.Note))
+                            {
+                                <br />@diaper.Note
+                            }
+                        </td>
+                    </tr>
+                }
+                else if (entry is Formula formula)
+                {
+                    <tr>
+                        <td>
+                            <img src="~/img/icon_review_formula.png" width="32" />
+                        </td>
+                        <td>
+                            @formula.Time.ToShortTimeString()<br />
+                            Formula @formula.Amount
+                            @if (!string.IsNullOrEmpty(formula.Note))
+                            {
+                                <br />@formula.Note
+                            }
+                        </td>
+                    </tr>
+                }
+                else if (entry is Growth growth)
+                {
+                    <tr>@growth.Time: Head: @growth.HeadSize, Weight: @growth.Weight, Height: @growth.Length, @growth.Note</tr>
+                }
+                else if (entry is MedicationModel medication)
+                {
+                    <tr>@medication.Time: @medication.MedicationName, Amount: @medication.Amount, @medication.Note</tr>
+                }
+                else if (entry is MilestoneModel milestone)
+                {
+                    <tr>@milestone.Time: @milestone.Milestone, @milestone.Note</tr>
+                }
+                else if (entry is ActivityModel activity)
+                {
+                    <tr>@activity.Time: @activity.OtherActivity, Duration: @activity.Duration, @activity.Note</tr>
+                }
+                else if (entry is SleepModel sleep)
+                {
+                    <tr>@sleep.Time: @sleep.Duration, @sleep.Note</tr>
+                }
+                else if (entry is SupplementModel supplement)
+                {
+                    <tr>@supplement.Time: @supplement.Supplement, Amount: @supplement.Amount, @supplement.Note</tr>
+                }
+                else if (entry is TemperatureModel temperature)
+                {
+                    <tr>@temperature.Time: @temperature.Temperature, @temperature.Note</tr>
+                }
+                else if (entry is VaccineModel vaccine)
+                {
+                    <tr>@vaccine.Time: @vaccine.Vaccine, @vaccine.Note</tr>
+                }
+            }
+        </table>
+    </p>
+}

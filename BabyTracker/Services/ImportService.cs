@@ -1,0 +1,116 @@
+﻿using BabyTracker.Models;
+using CsvHelper;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+
+namespace BabyTracker.Services
+{
+    public static class ImportService
+    {
+        public static List<EntryModel> HandleImport(IFormFile file)
+        {
+            var zipFile = SaveFile(file);
+            var extractDir = Unzip(zipFile);
+
+            if (Directory.GetFiles(extractDir).Any(f => f.Contains("EasyLog.db")))
+            {
+                return SqLiteService.ParseDb(extractDir);
+            }
+            
+            return ParseFiles(extractDir);
+        }
+
+        private static string SaveFile(IFormFile file)
+        {
+            var fileName = Path.GetFileName(file.FileName);
+
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+
+            using var localFile = File.OpenWrite(fileName);
+            using var uploadedFile = file.OpenReadStream();
+            
+            uploadedFile.CopyTo(localFile);
+
+            return localFile.Name;
+        }
+
+        private static string Unzip(string path)
+        {
+            var extractPath = Path.Combine(Path.GetDirectoryName(path), "zip");
+
+            using ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Read);
+            archive.ExtractToDirectory(extractPath, true);
+
+            return extractPath;
+        }
+
+        private static List<EntryModel> ParseFiles(string path)
+        {
+            var entries = new List<EntryModel>();
+
+            var files = Directory.GetFiles(path);
+
+            foreach (var file in files)
+            {
+                var fileName = Path.GetFileNameWithoutExtension(file);
+
+                if (fileName.EndsWith("diaper"))
+                {
+                    entries.AddRange(ParseCsv<Diaper>(file));
+                }
+                else if (fileName.EndsWith("formula"))
+                {
+                    entries.AddRange(ParseCsv<Formula>(file));
+                }
+                else if (fileName.EndsWith("growth"))
+                {
+                    entries.AddRange(ParseCsv<Growth>(file));
+                }
+                else if (fileName.EndsWith("medication"))
+                {
+                    entries.AddRange(ParseCsv<MedicationModel>(file));
+                }
+                else if (fileName.EndsWith("milestone"))
+                {
+                    entries.AddRange(ParseCsv<MilestoneModel>(file));
+                }
+                else if (fileName.EndsWith("other_activity"))
+                {
+                    entries.AddRange(ParseCsv<ActivityModel>(file));
+                }
+                else if (fileName.EndsWith("sleep"))
+                {
+                    entries.AddRange(ParseCsv<SleepModel>(file));
+                }
+                else if (fileName.EndsWith("supplement"))
+                {
+                    entries.AddRange(ParseCsv<SupplementModel>(file));
+                }
+                else if (fileName.EndsWith("temperature"))
+                {
+                    entries.AddRange(ParseCsv<TemperatureModel>(file));
+                }
+                else if (fileName.EndsWith("vaccine"))
+                {
+                    entries.AddRange(ParseCsv<VaccineModel>(file));
+                }
+            }
+
+            return entries;
+        }
+
+        private static IEnumerable<T> ParseCsv<T>(string path)
+        {
+            using var reader = new StreamReader(path);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            return csv.GetRecords<T>().ToList();
+        }
+    }
+}

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29709.97
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BabyTracker", "BabyTracker\BabyTracker.csproj", "{91BBB569-0EA8-4088-B52E-891E9EE744BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91BBB569-0EA8-4088-B52E-891E9EE744BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91BBB569-0EA8-4088-B52E-891E9EE744BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91BBB569-0EA8-4088-B52E-891E9EE744BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91BBB569-0EA8-4088-B52E-891E9EE744BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {06430253-54D0-4BBF-89B8-368104ACA230}
+	EndGlobalSection
+EndGlobal
