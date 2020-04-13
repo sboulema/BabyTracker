@@ -29,9 +29,9 @@ namespace BabyTracker.Controllers
         [DisableRequestSizeLimit]
         public IActionResult Index(IFormFile file)
         {
-            var entries = ImportService.HandleImport(file);
+            var importResultModel = ImportService.HandleImport(file);
 
-            var model = DiaryService.GetDays(entries);
+            var model = DiaryService.GetDays(importResultModel);
 
             return View("Diary", model);
         }

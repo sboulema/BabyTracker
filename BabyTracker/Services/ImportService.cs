@@ -11,21 +11,32 @@ namespace BabyTracker.Services
 {
     public static class ImportService
     {
-        public static List<EntryModel> HandleImport(IFormFile file)
+        public static ImportResultModel HandleImport(IFormFile file)
         {
             var zipFile = SaveFile(file);
             var extractDir = Unzip(zipFile);
 
+            var model = new ImportResultModel();
+
             if (Directory.GetFiles(extractDir).Any(f => f.Contains("EasyLog.db")))
             {
-                return SqLiteService.ParseDb(extractDir);
+                model.Entries = SqLiteService.ParseDb(extractDir);
+            }
+            else
+            {
+                model.Entries = ParseFiles(extractDir);
             }
             
-            return ParseFiles(extractDir);
+            return model;
         }
 
         private static string SaveFile(IFormFile file)
         {
+            if (file == null)
+            {
+                return string.Empty;
+            }
+
             var fileName = Path.GetFileName(file.FileName);
 
             if (File.Exists(fileName))

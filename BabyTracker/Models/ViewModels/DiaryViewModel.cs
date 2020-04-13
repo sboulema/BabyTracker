@@ -7,5 +7,7 @@ namespace BabyTracker.Models.ViewModels
     public class DiaryViewModel
     {
         public IEnumerable<IGrouping<DateTime, EntryModel>> Days { get; set; }
+
+        public string PictureDirectory { get; set; }
     }
 }
