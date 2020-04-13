@@ -76,7 +76,7 @@
                 }
                 else if (entry is ActivityModel activity)
                 {
-                    <tr>@activity.Time: @activity.OtherActivity, Duration: @activity.Duration, @activity.Note</tr>
+                    @await Html.PartialAsync("Diary/_Activity", activity)
                 }
                 else if (entry is SleepModel sleep)
                 {
