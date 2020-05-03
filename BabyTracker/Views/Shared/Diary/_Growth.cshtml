@@ -1,0 +1,21 @@
+﻿@model Growth
+
+<tr>
+    <td>
+        @Model.Time.ToShortDateString()
+    </td>
+    <td>
+        Growth
+    </td>
+    <td>
+        <img src="~/img/icon_review_growth.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-success">Growth Length: @Model.Length Weight: @Model.Weight Head: @Model.HeadSize</h5>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+    </td>
+</tr>

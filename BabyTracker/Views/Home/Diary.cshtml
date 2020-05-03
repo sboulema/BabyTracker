@@ -1,100 +1,114 @@
 ﻿@model DiaryViewModel
 
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "BabyTracker";
 }
 
-@foreach (var day in Model.Days)
-{
-    <p>
-        <b>@day.Key.ToShortDateString()</b><br />
-        <table>
-            @foreach (var entry in day.ToList())
+<input type="date" id="dateEntry" onchange="filterDate(event)"/>
+
+<div class="btn-group-toggle" data-toggle="buttons">
+    @foreach (var entryType in Model.EntryTypes)
+    {
+        <label class="btn btn-outline-info active">
+            <input type="checkbox" class="entryTypeCheckbox" data-entrytype="@entryType" onchange="filterType(event)" checked autocomplete="off"> 
+            <img src="~/img/icon_review_@(entryType.ToLower()).png" width="32" style="filter: brightness(0) invert(1);"/>
+        </label>
+    }
+</div>
+
+<table id="diaryTable" class="table">
+    <tbody>
+        @foreach (var entry in Model.Entries.ToList())
+        {
+            if (entry is Diaper diaper)
             {
-                if (entry is Diaper diaper)
-                {
-                    <tr>
-                        <td>
-                            <img src="~/img/icon_review_diaper.png" width="32" />
-                        </td>
-                        <td>
-                            @diaper.Time.ToShortTimeString()<br />
-                            @diaper.Status
-                            @if (!string.IsNullOrEmpty(diaper.Note))
-                            {
-                                <br />@diaper.Note
-                            }
-                        </td>
-                    </tr>
-                }
-                else if (entry is Formula formula)
-                {
-                    <tr>
-                        <td>
-                            <img src="~/img/icon_review_formula.png" width="32" />
-                        </td>
-                        <td>
-                            @formula.Time.ToShortTimeString()<br />
-                            Formula @formula.Amount
-                            @if (!string.IsNullOrEmpty(formula.Note))
-                            {
-                                <br />@formula.Note
-                            }
-                        </td>
-                    </tr>
-                }
-                else if (entry is Joy joy)
-                {
-                    <tr>
-                        <td>
-                            <img src="~/img/icon_review_joy.png" width="32" />
-                        </td>
-                        <td>
-                            @joy.Time.ToShortTimeString()<br />
-                            @if (!string.IsNullOrEmpty(joy.Note))
-                            {
-                                <br />@joy.Note
-                            }
-                            @if (!string.IsNullOrEmpty(joy.Filename))
-                            {
-                                <br /><a href="~/picture/@joy.Filename" target="_blank"><img src="~/picture/@joy.Filename/thumbnail" width="200" /></a>
-                            }
-                        </td>
-                    </tr>
-                }
-                else if (entry is Growth growth)
-                {
-                    <tr>@growth.Time: Head: @growth.HeadSize, Weight: @growth.Weight, Height: @growth.Length, @growth.Note</tr>
-                }
-                else if (entry is MedicationModel medication)
-                {
-                    <tr>@medication.Time: @medication.MedicationName, Amount: @medication.Amount, @medication.Note</tr>
-                }
-                else if (entry is MilestoneModel milestone)
-                {
-                    @await Html.PartialAsync("Diary/_Milestone", milestone)
-                }
-                else if (entry is ActivityModel activity)
-                {
-                    @await Html.PartialAsync("Diary/_Activity", activity)
-                }
-                else if (entry is SleepModel sleep)
-                {
-                    <tr>@sleep.Time: @sleep.Duration, @sleep.Note</tr>
-                }
-                else if (entry is SupplementModel supplement)
-                {
-                    <tr>@supplement.Time: @supplement.Supplement, Amount: @supplement.Amount, @supplement.Note</tr>
-                }
-                else if (entry is TemperatureModel temperature)
-                {
-                    <tr>@temperature.Time: @temperature.Temperature, @temperature.Note</tr>
-                }
-                else if (entry is VaccineModel vaccine)
-                {
-                    <tr>@vaccine.Time: @vaccine.Vaccine, @vaccine.Note</tr>
-                }
+                @await Html.PartialAsync("Diary/_Diaper", diaper)
             }
-        </table>
-    </p>
-}
+            else if (entry is Formula formula)
+            {
+                @await Html.PartialAsync("Diary/_Formula", formula)
+            }
+            else if (entry is Joy joy)
+            {
+                @await Html.PartialAsync("Diary/_Joy", joy)
+            }
+            else if (entry is Growth growth)
+            {
+                @await Html.PartialAsync("Diary/_Growth", growth)
+            }
+            else if (entry is MedicationModel medication)
+            {
+                @await Html.PartialAsync("Diary/_Medication", medication)
+            }
+            else if (entry is MilestoneModel milestone)
+            {
+                @await Html.PartialAsync("Diary/_Milestone", milestone)
+            }
+            else if (entry is ActivityModel activity)
+            {
+                @await Html.PartialAsync("Diary/_Activity", activity)
+            }
+            else if (entry is SleepModel sleep)
+            {
+                @await Html.PartialAsync("Diary/_Sleep", sleep)
+            }
+            else if (entry is SupplementModel supplement)
+            {
+                @await Html.PartialAsync("Diary/_Supplement", supplement)
+            }
+            else if (entry is TemperatureModel temperature)
+            {
+                @await Html.PartialAsync("Diary/_Temperature", temperature)
+            }
+            else if (entry is VaccineModel vaccine)
+            {
+                @await Html.PartialAsync("Diary/_Vaccine", vaccine)
+            }
+        }
+    </tbody>
+</table>
+
+<script>
+    var tf;
+
+    (function () {
+        var filtersConfig = {
+            base_path: '/js/tablefilter/',
+            col_0: 'none',
+            col_1: 'none',
+            col_2: 'none',
+            col_3: 'none',
+            toolbar: false,
+            themes: [{
+                name: 'transparent'
+            }],
+            extensions: [{
+                name: 'colsVisibility',
+                at_start: [0, 1]
+            }]
+        };
+
+        tf = new TableFilter('diaryTable', 0, filtersConfig);
+        tf.init();      
+    })();
+
+    function filterDate(event) {
+        tf.setFilterValue(0, event.target.value);
+        tf.filter();
+    }
+
+    function filterType(event) {
+        var filter = Array.from(document.getElementsByClassName("entryTypeCheckbox"))
+            .filter(c => c.checked == true)
+            .map(c => c.dataset.entrytype)
+
+        tf.setFilterValue(1, filter);
+        tf.filter();
+
+        if (event.target.checked == true) {
+            event.target.nextElementSibling.style.filter = "brightness(0) invert(1)";
+        } else {
+            event.target.nextElementSibling.style.filter = "none";
+        }        
+    }
+</script>

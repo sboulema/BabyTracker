@@ -8,6 +8,10 @@ namespace BabyTracker.Models.ViewModels
     {
         public IEnumerable<IGrouping<DateTime, EntryModel>> Days { get; set; }
 
+        public IEnumerable<EntryModel> Entries { get; set; }
+
         public string PictureDirectory { get; set; }
+
+        public List<string> EntryTypes { get; set; } = new List<string> { "Diaper", "Formula", "Supplement", "Joy", "Growth", "Medication", "Milestone", "Activity", "Sleep", "Temperature", "Vaccine" };
     }
 }

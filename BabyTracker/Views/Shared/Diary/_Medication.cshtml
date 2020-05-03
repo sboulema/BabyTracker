@@ -1,0 +1,21 @@
+﻿@model MedicationModel
+
+<tr>
+    <td>
+        @Model.Time.ToShortDateString()
+    </td>
+    <td>
+        Medication
+    </td>
+    <td>
+        <img src="~/img/icon_review_medication.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-success">@Model.MedicationName @Model.Amount</h5>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+    </td>
+</tr>

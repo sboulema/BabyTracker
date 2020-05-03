@@ -9,7 +9,8 @@ namespace BabyTracker.Services
         public static DiaryViewModel GetDays(ImportResultModel model)
             => new DiaryViewModel
             {
-                Days = model.Entries.OrderByDescending(e => e.Time).GroupBy(e => e.Time.Date)
+                Days = model.Entries.OrderByDescending(e => e.Time).GroupBy(e => e.Time.Date),
+                Entries = model.Entries.OrderByDescending(e => e.Time)
             };
     }
 }

@@ -1,0 +1,21 @@
+﻿@model TemperatureModel
+
+<tr>
+    <td>
+        @Model.Time.ToShortDateString()
+    </td>
+    <td>
+        Temperature
+    </td>
+    <td>
+        <img src="~/img/icon_review_temperature.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-success">Temperature @Model.Temperature</h5>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+    </td>
+</tr>

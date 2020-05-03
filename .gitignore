@@ -5,3 +5,5 @@
 /BabyTracker/bin
 /BabyTracker/obj
 /BabyTracker/zip
+.vscode/launch.json
+.vscode/tasks.json

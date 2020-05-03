@@ -1,0 +1,21 @@
+﻿@model SupplementModel
+
+<tr>
+    <td>
+        @Model.Time.ToShortDateString()
+    </td>
+    <td>
+        Supplement
+    </td>
+    <td>
+        <img src="~/img/icon_review_supplement.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-warning">@Model.Supplement @Model.Amount</h5>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+    </td>
+</tr>

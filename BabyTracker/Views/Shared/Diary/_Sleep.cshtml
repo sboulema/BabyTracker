@@ -1,0 +1,21 @@
+﻿@model SleepModel
+
+<tr>
+    <td>
+        @Model.Time.ToShortDateString()
+    </td>
+    <td>
+        Sleep
+    </td>
+    <td>
+        <img src="~/img/icon_review_sleep.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-primary">Slept @Model.Duration</h5>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <br />@Model.Note
+        }
+    </td>
+</tr>

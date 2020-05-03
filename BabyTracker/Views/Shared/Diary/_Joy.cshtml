@@ -1,18 +1,18 @@
-﻿@model MilestoneModel
+﻿@model Joy
 
 <tr>
     <td>
         @Model.Time.ToShortDateString()
     </td>
     <td>
-        Milestone
+        Joy
     </td>
     <td>
-        <img src="~/img/icon_review_milestone.png" width="64" />
+        <img src="~/img/icon_review_joy.png" width="64" />
     </td>
     <td>
         @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
-        <h5 class="text-success">@Model.Milestone</h5>
+        <h5 class="text-success">Joy</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note

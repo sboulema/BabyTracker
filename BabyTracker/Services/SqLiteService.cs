@@ -1,4 +1,5 @@
-﻿using BabyTracker.Models;
+﻿using BabyTracker.Constants;
+using BabyTracker.Models;
 using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 using System.IO;
@@ -36,11 +37,23 @@ namespace BabyTracker.Services
                 {
                     Time = reader.GetDateTime(0),
                     Note = reader.GetString(1),
-                    Status = reader.GetString(2)
+                    Status = GetDiaperStatus(reader.GetString(2))
                 });
             }
 
             return entries;
+        }
+
+        private static string GetDiaperStatus(string status) {
+            switch (status)
+            {
+                case DiaperStatus.Wet:
+                    return "Wet";
+                case DiaperStatus.Dirty:
+                    return "Dirty";
+                default:
+                    return string.Empty;
+            }
         }
 
         private static List<EntryModel> GetJoy(string path)

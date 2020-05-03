@@ -2,11 +2,17 @@
 
 <tr>
     <td>
-        <img src="~/img/icon_review_activities.png" width="32" />
+        @Model.Time.ToShortDateString()
     </td>
     <td>
-        @Model.Time.ToShortTimeString()<br />
-        @Model.OtherActivity<br />
+        Activity
+    </td>
+    <td>
+        <img src="~/img/icon_review_activity.png" width="64" />
+    </td>
+    <td>
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        <h5 class="text-success">@Model.OtherActivity</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note
