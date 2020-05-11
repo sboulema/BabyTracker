@@ -16,6 +16,15 @@
     }
 </div>
 
+<div class="btn-group btn-group-toggle" data-toggle="buttons">
+  <label class="btn btn-outline-primary active">
+    <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked> List
+  </label>
+  <label class="btn btn-outline-primary">
+    <input type="radio" name="viewStyle" onchange="toggleViewStyle()"> Card
+  </label>
+</div>
+
 <table id="diaryTable" class="table">
     <tbody>
         @foreach (var entry in Model.Entries.ToList())
@@ -78,18 +87,19 @@
             col_1: 'none',
             col_2: 'none',
             col_3: 'none',
+            col_4: 'none',
             toolbar: false,
             themes: [{
                 name: 'transparent'
             }],
             extensions: [{
                 name: 'colsVisibility',
-                at_start: [0, 1]
+                at_start: [0, 1, 4]
             }]
         };
 
         tf = new TableFilter('diaryTable', 0, filtersConfig);
-        tf.init();      
+        tf.init();
     })();
 
     function filterDate(event) {
@@ -110,5 +120,39 @@
         } else {
             event.target.nextElementSibling.style.filter = "none";
         }        
+    }
+
+    function toggleViewStyle() {
+        var tfColsVisibility = tf.extension('colsVisibility');
+        tfColsVisibility.toggleCol(2);
+        tfColsVisibility.toggleCol(3);
+        tfColsVisibility.toggleCol(4);
+    }
+
+    function saveCard(selector) {
+        $(".btn-screenshot").toggle();
+        document.getElementById(selector).style.overflow = 'visible';
+        html2canvas(document.querySelector("#" + selector)).then(canvas => {
+            saveAs(canvas.toDataURL(), selector + '.png');
+        });
+        $(".btn-screenshot").toggle();
+        document.getElementById(selector).style.overflow = 'hidden';
+    }
+
+    function saveAs(uri, filename) {
+        var link = document.createElement('a');
+        if (typeof link.download === 'string') {
+
+            link.href = uri;
+            link.download = filename;
+            //Firefox requires the link to be in the body
+            document.body.appendChild(link);
+            //simulate click
+            link.click();
+            //remove the link when done
+            document.body.removeChild(link);
+        } else {
+            window.open(uri);
+        }
     }
 </script>

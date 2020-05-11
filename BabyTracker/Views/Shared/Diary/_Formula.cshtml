@@ -18,4 +18,15 @@
             <br />@Model.Note
         }
     </td>
+    <td>
+        <div class="card" id="formula_@Model.Time.Ticks">
+            <img class="card-img-top" src="~/img/icon_review_formula.png">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Formula @Model.Amount</h5>
+                <p class="card-text">@Model.Note</p>
+                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+            </div>
+            <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('formula_@Model.Time.Ticks')">Screenshot</a>
+        </div>
+    </td>
 </tr>

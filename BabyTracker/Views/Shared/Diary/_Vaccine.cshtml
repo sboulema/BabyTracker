@@ -8,7 +8,7 @@
         Vaccine
     </td>
     <td>
-        <img src="~/img/icon_review_diaper.png" width="64" />
+        <img src="~/img/icon_review_vaccine.png" width="64" />
     </td>
     <td>
         @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
@@ -17,5 +17,16 @@
         {
             <br />@Model.Note
         }
+    </td>
+    <td>
+        <div class="card" id="vaccine_@Model.Time.Ticks">
+            <img class="card-img-top" src="~/img/icon_review_vaccine.png">
+            <div class="card-body">
+                <h5 class="card-title text-success">@Model.Vaccine</h5>
+                <p class="card-text">@Model.Note</p>
+                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+            </div>
+            <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('vaccine_@Model.Time.Ticks')">Screenshot</a>
+        </div>
     </td>
 </tr>
