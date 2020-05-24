@@ -1,7 +1,6 @@
 ﻿using BabyTracker.Models;
 using CsvHelper;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -19,16 +18,9 @@ namespace BabyTracker.Services
 
     public class ImportService : IImportService
     {
-        private readonly IConfiguration _configuration;
-
-        public ImportService(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         public ImportResultModel LoadFromZip(string fileName)
         {
-            var path = Path.Combine(_configuration["DATA_DIRECTORY"], $"{fileName}.eml");
+            var path = $"/data/{fileName}.eml";
             return ParseZip(path);
         }
 
