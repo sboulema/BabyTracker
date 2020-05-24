@@ -15,6 +15,9 @@ stages:
           inputs:
             containerRegistry: 'Docker Hub'
             repository: sboulema/babytracker
+            tags: |
+              $(Build.BuildId)
+              latest
   - stage: Deploy
     displayName: Deploy
     jobs:
