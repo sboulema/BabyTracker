@@ -1,10 +1,12 @@
 ﻿@model DiaryViewModel
 
 @{
-    ViewData["Title"] = "BabyTracker";
+    ViewData["Title"] = "Diary - BabyTracker";
 }
 
 <input type="date" id="dateEntry" onchange="filterDate(event)"/>
+
+<br />
 
 <div class="btn-group-toggle" data-toggle="buttons">
     @foreach (var entryType in Model.EntryTypes)
@@ -15,6 +17,8 @@
         </label>
     }
 </div>
+
+<br />
 
 <div class="btn-group btn-group-toggle" data-toggle="buttons">
   <label class="btn btn-outline-primary active">
@@ -84,7 +88,7 @@
         var filtersConfig = {
             base_path: '/js/tablefilter/',
             col_0: 'none',
-            col_1: 'none',
+            col_1: 'checklist',
             col_2: 'none',
             col_3: 'none',
             col_4: 'none',
@@ -131,28 +135,19 @@
 
     function saveCard(selector) {
         $(".btn-screenshot").toggle();
-        document.getElementById(selector).style.overflow = 'visible';
+
+        var scrollTop = document.documentElement.scrollTop;
+
+        window.scrollTo(0, 0);
+
         html2canvas(document.querySelector("#" + selector)).then(canvas => {
-            saveAs(canvas.toDataURL(), selector + '.png');
+            canvas.toBlob(function(blob) {
+                saveAs(blob, selector + ".png");
+            });
         });
+
+        window.scrollTo(0, scrollTop);
+
         $(".btn-screenshot").toggle();
-        document.getElementById(selector).style.overflow = 'hidden';
-    }
-
-    function saveAs(uri, filename) {
-        var link = document.createElement('a');
-        if (typeof link.download === 'string') {
-
-            link.href = uri;
-            link.download = filename;
-            //Firefox requires the link to be in the body
-            document.body.appendChild(link);
-            //simulate click
-            link.click();
-            //remove the link when done
-            document.body.removeChild(link);
-        } else {
-            window.open(uri);
-        }
     }
 </script>

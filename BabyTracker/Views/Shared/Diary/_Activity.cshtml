@@ -33,7 +33,7 @@
                 <p class="card-text">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
             </div>
-            <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.Time.Ticks')">Screenshot</a>
+            <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.Time.Ticks');return false;">Screenshot</a>
         </div>
     </td>
 </tr>

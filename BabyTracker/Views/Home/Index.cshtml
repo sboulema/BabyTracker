@@ -1,13 +1,41 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "BabyTracker";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h1 class="display-4 text-center mb-5">BabyTracker</h1>
+
+<br />
+
+<div class="card col-6 offset-3">
+  <div class="card-body">
+    <h5 class="card-title">Upload your own BabyTracker Data Clone</h5>
+    <form asp-controller="Home" asp-action="ImportFile" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="importFile">Upload file</label>
+            <input type="file" class="form-control-file" name="file" id="importFile">
+        </div>
+
+        <button type="submit" class="btn btn-success">Upload</button>
+    </form>
+  </div>
 </div>
 
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="file" />
-    <button type="submit">Upload</button>
-</form>
+<br />
+
+<h3 class="text-center">Or</h2>
+
+<br />
+
+<div class="card col-6 offset-3">
+  <div class="card-body">
+    <h5 class="card-title">Load from an existing BabyTracker Data Clone</h5>
+    <form asp-controller="Home" asp-action="LoadFile" method="post">
+        <div class="form-group">
+            <label for="loadFile">Baby name</label>
+            <input type="text" class="form-control" name="fileName" id="loadFile" placeholder="baby name">
+        </div>
+
+        <button type="submit" class="btn btn-success">Load</button>
+    </form>
+  </div>
+</div>

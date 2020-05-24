@@ -1,6 +1,7 @@
 ﻿using BabyTracker.Models;
 using CsvHelper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,12 +10,42 @@ using System.Linq;
 
 namespace BabyTracker.Services
 {
-    public static class ImportService
+    public interface IImportService
     {
-        public static ImportResultModel HandleImport(IFormFile file)
+        ImportResultModel HandleImport(IFormFile file);
+
+        ImportResultModel LoadFromZip(string fileName);
+    }
+
+    public class ImportService : IImportService
+    {
+        private readonly IConfiguration _configuration;
+
+        public ImportService(IConfiguration configuration)
         {
-            var zipFile = SaveFile(file);
-            var extractDir = Unzip(zipFile);
+            _configuration = configuration;
+        }
+
+        public ImportResultModel LoadFromZip(string fileName)
+        {
+            var path = Path.Combine(_configuration["DATA_DIRECTORY"], $"{fileName}.eml");
+            return ParseZip(path);
+        }
+
+        public ImportResultModel HandleImport(IFormFile file)
+        {
+            var path = SaveFile(file);
+            return ParseZip(path);
+        }
+
+        private ImportResultModel ParseZip(string path)
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var extractDir = Unzip(path);
 
             var model = new ImportResultModel();
 
@@ -26,7 +57,7 @@ namespace BabyTracker.Services
             {
                 model.Entries = ParseFiles(extractDir);
             }
-            
+
             return model;
         }
 
@@ -46,7 +77,7 @@ namespace BabyTracker.Services
 
             using var localFile = File.OpenWrite(fileName);
             using var uploadedFile = file.OpenReadStream();
-            
+
             uploadedFile.CopyTo(localFile);
 
             return localFile.Name;

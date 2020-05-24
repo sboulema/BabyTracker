@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using BabyTracker.Models;
@@ -14,10 +10,12 @@ namespace BabyTracker.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IImportService _importService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IImportService importService)
         {
             _logger = logger;
+            _importService = importService;
         }
 
         public IActionResult Index()
@@ -27,18 +25,23 @@ namespace BabyTracker.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        public IActionResult Index(IFormFile file)
+        public IActionResult ImportFile(IFormFile file)
         {
-            var importResultModel = ImportService.HandleImport(file);
+            var importResultModel = _importService.HandleImport(file);
 
             var model = DiaryService.GetDays(importResultModel);
 
             return View("Diary", model);
         }
 
-        public IActionResult Privacy()
+        [HttpPost]
+        public IActionResult LoadFile(string fileName)
         {
-            return View();
+            var importResultModel = _importService.LoadFromZip(fileName);
+
+            var model = DiaryService.GetDays(importResultModel);
+
+            return View("Diary", model);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

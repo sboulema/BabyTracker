@@ -12,7 +12,13 @@
     </td>
     <td>
         @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
-        <h5 class="text-primary">Slept @Model.Duration</h5>
+        @if (Model.Duration == "0") {
+            <h5 class="card-title text-success">Started sleeping</h5>
+        } 
+        else 
+        {
+            <h5 class="card-title text-success">Slept @Model.Duration min</h5>
+        }  
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note
@@ -22,11 +28,16 @@
         <div class="card" id="sleep_@Model.Time.Ticks">
             <img class="card-img-top" src="~/img/icon_review_sleep.png">
             <div class="card-body">
-                <h5 class="card-title text-primary">Slept @Model.Duration</h5>
+                @if (Model.Duration == "0") {
+                    <h5 class="card-title text-success">Started sleeping</h5>
+                } 
+                else 
+                {
+                    <h5 class="card-title text-success">Slept @Model.Duration min</h5>
+                }               
                 <p class="card-text">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
             </div>
-            <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('sleep_@Model.Time.Ticks')">Screenshot</a>
         </div>
     </td>
 </tr>
