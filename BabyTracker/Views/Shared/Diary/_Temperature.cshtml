@@ -12,7 +12,7 @@
     </td>
     <td>
         @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
-        <h5 class="text-success">Temperature @Model.Temperature</h5>
+        <h5 class="text-success">Temperature @Model.Temperature.ToString("n2")</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note
@@ -22,7 +22,7 @@
         <div class="card" id="temperature_@Model.Time.Ticks">
             <img class="card-img-top" src="~/img/icon_review_temperature.png">
             <div class="card-body">
-                <h5 class="card-title text-success">Temperature @Model.Temperature</h5>
+                <h5 class="card-title text-success">Temperature @Model.Temperature.ToString("n2")</h5>
                 <p class="card-text">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
             </div>

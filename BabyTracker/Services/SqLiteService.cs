@@ -119,7 +119,7 @@ namespace BabyTracker.Services
                 {
                     Time = reader.GetDateTime(0),
                     Note = reader.GetString(1),
-                    Temperature = reader.GetDouble(2).ToString()
+                    Temperature = reader.GetDouble(2)
                 });
             }
 
@@ -167,9 +167,9 @@ namespace BabyTracker.Services
                 {
                     Time = reader.GetDateTime(0),
                     Note = reader.GetString(1),
-                    Weight = reader.GetDouble(2).ToString(),
-                    Length = reader.GetDouble(3).ToString(),
-                    HeadSize = reader.GetDouble(4).ToString()
+                    Weight = reader.GetDouble(2),
+                    Length = reader.GetDouble(3),
+                    HeadSize = reader.GetDouble(4)
                 });
             }
 

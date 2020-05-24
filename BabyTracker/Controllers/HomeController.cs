@@ -39,6 +39,11 @@ namespace BabyTracker.Controllers
         {
             var importResultModel = _importService.LoadFromZip(fileName);
 
+            if (importResultModel == null) 
+            {
+                return View("Error", new ErrorViewModel { Message = "Unable to load file" });
+            }
+
             var model = DiaryService.GetDays(importResultModel);
 
             return View("Diary", model);

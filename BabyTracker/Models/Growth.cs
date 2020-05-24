@@ -4,11 +4,11 @@ namespace BabyTracker.Models
 {
     public class Growth : EntryModel
     {
-        public string Length { get; set; }
+        public double Length { get; set; }
 
-        public string Weight { get; set; }
+        public double Weight { get; set; }
 
         [Name("Head Size")]
-        public string HeadSize { get; set; }
+        public double HeadSize { get; set; }
     }
 }
