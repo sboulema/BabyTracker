@@ -7,13 +7,13 @@ namespace BabyTracker.Services
     {
         public static async Task<byte[]> GetPicture(string filename)
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "zip", filename);
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "zip", $"{filename}.jpg");
 
             if (!File.Exists(path)) {
-                path = $"/data/zip/{filename}";
+                path = $"/data/zip/{filename}.jpg";
             }
 
-            return await File.ReadAllBytesAsync($"{path}.jpg");
+            return await File.ReadAllBytesAsync(path);
         }
     }
 }

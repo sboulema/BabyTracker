@@ -108,7 +108,7 @@
 
     function filterDate(event) {
         var date = new Date(event.target.value);
-        tf.setFilterValue(0, date.getDate() + "-" + (date.getMonth() + 1) + "-" + date.getFullYear());
+        tf.setFilterValue(0, ('0' + date.getDate()).slice(-2) + "-" + ('0' + (date.getMonth()+1)).slice(-2) + "-" + date.getFullYear());
         tf.filter();
     }
 
