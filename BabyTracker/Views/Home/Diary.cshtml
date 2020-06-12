@@ -107,7 +107,8 @@
     })();
 
     function filterDate(event) {
-        tf.setFilterValue(0, event.target.value);
+        var date = new Date(event.target.value);
+        tf.setFilterValue(0, date.getDate() + "-" + (date.getMonth() + 1) + "-" + date.getFullYear());
         tf.filter();
     }
 

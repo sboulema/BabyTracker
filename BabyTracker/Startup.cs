@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,15 @@ namespace BabyTracker
             services.AddControllersWithViews();
 
             services.AddSingleton<IImportService, ImportService>();
+
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = Int32.MaxValue;
+                options.MemoryBufferThreshold = Int32.MaxValue;
+                options.ValueCountLimit = Int32.MaxValue;
+                options.ValueLengthLimit = int.MaxValue;
+                options.MultipartBodyLengthLimit = long.MaxValue;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
