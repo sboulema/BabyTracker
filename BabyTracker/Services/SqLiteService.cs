@@ -231,6 +231,8 @@ namespace BabyTracker.Services
                     return "Wet";
                 case DiaperStatus.Dirty:
                     return "Dirty";
+                case DiaperStatus.Mixed:
+                    return "Mixed";
                 default:
                     return string.Empty;
             }
