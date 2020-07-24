@@ -17,7 +17,7 @@
         } 
         else 
         {
-            <h5 class="card-title text-success">Slept @Model.Duration min</h5>
+            <h5 class="card-title text-success">Slept @Model.DurationText</h5>
         }  
         @if (!string.IsNullOrEmpty(Model.Note))
         {
@@ -33,7 +33,7 @@
                 } 
                 else 
                 {
-                    <h5 class="card-title text-success">Slept @Model.Duration min</h5>
+                    <h5 class="card-title text-success">Slept @Model.DurationText</h5>
                 }               
                 <p class="card-text">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
