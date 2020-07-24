@@ -43,7 +43,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new SupplementModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Supplement = $"{reader.GetString(4)} {reader.GetString(2)} {reader.GetString(3)}"
                 });
@@ -68,7 +68,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new MedicationModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     MedicationName = $"{reader.GetString(3)}",
                     Amount = reader.GetString(4)
@@ -93,7 +93,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new VaccineModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Vaccine = $"{reader.GetString(2)} - {reader.GetString(3)}"
                 });
@@ -117,7 +117,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new TemperatureModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Temperature = reader.GetDouble(2)
                 });
@@ -141,7 +141,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new SleepModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Duration = reader.GetInt32(2).ToString()
                 });
@@ -165,7 +165,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Growth
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Weight = reader.GetDouble(2),
                     Length = reader.GetDouble(3),
@@ -191,7 +191,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Formula
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Amount = reader.GetInt32(2).ToString()
                 });
@@ -215,7 +215,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Diaper
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Status = GetDiaperStatus(reader.GetString(2))
                 });
@@ -253,7 +253,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Joy
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = reader.GetString(2)
                 });
@@ -280,7 +280,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new ActivityModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = GetString(reader, 2),
                     Duration = reader.GetInt32(3).ToString(),
@@ -309,7 +309,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new MilestoneModel
                 {
-                    Time = reader.GetDateTime(0),
+                    TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = GetString(reader, 2),
                     Milestone = GetString(reader, 3)

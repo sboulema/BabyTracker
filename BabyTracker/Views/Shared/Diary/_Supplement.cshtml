@@ -11,7 +11,7 @@
         <img src="~/img/icon_review_supplement.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()<br />
+        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
         <h5 class="text-warning">@Model.Supplement @Model.Amount</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
@@ -24,7 +24,7 @@
             <div class="card-body">
                 <h5 class="card-title text-success">@Model.Supplement @Model.Amount</h5>
                 <p class="card-text">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()</small>
+                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
             </div>
         </div>
     </td>
