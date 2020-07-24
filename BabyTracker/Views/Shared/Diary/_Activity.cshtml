@@ -11,7 +11,7 @@
         <img src="~/img/icon_review_activity.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        @Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()<br />
         <h5 class="text-success">@Model.OtherActivity</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
@@ -31,7 +31,7 @@
             <div class="card-body">
                 <h5 class="card-title text-success">@Model.OtherActivity</h5>
                 <p class="card-text">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()</small>
             </div>
             <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.Time.Ticks');return false;">Screenshot</a>
         </div>

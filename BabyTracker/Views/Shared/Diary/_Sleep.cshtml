@@ -11,7 +11,7 @@
         <img src="~/img/icon_review_sleep.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
+        @Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()<br />
         @if (Model.Duration == "0") {
             <h5 class="card-title text-success">Started sleeping</h5>
         } 
@@ -36,7 +36,7 @@
                     <h5 class="card-title text-success">Slept @Model.Duration min</h5>
                 }               
                 <p class="card-text">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToLocalTime().ToShortTimeString()</small>
             </div>
         </div>
     </td>
