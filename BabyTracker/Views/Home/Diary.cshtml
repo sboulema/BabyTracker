@@ -4,151 +4,176 @@
     ViewData["Title"] = "Diary - BabyTracker";
 }
 
-<input type="date" id="dateEntry" onchange="filterDate(event)"/>
-
-<br /><br />
-
-<div class="btn-group-toggle" data-toggle="buttons">
-    @foreach (var entryType in Model.EntryTypes)
+<form class="form-inline">
+    @if (Model != null)
     {
-        <label class="btn btn-outline-info active">
-            <input type="checkbox" class="entryTypeCheckbox" data-entrytype="@entryType" onchange="filterType(event)" checked autocomplete="off"> 
-            <img src="~/img/icon_review_@(entryType.ToLower()).png" width="32" style="filter: brightness(0) invert(1);"/>
-        </label>
+        <a class="btn btn-primary mr-2" href="/@Model.DatePrevious" role="button"><i class="fas fa-angle-left"></i></a>
     }
-</div>
 
-<br />
+    <input type="date" id="dateEntry" onchange="filterDate(event)" value="@Model?.Date" class="form-control mr-2" />
 
-<div class="btn-group btn-group-toggle" data-toggle="buttons">
-  <label class="btn btn-outline-primary active">
-    <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked> List
-  </label>
-  <label class="btn btn-outline-primary">
-    <input type="radio" name="viewStyle" onchange="toggleViewStyle()"> Card
-  </label>
-</div>
+    @if (Model != null)
+    {
+        <a class="btn btn-primary" href="/@Model.DateNext" role="button"><i class="fas fa-angle-right"></i></a>
+    }
+</form>
 
-<table id="diaryTable" class="table">
-    <tbody>
-        @foreach (var entry in Model.Entries.ToList())
+@if (Model == null)
+{
+    <div class="card col-6 offset-3">
+        <div class="card-body">
+            <h5 class="card-title">Please choose a date to view your entries</h5>
+        </div>
+    </div>
+
+    <script>
+        function filterDate(event) {
+            var date = new Date(event.target.value);
+            window.location.href = "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
+        }
+    </script>
+}
+else
+{
+    <br />
+    <br />
+
+    <div class="btn-group-toggle" data-toggle="buttons">
+        @foreach (var entryType in Model.EntryTypes)
         {
-            if (entry is Diaper diaper)
+            <label class="btn btn-outline-info active">
+                <input type="checkbox" class="entryTypeCheckbox" data-entrytype="@entryType" onchange="filterType(event)" checked autocomplete="off">
+                <img src="~/img/icon_review_@(entryType.ToLower()).png" width="32" style="filter: brightness(0) invert(1);" />
+            </label>
+        }
+    </div>
+
+    <br />
+
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-outline-primary active">
+            <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked> List
+        </label>
+        <label class="btn btn-outline-primary">
+            <input type="radio" name="viewStyle" onchange="toggleViewStyle()"> Card
+        </label>
+    </div>
+
+    <table id="diaryTable" class="table">
+        <tbody>
+            @foreach (var entry in Model.Entries.ToList())
             {
-                @await Html.PartialAsync("Diary/_Diaper", diaper)
+                if (entry is Diaper diaper)
+                {
+                    @await Html.PartialAsync("Diary/_Diaper", diaper)
+                }
+                else if (entry is Formula formula)
+                {
+                    @await Html.PartialAsync("Diary/_Formula", formula)
+                }
+                else if (entry is Joy joy)
+                {
+                    @await Html.PartialAsync("Diary/_Joy", joy)
+                }
+                else if (entry is Growth growth)
+                {
+                    @await Html.PartialAsync("Diary/_Growth", growth)
+                }
+                else if (entry is MedicationModel medication)
+                {
+                    @await Html.PartialAsync("Diary/_Medication", medication)
+                }
+                else if (entry is MilestoneModel milestone)
+                {
+                    @await Html.PartialAsync("Diary/_Milestone", milestone)
+                }
+                else if (entry is ActivityModel activity)
+                {
+                    @await Html.PartialAsync("Diary/_Activity", activity)
+                }
+                else if (entry is SleepModel sleep)
+                {
+                    @await Html.PartialAsync("Diary/_Sleep", sleep)
+                }
+                else if (entry is SupplementModel supplement)
+                {
+                    @await Html.PartialAsync("Diary/_Supplement", supplement)
+                }
+                else if (entry is TemperatureModel temperature)
+                {
+                    @await Html.PartialAsync("Diary/_Temperature", temperature)
+                }
+                else if (entry is VaccineModel vaccine)
+                {
+                    @await Html.PartialAsync("Diary/_Vaccine", vaccine)
+                }
             }
-            else if (entry is Formula formula)
-            {
-                @await Html.PartialAsync("Diary/_Formula", formula)
-            }
-            else if (entry is Joy joy)
-            {
-                @await Html.PartialAsync("Diary/_Joy", joy)
-            }
-            else if (entry is Growth growth)
-            {
-                @await Html.PartialAsync("Diary/_Growth", growth)
-            }
-            else if (entry is MedicationModel medication)
-            {
-                @await Html.PartialAsync("Diary/_Medication", medication)
-            }
-            else if (entry is MilestoneModel milestone)
-            {
-                @await Html.PartialAsync("Diary/_Milestone", milestone)
-            }
-            else if (entry is ActivityModel activity)
-            {
-                @await Html.PartialAsync("Diary/_Activity", activity)
-            }
-            else if (entry is SleepModel sleep)
-            {
-                @await Html.PartialAsync("Diary/_Sleep", sleep)
-            }
-            else if (entry is SupplementModel supplement)
-            {
-                @await Html.PartialAsync("Diary/_Supplement", supplement)
-            }
-            else if (entry is TemperatureModel temperature)
-            {
-                @await Html.PartialAsync("Diary/_Temperature", temperature)
-            }
-            else if (entry is VaccineModel vaccine)
-            {
-                @await Html.PartialAsync("Diary/_Vaccine", vaccine)
+        </tbody>
+    </table>
+
+    <script>
+        var tf;
+
+        (function () {
+            var filtersConfig = {
+                base_path: '/js/tablefilter/',
+                col_0: 'none',
+                col_1: 'checklist',
+                col_2: 'none',
+                col_3: 'none',
+                col_4: 'none',
+                toolbar: false,
+                themes: [{
+                    name: 'transparent'
+                }],
+                extensions: [{
+                    name: 'colsVisibility',
+                    at_start: [0, 1, 4]
+                }]
+            };
+
+            tf = new TableFilter('diaryTable', 0, filtersConfig);
+            tf.init();
+        })();
+
+        function filterType(event) {
+            var filter = Array.from(document.getElementsByClassName("entryTypeCheckbox"))
+                .filter(c => c.checked == true)
+                .map(c => c.dataset.entrytype)
+
+            tf.setFilterValue(1, filter);
+            tf.filter();
+
+            if (event.target.checked == true) {
+                event.target.nextElementSibling.style.filter = "brightness(0) invert(1)";
+            } else {
+                event.target.nextElementSibling.style.filter = "none";
             }
         }
-    </tbody>
-</table>
 
-<script>
-    var tf;
+        function toggleViewStyle() {
+            var tfColsVisibility = tf.extension('colsVisibility');
+            tfColsVisibility.toggleCol(2);
+            tfColsVisibility.toggleCol(3);
+            tfColsVisibility.toggleCol(4);
+        }
 
-    (function () {
-        var filtersConfig = {
-            base_path: '/js/tablefilter/',
-            col_0: 'none',
-            col_1: 'checklist',
-            col_2: 'none',
-            col_3: 'none',
-            col_4: 'none',
-            toolbar: false,
-            themes: [{
-                name: 'transparent'
-            }],
-            extensions: [{
-                name: 'colsVisibility',
-                at_start: [0, 1, 4]
-            }]
-        };
+        function saveCard(selector) {
+            $(".btn-screenshot").toggle();
 
-        tf = new TableFilter('diaryTable', 0, filtersConfig);
-        tf.init();
-    })();
+            var scrollTop = document.documentElement.scrollTop;
 
-    function filterDate(event) {
-        var date = new Date(event.target.value);
-        tf.setFilterValue(0, ('0' + date.getDate()).slice(-2) + "-" + ('0' + (date.getMonth()+1)).slice(-2) + "-" + date.getFullYear());
-        tf.filter();
-    }
+            window.scrollTo(0, 0);
 
-    function filterType(event) {
-        var filter = Array.from(document.getElementsByClassName("entryTypeCheckbox"))
-            .filter(c => c.checked == true)
-            .map(c => c.dataset.entrytype)
-
-        tf.setFilterValue(1, filter);
-        tf.filter();
-
-        if (event.target.checked == true) {
-            event.target.nextElementSibling.style.filter = "brightness(0) invert(1)";
-        } else {
-            event.target.nextElementSibling.style.filter = "none";
-        }        
-    }
-
-    function toggleViewStyle() {
-        var tfColsVisibility = tf.extension('colsVisibility');
-        tfColsVisibility.toggleCol(2);
-        tfColsVisibility.toggleCol(3);
-        tfColsVisibility.toggleCol(4);
-    }
-
-    function saveCard(selector) {
-        $(".btn-screenshot").toggle();
-
-        var scrollTop = document.documentElement.scrollTop;
-
-        window.scrollTo(0, 0);
-
-        html2canvas(document.querySelector("#" + selector)).then(canvas => {
-            canvas.toBlob(function(blob) {
-                saveAs(blob, selector + ".png");
+            html2canvas(document.querySelector("#" + selector)).then(canvas => {
+                canvas.toBlob(function (blob) {
+                    saveAs(blob, selector + ".png");
+                });
             });
-        });
 
-        window.scrollTo(0, scrollTop);
+            window.scrollTo(0, scrollTop);
 
-        $(".btn-screenshot").toggle();
-    }
-</script>
+            $(".btn-screenshot").toggle();
+        }
+    </script>
+}

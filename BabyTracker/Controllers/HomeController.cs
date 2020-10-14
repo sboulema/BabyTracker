@@ -1,21 +1,23 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using BabyTracker.Models;
 using Microsoft.AspNetCore.Http;
 using BabyTracker.Services;
+using System;
 
 namespace BabyTracker.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly IImportService _importService;
+        private readonly ISqLiteService _sqLiteService;
 
-        public HomeController(ILogger<HomeController> logger, IImportService importService)
+        public HomeController(
+            IImportService importService,
+            ISqLiteService sqLiteService)
         {
-            _logger = logger;
             _importService = importService;
+            _sqLiteService = sqLiteService;
         }
 
         public IActionResult Index()
@@ -27,24 +29,48 @@ namespace BabyTracker.Controllers
         [DisableRequestSizeLimit]
         public IActionResult ImportFile(IFormFile file)
         {
-            var importResultModel = _importService.HandleImport(file);
+            var path = _importService.HandleImport(file);
 
-            var model = DiaryService.GetDays(importResultModel);
+            if (string.IsNullOrEmpty(path))
+            {
+                return View("Error", new ErrorViewModel { Message = "Unable to import file" });
+            }
 
-            return View("Diary", model);
+            _sqLiteService.OpenConnection(path);
+
+            return View("Diary", null);
         }
 
         [HttpPost]
         public IActionResult LoadFile(string fileName)
         {
-            var importResultModel = _importService.LoadFromZip(fileName);
+            var path = _importService.HandleLoad(fileName);
 
-            if (importResultModel == null) 
+            if (string.IsNullOrEmpty(path)) 
             {
-                return View("Error", new ErrorViewModel { Message = "Unable to load file" });
+                return View("Error", new ErrorViewModel { Message = $"Unable to load find data for baby '{fileName}'" });
             }
 
+            _sqLiteService.OpenConnection(path);
+
+            return View("Diary", null);
+        }
+
+        [HttpGet("{inputDate}")]
+        public IActionResult Diary(string inputDate)
+        {
+            var date = DateTime.Parse(inputDate);
+
+            var entries = _sqLiteService.GetEntriesFromDb(date);
+            var importResultModel = new ImportResultModel
+            {
+                Entries = entries
+            };
             var model = DiaryService.GetDays(importResultModel);
+
+            model.Date = date.ToString("yyyy-MM-dd");
+            model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
+            model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
 
             return View("Diary", model);
         }

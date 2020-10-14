@@ -1,6 +1,4 @@
-﻿using CsvHelper.Configuration.Attributes;
-
-namespace BabyTracker.Models
+﻿namespace BabyTracker.Models
 {
     public class Growth : EntryModel
     {
@@ -8,7 +6,6 @@ namespace BabyTracker.Models
 
         public double Weight { get; set; }
 
-        [Name("Head Size")]
         public double HeadSize { get; set; }
     }
 }

@@ -1,42 +1,59 @@
 ﻿using BabyTracker.Constants;
 using BabyTracker.Models;
 using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace BabyTracker.Services
 {
-    public static class SqLiteService
+    public interface ISqLiteService
     {
-        public static List<EntryModel> ParseDb(string path)
+        void OpenConnection(string path);
+
+        List<EntryModel> GetEntriesFromDb(DateTime date);
+    }
+
+    public class SqLiteService : ISqLiteService
+    {
+        private SqliteConnection _sqliteConnection;
+
+        public void OpenConnection(string path)
         {
+            _sqliteConnection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
+            _sqliteConnection.Open();
+        }
+
+        public List<EntryModel> GetEntriesFromDb(DateTime date)
+        {
+            var lowerBound = ToUnixTimestamp(date);
+            var upperBound = ToUnixTimestamp(date.AddDays(1));
+
             var entries = new List<EntryModel>();
 
-            entries.AddRange(GetActivity(path));
-            entries.AddRange(GetDiapers(path));
-            entries.AddRange(GetFormula(path));
-            entries.AddRange(GetGrowth(path));
-            entries.AddRange(GetJoy(path));
-            entries.AddRange(GetMedication(path));
-            entries.AddRange(GetMilestone(path));
-            entries.AddRange(GetSleep(path));
-            entries.AddRange(GetSupplement(path));
-            entries.AddRange(GetTemperature(path));
-            entries.AddRange(GetVaccine(path));
+            entries.AddRange(GetActivity(lowerBound, upperBound));
+            entries.AddRange(GetDiapers(lowerBound, upperBound));
+            entries.AddRange(GetFormula(lowerBound, upperBound));
+            entries.AddRange(GetGrowth(lowerBound, upperBound));
+            entries.AddRange(GetJoy(lowerBound, upperBound));
+            entries.AddRange(GetMedication(lowerBound, upperBound));
+            entries.AddRange(GetMilestone(lowerBound, upperBound));
+            entries.AddRange(GetSleep(lowerBound, upperBound));
+            entries.AddRange(GetSupplement(lowerBound, upperBound));
+            entries.AddRange(GetTemperature(lowerBound, upperBound));
+            entries.AddRange(GetVaccine(lowerBound, upperBound));
 
             return entries;
         }
 
-        private static List<EntryModel> GetSupplement(string path)
+        private List<EntryModel> GetSupplement(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount, Unit, Name, Description" + 
-            " FROM OtherFeed LEFT JOIN OtherFeedSelection ON TypeID == OtherFeedSelection.ID";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount, Unit, Name, Description" +
+            " FROM OtherFeed LEFT JOIN OtherFeedSelection ON TypeID == OtherFeedSelection.ID" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -52,16 +69,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetMedication(string path)
+        private List<EntryModel> GetMedication(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description, Amount, AmountPerTime, Unit" + 
-            " FROM Medicine LEFT JOIN MedicineSelection ON MedID == MedicineSelection.ID";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description, Amount, AmountPerTime, Unit" +
+            " FROM Medicine LEFT JOIN MedicineSelection ON MedID == MedicineSelection.ID" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -78,15 +93,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetVaccine(string path)
+        private List<EntryModel> GetVaccine(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description FROM Vaccine LEFT JOIN VaccineSelection ON VaccID == VaccineSelection.ID";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description" +
+            " FROM Vaccine LEFT JOIN VaccineSelection ON VaccID == VaccineSelection.ID" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -102,15 +116,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetTemperature(string path)
+        private List<EntryModel> GetTemperature(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Temp FROM Temperature";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Temp" +
+            " FROM Temperature" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -126,15 +139,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetSleep(string path)
+        private List<EntryModel> GetSleep(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Duration FROM Sleep";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Duration" +
+            " FROM Sleep" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -150,15 +162,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetGrowth(string path)
+        private List<EntryModel> GetGrowth(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Weight, Length, Head FROM Growth";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Weight, Length, Head" +
+            " FROM Growth" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -176,15 +187,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetFormula(string path)
+        private List<EntryModel> GetFormula(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount FROM Formula";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount" +
+            " FROM Formula" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -200,15 +210,14 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetDiapers(string path)
+        private List<EntryModel> GetDiapers(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Status FROM Diaper";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Status" +
+            " FROM Diaper" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -224,29 +233,23 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static string GetDiaperStatus(string status) {
-            switch (status)
+        private static string GetDiaperStatus(string status)
+            => status switch
             {
-                case DiaperStatus.Wet:
-                    return "Wet";
-                case DiaperStatus.Dirty:
-                    return "Dirty";
-                case DiaperStatus.Mixed:
-                    return "Mixed";
-                default:
-                    return string.Empty;
-            }
-        }
+                DiaperStatus.Wet => "Wet",
+                DiaperStatus.Dirty => "Dirty",
+                DiaperStatus.Mixed => "Mixed",
+                _ => string.Empty,
+            };
 
-        private static List<EntryModel> GetJoy(string path)
+        private List<EntryModel> GetJoy(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename FROM Joy LEFT JOIN Picture ON Joy.Id == activityid";
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename" +
+            " FROM Joy LEFT JOIN Picture ON Joy.Id == activityid" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -262,18 +265,16 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetActivity(string path)
+        private List<EntryModel> GetActivity(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name " + 
-                "FROM OtherActivity " + 
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name " +
+                "FROM OtherActivity " +
                 "LEFT JOIN Picture ON OtherActivity.Id == activityid " +
-                "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID";
+                "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -291,18 +292,16 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private static List<EntryModel> GetMilestone(string path)
+        private List<EntryModel> GetMilestone(long lowerBound, long upperBound)
         {
             var entries = new List<EntryModel>();
 
-            using var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
-            connection.Open();
-
-            var command = connection.CreateCommand();
+            var command = _sqliteConnection.CreateCommand();
             command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name " +
                 "FROM Milestone " +
                 "LEFT JOIN Picture ON Milestone.Id == activityid " +
-                "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid";
+                "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
+            $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -320,5 +319,7 @@ namespace BabyTracker.Services
         }
 
         private static string GetString(SqliteDataReader reader, int column) => reader.IsDBNull(column) ? string.Empty : reader.GetString(column);
+
+        private long ToUnixTimestamp(DateTime date) => new DateTimeOffset(date).ToUnixTimeSeconds();
     }
 }

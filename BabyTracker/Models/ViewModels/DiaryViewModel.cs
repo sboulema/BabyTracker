@@ -13,5 +13,11 @@ namespace BabyTracker.Models.ViewModels
         public string PictureDirectory { get; set; }
 
         public List<string> EntryTypes { get; set; } = new List<string> { "Diaper", "Formula", "Supplement", "Joy", "Growth", "Medication", "Milestone", "Activity", "Sleep", "Temperature", "Vaccine" };
+
+        public string Date { get; set; }
+
+        public string DateNext { get; set; }
+
+        public string DatePrevious { get; set; }
     }
 }
