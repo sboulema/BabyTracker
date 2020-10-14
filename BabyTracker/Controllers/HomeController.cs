@@ -36,21 +36,23 @@ namespace BabyTracker.Controllers
                 return View("Error", new ErrorViewModel { Message = "Unable to import file" });
             }
 
+            _sqLiteService.SetBabyName("zip");
             _sqLiteService.OpenConnection(path);
 
             return View("Diary", null);
         }
 
         [HttpPost]
-        public IActionResult LoadFile(string fileName)
+        public IActionResult LoadFile(string babyName)
         {
-            var path = _importService.HandleLoad(fileName);
+            var path = _importService.HandleLoad(babyName);
 
             if (string.IsNullOrEmpty(path)) 
             {
-                return View("Error", new ErrorViewModel { Message = $"Unable to load find data for baby '{fileName}'" });
+                return View("Error", new ErrorViewModel { Message = $"Unable to load find data for baby '{babyName}'" });
             }
 
+            _sqLiteService.SetBabyName(babyName);
             _sqLiteService.OpenConnection(path);
 
             return View("Diary", null);

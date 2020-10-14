@@ -7,18 +7,18 @@ namespace BabyTracker.Controllers
     [Route("[controller]")]
     public class PictureController : Controller
     {
-        [Route("{filename}")]
-        public async Task<IActionResult> GetPicture(string filename)
+        [Route("{babyName}/{fileName}")]
+        public async Task<IActionResult> GetPicture(string babyName, string fileName)
         {
-            var picture = await PictureService.GetPicture(filename);
+            var picture = await PictureService.GetPicture(babyName, fileName);
 
             return File(picture, "image/jpg");
         }
 
-        [Route("{filename}/thumbnail")]
-        public async Task<IActionResult> GetThumbnail(string filename)
+        [Route("{babyName}/{filename}/thumbnail")]
+        public async Task<IActionResult> GetThumbnail(string babyName, string fileName)
         {
-            var thumbnail = await PictureService.GetPicture($"{filename}__thumbnail");
+            var thumbnail = await PictureService.GetPicture(babyName, $"{fileName}__thumbnail");
 
             return File(thumbnail, "image/jpg");
         }

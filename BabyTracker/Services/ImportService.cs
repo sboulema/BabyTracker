@@ -13,10 +13,10 @@ namespace BabyTracker.Services
 
     public class ImportService : IImportService
     {
-        public string HandleLoad(string fileName)
+        public string HandleLoad(string babyName)
         {
-            var path = $"/data/{fileName}.eml";
-            return Unzip(path);
+            var path = $"/data/{babyName}.eml";
+            return Unzip(path, babyName);
         }
 
         public string HandleImport(IFormFile file)
@@ -25,18 +25,21 @@ namespace BabyTracker.Services
             return Unzip(path);
         }
 
-        private string Unzip(string path)
+        private string Unzip(string path, string babyName = "zip")
         {
             if (!File.Exists(path))
             {
                 return string.Empty;
             }
 
-            var extractPath = Path.Combine(Path.GetDirectoryName(path), "zip");
+            var extractPath = Path.Combine(Path.GetDirectoryName(path), babyName);
 
-            using ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Read);
-            archive.ExtractToDirectory(extractPath, true);
-            archive.Dispose();
+            if (!Directory.Exists(extractPath))
+            {
+                using ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Read);
+                archive.ExtractToDirectory(extractPath, true);
+                archive.Dispose();
+            }
 
             return extractPath;
         }

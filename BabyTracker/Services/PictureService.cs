@@ -5,12 +5,12 @@ namespace BabyTracker.Services
 {
     public static class PictureService
     {
-        public static async Task<byte[]> GetPicture(string filename)
+        public static async Task<byte[]> GetPicture(string babyName, string fileName)
         {
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "zip", $"{filename}.jpg");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), babyName, $"{fileName}.jpg");
 
             if (!File.Exists(path)) {
-                path = $"/data/zip/{filename}.jpg";
+                path = $"/data/{babyName}/{fileName}.jpg";
             }
 
             return await File.ReadAllBytesAsync(path);

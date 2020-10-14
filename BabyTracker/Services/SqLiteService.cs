@@ -11,12 +11,20 @@ namespace BabyTracker.Services
     {
         void OpenConnection(string path);
 
+        void SetBabyName(string babyName);
+
         List<EntryModel> GetEntriesFromDb(DateTime date);
     }
 
     public class SqLiteService : ISqLiteService
     {
         private SqliteConnection _sqliteConnection;
+        private string _babyName;
+
+        public void SetBabyName(string babyName)
+        {
+            _babyName = babyName;
+        }
 
         public void OpenConnection(string path)
         {
@@ -31,22 +39,22 @@ namespace BabyTracker.Services
 
             var entries = new List<EntryModel>();
 
-            entries.AddRange(GetActivity(lowerBound, upperBound));
-            entries.AddRange(GetDiapers(lowerBound, upperBound));
-            entries.AddRange(GetFormula(lowerBound, upperBound));
-            entries.AddRange(GetGrowth(lowerBound, upperBound));
-            entries.AddRange(GetJoy(lowerBound, upperBound));
-            entries.AddRange(GetMedication(lowerBound, upperBound));
-            entries.AddRange(GetMilestone(lowerBound, upperBound));
-            entries.AddRange(GetSleep(lowerBound, upperBound));
-            entries.AddRange(GetSupplement(lowerBound, upperBound));
-            entries.AddRange(GetTemperature(lowerBound, upperBound));
-            entries.AddRange(GetVaccine(lowerBound, upperBound));
+            entries.AddRange(GetActivity(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetDiapers(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetFormula(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetGrowth(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetJoy(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetMedication(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetMilestone(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetSleep(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetSupplement(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetTemperature(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetVaccine(lowerBound, upperBound, _babyName));
 
             return entries;
         }
 
-        private List<EntryModel> GetSupplement(long lowerBound, long upperBound)
+        private List<EntryModel> GetSupplement(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -62,14 +70,15 @@ namespace BabyTracker.Services
                 {
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
-                    Supplement = $"{reader.GetString(4)} {reader.GetString(2)} {reader.GetString(3)}"
+                    Supplement = $"{reader.GetString(4)} {reader.GetString(2)} {reader.GetString(3)}",
+                    BabyName = babyName
                 });
             }
 
             return entries;
         }
 
-        private List<EntryModel> GetMedication(long lowerBound, long upperBound)
+        private List<EntryModel> GetMedication(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -83,6 +92,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new MedicationModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     MedicationName = $"{reader.GetString(3)}",
@@ -93,7 +103,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetVaccine(long lowerBound, long upperBound)
+        private List<EntryModel> GetVaccine(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -107,6 +117,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new VaccineModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Vaccine = $"{reader.GetString(2)} - {reader.GetString(3)}"
@@ -116,7 +127,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetTemperature(long lowerBound, long upperBound)
+        private List<EntryModel> GetTemperature(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -130,6 +141,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new TemperatureModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Temperature = reader.GetDouble(2)
@@ -139,7 +151,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetSleep(long lowerBound, long upperBound)
+        private List<EntryModel> GetSleep(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -153,6 +165,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new SleepModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Duration = reader.GetInt32(2).ToString()
@@ -162,7 +175,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetGrowth(long lowerBound, long upperBound)
+        private List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -176,6 +189,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Growth
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Weight = reader.GetDouble(2),
@@ -187,7 +201,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetFormula(long lowerBound, long upperBound)
+        private List<EntryModel> GetFormula(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -201,6 +215,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Formula
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Amount = reader.GetInt32(2).ToString()
@@ -210,7 +225,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetDiapers(long lowerBound, long upperBound)
+        private List<EntryModel> GetDiapers(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -224,6 +239,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Diaper
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Status = GetDiaperStatus(reader.GetString(2))
@@ -242,7 +258,7 @@ namespace BabyTracker.Services
                 _ => string.Empty,
             };
 
-        private List<EntryModel> GetJoy(long lowerBound, long upperBound)
+        private List<EntryModel> GetJoy(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -256,6 +272,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new Joy
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = reader.GetString(2)
@@ -265,7 +282,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetActivity(long lowerBound, long upperBound)
+        private List<EntryModel> GetActivity(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -281,6 +298,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new ActivityModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = GetString(reader, 2),
@@ -292,7 +310,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetMilestone(long lowerBound, long upperBound)
+        private List<EntryModel> GetMilestone(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 
@@ -308,6 +326,7 @@ namespace BabyTracker.Services
             {
                 entries.Add(new MilestoneModel
                 {
+                    BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
                     Filename = GetString(reader, 2),

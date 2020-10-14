@@ -5,7 +5,7 @@ namespace BabyTracker.Models
 {
     public class EntryModel
     {
-        public string Baby { get; set; }
+        public string BabyName { get; set; }
 
         public DateTime TimeUTC { get; set; }
 
