@@ -10,7 +10,7 @@
         <a class="btn btn-primary mr-2" href="/@Model.DatePrevious" role="button"><i class="fas fa-angle-left"></i></a>
     }
 
-    <input type="date" id="dateEntry" onchange="filterDate(event)" value="@Model?.Date" class="form-control mr-2" />
+    <input type="date" id="dateEntry" onblur="filterDate(event)" value="@Model?.Date" class="form-control mr-2" />
 
     @if (Model != null)
     {
@@ -25,13 +25,6 @@
             <h5 class="card-title">Please choose a date to view your entries</h5>
         </div>
     </div>
-
-    <script>
-        function filterDate(event) {
-            var date = new Date(event.target.value);
-            window.location.href = "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
-        }
-    </script>
 }
 else
 {
@@ -174,6 +167,15 @@ else
             window.scrollTo(0, scrollTop);
 
             $(".btn-screenshot").toggle();
+        }
+    </script>
+}
+
+@section Scripts {
+    <script>
+        function filterDate(event) {
+            var date = new Date(event.target.value);
+            window.location.href = "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
         }
     </script>
 }
