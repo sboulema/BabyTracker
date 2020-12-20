@@ -1,0 +1,95 @@
+﻿@model DiaryViewModel
+
+@{
+    ViewData["Title"] = "Memories - BabyTracker";
+}
+
+@if (Model == null)
+{
+    <div class="card col-6 offset-3">
+        <div class="card-body">
+            <h5 class="card-title">Please choose a date to view your entries</h5>
+        </div>
+    </div>
+}
+else
+{
+    <br />
+    <br />
+
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-outline-primary active">
+            <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked> List
+        </label>
+        <label class="btn btn-outline-primary">
+            <input type="radio" name="viewStyle" onchange="toggleViewStyle()"> Card
+        </label>
+    </div>
+
+    <table id="diaryTable" class="table">
+        <tbody>
+            @foreach (var entry in Model.Entries.ToList())
+            {
+                if (entry is Joy joy)
+                {
+                    @await Html.PartialAsync("Diary/_Joy", joy)
+                }
+                else if (entry is MilestoneModel milestone)
+                {
+                    @await Html.PartialAsync("Diary/_Milestone", milestone)
+                }
+            }
+        </tbody>
+    </table>
+
+    <script>
+        var tf;
+
+        (function () {
+            var filtersConfig = {
+                base_path: '/js/tablefilter/',
+                col_0: 'none',
+                col_1: 'checklist',
+                col_2: 'none',
+                col_3: 'none',
+                col_4: 'none',
+                toolbar: false,
+                themes: [{
+                    name: 'transparent'
+                }],
+                extensions: [{
+                    name: 'colsVisibility',
+                    at_start: [0, 1, 4]
+                }]
+            };
+
+            tf = new TableFilter('diaryTable', 0, filtersConfig);
+            tf.init();
+        })();
+
+        function toggleViewStyle() {
+            var tfColsVisibility = tf.extension('colsVisibility');
+            tfColsVisibility.toggleCol(2);
+            tfColsVisibility.toggleCol(3);
+            tfColsVisibility.toggleCol(4);
+        }
+
+        function saveCard(selector) {
+            $(".btn-screenshot").toggle();
+
+            var scrollTop = document.documentElement.scrollTop;
+
+            window.scrollTo(0, 0);
+
+            html2canvas(document.querySelector("#" + selector)).then(canvas => {
+                canvas.toBlob(function (blob) {
+                    saveAs(blob, selector + ".png");
+                });
+            });
+
+            window.scrollTo(0, scrollTop);
+
+            $(".btn-screenshot").toggle();
+        }
+    </script>
+}

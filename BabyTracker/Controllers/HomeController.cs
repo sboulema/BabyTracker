@@ -77,6 +77,19 @@ namespace BabyTracker.Controllers
             return View("Diary", model);
         }
 
+        [HttpGet("memories")]
+        public IActionResult Memories()
+        {
+            var entries = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
+            var importResultModel = new ImportResultModel
+            {
+                Entries = entries
+            };
+            var model = DiaryService.GetDays(importResultModel);
+            
+            return View("Memories", model);
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

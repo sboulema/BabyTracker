@@ -14,6 +14,8 @@ namespace BabyTracker.Services
         void SetBabyName(string babyName);
 
         List<EntryModel> GetEntriesFromDb(DateTime date);
+
+        List<EntryModel> GetMemoriesFromDb(DateTime date);
     }
 
     public class SqLiteService : ISqLiteService
@@ -50,6 +52,16 @@ namespace BabyTracker.Services
             entries.AddRange(GetSupplement(lowerBound, upperBound, _babyName));
             entries.AddRange(GetTemperature(lowerBound, upperBound, _babyName));
             entries.AddRange(GetVaccine(lowerBound, upperBound, _babyName));
+
+            return entries;
+        }
+
+        public List<EntryModel> GetMemoriesFromDb(DateTime date)
+        {
+            var entries = new List<EntryModel>();
+
+            entries.AddRange(GetJoy(date.Day, date.Month, _babyName));
+            entries.AddRange(GetMilestone(date.Day, date.Month, _babyName));
 
             return entries;
         }
@@ -282,6 +294,32 @@ namespace BabyTracker.Services
             return entries;
         }
 
+        private List<EntryModel> GetJoy(int day, int month, string babyName)
+        {
+            var entries = new List<EntryModel>();
+
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename," +
+            " strftime('%m', datetime(TIME, 'unixepoch')) AS Month," +
+            " strftime('%d', datetime(TIME, 'unixepoch')) AS Day" +
+            " FROM Joy LEFT JOIN Picture ON Joy.Id == activityid" +
+            $" WHERE Month = '{month}' AND Day = '{day}'";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new Joy
+                {
+                    BabyName = babyName,
+                    TimeUTC = reader.GetDateTime(0),
+                    Note = reader.GetString(1),
+                    Filename = reader.GetString(2)
+                });
+            }
+
+            return entries;
+        }
+
         private List<EntryModel> GetActivity(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
@@ -320,6 +358,35 @@ namespace BabyTracker.Services
                 "LEFT JOIN Picture ON Milestone.Id == activityid " +
                 "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
             $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new MilestoneModel
+                {
+                    BabyName = babyName,
+                    TimeUTC = reader.GetDateTime(0),
+                    Note = reader.GetString(1),
+                    Filename = GetString(reader, 2),
+                    Milestone = GetString(reader, 3)
+                });
+            }
+
+            return entries;
+        }
+
+        private List<EntryModel> GetMilestone(int day, int month, string babyName)
+        {
+            var entries = new List<EntryModel>();
+
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name, " +
+                "strftime('%m', datetime(TIME, 'unixepoch')) AS Month, " +
+                "strftime('%d', datetime(TIME, 'unixepoch')) AS Day " +
+                "FROM Milestone " +
+                "LEFT JOIN Picture ON Milestone.Id == activityid " +
+                "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
+            $" WHERE Day = '{day}' AND Month = '{month}'";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
