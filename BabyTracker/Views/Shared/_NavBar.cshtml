@@ -1,0 +1,29 @@
+@model BaseViewModel
+
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark border-bottom box-shadow mb-3" style="background-color: #bd4d85">
+    <div class="container">
+        <a class="navbar-brand text-white" asp-area="" asp-controller="Home" asp-action="Index">BabyTracker</a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                @if (Model.ShowMemoriesLink)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/memories">
+                            Memories
+                            @if (Model?.MemoriesBadgeCount > 0)
+                            {
+                                <span class="badge badge-light">@Model.MemoriesBadgeCount</span>
+                            }                               
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</nav>

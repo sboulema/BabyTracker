@@ -4,6 +4,7 @@ using BabyTracker.Models;
 using Microsoft.AspNetCore.Http;
 using BabyTracker.Services;
 using System;
+using BabyTracker.Models.ViewModels;
 
 namespace BabyTracker.Controllers
 {
@@ -22,7 +23,12 @@ namespace BabyTracker.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            var model = new BaseViewModel
+            {
+                ShowMemoriesLink = false
+            };
+
+            return View(model);
         }
 
         [HttpPost]
@@ -36,10 +42,10 @@ namespace BabyTracker.Controllers
                 return View("Error", new ErrorViewModel { Message = "Unable to import file" });
             }
 
-            _sqLiteService.SetBabyName("zip");
+            _sqLiteService.SetBabyName(file.Name);
             _sqLiteService.OpenConnection(path);
 
-            return View("Diary", null);
+            return Redirect($"/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
         [HttpPost]
@@ -74,19 +80,27 @@ namespace BabyTracker.Controllers
             model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
             model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
 
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
+            model.MemoriesBadgeCount = memories.Count;
+            model.ShowMemoriesLink = true;
+
             return View("Diary", model);
         }
 
         [HttpGet("memories")]
         public IActionResult Memories()
         {
-            var entries = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
             var importResultModel = new ImportResultModel
             {
-                Entries = entries
+                Entries = memories
             };
+            
             var model = DiaryService.GetDays(importResultModel);
             
+            model.MemoriesBadgeCount = memories.Count;
+            model.ShowMemoriesLink = true;
+
             return View("Memories", model);
         }
 

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace BabyTracker.Models.ViewModels
 {
-    public class DiaryViewModel
+    public class DiaryViewModel : BaseViewModel
     {
         public IEnumerable<IGrouping<DateTime, EntryModel>> Days { get; set; }
 
