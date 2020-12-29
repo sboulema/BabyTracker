@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using BabyTracker.Services;
 using System;
 using BabyTracker.Models.ViewModels;
+using System.IO;
 
 namespace BabyTracker.Controllers
 {
@@ -42,10 +43,9 @@ namespace BabyTracker.Controllers
                 return View("Error", new ErrorViewModel { Message = "Unable to import file" });
             }
 
-            _sqLiteService.SetBabyName(file.Name);
             _sqLiteService.OpenConnection(path);
 
-            return Redirect($"/{DateTime.Now.ToString("yyyy-MM-dd")}");
+            return Redirect($"/{Path.GetFileNameWithoutExtension(file.FileName)}/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
         [HttpPost]
@@ -58,18 +58,17 @@ namespace BabyTracker.Controllers
                 return View("Error", new ErrorViewModel { Message = $"Unable to load find data for baby '{babyName}'" });
             }
 
-            _sqLiteService.SetBabyName(babyName);
             _sqLiteService.OpenConnection(path);
 
-            return Redirect($"/{DateTime.Now.ToString("yyyy-MM-dd")}");
+            return Redirect($"/{babyName}/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
-        [HttpGet("{inputDate}")]
-        public IActionResult Diary(string inputDate)
+        [HttpGet("{babyName}/{inputDate}")]
+        public IActionResult Diary(string babyName, string inputDate)
         {
             var date = DateTime.Parse(inputDate);
 
-            var entries = _sqLiteService.GetEntriesFromDb(date);
+            var entries = _sqLiteService.GetEntriesFromDb(date, babyName);
             var importResultModel = new ImportResultModel
             {
                 Entries = entries
@@ -80,17 +79,17 @@ namespace BabyTracker.Controllers
             model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
             model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
 
-            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
             model.MemoriesBadgeCount = memories.Count;
             model.ShowMemoriesLink = true;
 
             return View("Diary", model);
         }
 
-        [HttpGet("memories")]
-        public IActionResult Memories()
+        [HttpGet("{babyName}/memories")]
+        public IActionResult Memories(string babyName)
         {
-            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now);
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
             var importResultModel = new ImportResultModel
             {
                 Entries = memories

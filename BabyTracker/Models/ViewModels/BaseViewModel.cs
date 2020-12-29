@@ -5,5 +5,7 @@ namespace BabyTracker.Models.ViewModels
         public bool ShowMemoriesLink { get; set; }
 
         public int MemoriesBadgeCount { get; set; }
+
+        public string BabyName { get; set; }
     }
 }

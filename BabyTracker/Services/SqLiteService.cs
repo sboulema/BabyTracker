@@ -11,22 +11,14 @@ namespace BabyTracker.Services
     {
         void OpenConnection(string path);
 
-        void SetBabyName(string babyName);
+        List<EntryModel> GetEntriesFromDb(DateTime date, string babyName);
 
-        List<EntryModel> GetEntriesFromDb(DateTime date);
-
-        List<EntryModel> GetMemoriesFromDb(DateTime date);
+        List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName);
     }
 
     public class SqLiteService : ISqLiteService
     {
         private SqliteConnection _sqliteConnection;
-        private string _babyName;
-
-        public void SetBabyName(string babyName)
-        {
-            _babyName = babyName;
-        }
 
         public void OpenConnection(string path)
         {
@@ -34,34 +26,34 @@ namespace BabyTracker.Services
             _sqliteConnection.Open();
         }
 
-        public List<EntryModel> GetEntriesFromDb(DateTime date)
+        public List<EntryModel> GetEntriesFromDb(DateTime date, string babyName)
         {
             var lowerBound = ToUnixTimestamp(date);
             var upperBound = ToUnixTimestamp(date.AddDays(1));
 
             var entries = new List<EntryModel>();
 
-            entries.AddRange(GetActivity(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetDiapers(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetFormula(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetGrowth(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetJoy(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetMedication(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetMilestone(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetSleep(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetSupplement(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetTemperature(lowerBound, upperBound, _babyName));
-            entries.AddRange(GetVaccine(lowerBound, upperBound, _babyName));
+            entries.AddRange(GetActivity(lowerBound, upperBound, babyName));
+            entries.AddRange(GetDiapers(lowerBound, upperBound, babyName));
+            entries.AddRange(GetFormula(lowerBound, upperBound, babyName));
+            entries.AddRange(GetGrowth(lowerBound, upperBound, babyName));
+            entries.AddRange(GetJoy(lowerBound, upperBound, babyName));
+            entries.AddRange(GetMedication(lowerBound, upperBound, babyName));
+            entries.AddRange(GetMilestone(lowerBound, upperBound, babyName));
+            entries.AddRange(GetSleep(lowerBound, upperBound, babyName));
+            entries.AddRange(GetSupplement(lowerBound, upperBound, babyName));
+            entries.AddRange(GetTemperature(lowerBound, upperBound, babyName));
+            entries.AddRange(GetVaccine(lowerBound, upperBound, babyName));
 
             return entries;
         }
 
-        public List<EntryModel> GetMemoriesFromDb(DateTime date)
+        public List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName)
         {
             var entries = new List<EntryModel>();
 
-            entries.AddRange(GetJoy(date.Day, date.Month, _babyName));
-            entries.AddRange(GetMilestone(date.Day, date.Month, _babyName));
+            entries.AddRange(GetJoy(date.Day, date.Month, babyName));
+            entries.AddRange(GetMilestone(date.Day, date.Month, babyName));
 
             return entries;
         }

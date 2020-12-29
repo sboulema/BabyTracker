@@ -11,10 +11,19 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
+                @if (!string.IsNullOrEmpty(Model.BabyName))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/@Model.BabyName">
+                            @Model.BabyName                               
+                        </a>
+                    </li>
+                }
+
                 @if (Model.ShowMemoriesLink)
                 {
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/memories">
+                        <a class="nav-link text-white" href="/@Model.BabyName/memories">
                             Memories
                             @if (Model?.MemoriesBadgeCount > 0)
                             {
