@@ -11,7 +11,7 @@ COPY BabyTracker/. ./BabyTracker/
 WORKDIR /app/BabyTracker
 RUN dotnet publish -c Release -o out
 
-FROM cr.microsoft.com/dotnet/aspnet:5.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/BabyTracker/out ./
 VOLUME /data
