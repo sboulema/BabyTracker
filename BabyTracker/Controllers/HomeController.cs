@@ -61,7 +61,7 @@ namespace BabyTracker.Controllers
             _sqLiteService.SetBabyName(babyName);
             _sqLiteService.OpenConnection(path);
 
-            return View("Diary", null);
+            return Redirect($"/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
         [HttpGet("{inputDate}")]
