@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SendGrid.Extensions.DependencyInjection;
 
 namespace BabyTracker
 {
@@ -23,6 +24,11 @@ namespace BabyTracker
 
             services.AddSingleton<IImportService, ImportService>();
             services.AddSingleton<ISqLiteService, SqLiteService>();
+
+            services.AddSendGrid(options =>
+            {
+                options.ApiKey = Configuration["SENDGRID_API_KEY"];
+            });
 
             services.Configure<FormOptions>(options =>
             {

@@ -63,10 +63,14 @@ namespace BabyTracker.Controllers
             return Redirect($"/{babyName}/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
-        [HttpGet("{babyName}/{inputDate}")]
+        [HttpGet("{babyName}/{inputDate?}")]
         public IActionResult Diary(string babyName, string inputDate)
         {
-            var date = DateTime.Parse(inputDate);
+            var date = DateTime.Now;
+
+            if (!string.IsNullOrEmpty(inputDate)) {
+                date = DateTime.Parse(inputDate);
+            }
 
             var entries = _sqLiteService.GetEntriesFromDb(date, babyName);
             var importResultModel = new ImportResultModel

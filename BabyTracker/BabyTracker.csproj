@@ -5,6 +5,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="*"/>
     <PackageReference Include="TimeZoneConverter" Version="*"/>
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="*" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="*"/>
+    <PackageReference Include="SendGrid" Version="*"/>
+    <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*"/>
   </ItemGroup>
 </Project>
