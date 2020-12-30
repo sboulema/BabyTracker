@@ -52,6 +52,7 @@ namespace BabyTracker.Services
         {
             var entries = new List<EntryModel>();
 
+            entries.AddRange(GetActivity(date.Day, date.Month, babyName));
             entries.AddRange(GetJoy(date.Day, date.Month, babyName));
             entries.AddRange(GetMilestone(date.Day, date.Month, babyName));
 
@@ -322,6 +323,36 @@ namespace BabyTracker.Services
                 "LEFT JOIN Picture ON OtherActivity.Id == activityid " +
                 "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
             $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new ActivityModel
+                {
+                    BabyName = babyName,
+                    TimeUTC = reader.GetDateTime(0),
+                    Note = reader.GetString(1),
+                    Filename = GetString(reader, 2),
+                    Duration = reader.GetInt32(3).ToString(),
+                    OtherActivity = GetString(reader, 4)
+                });
+            }
+
+            return entries;
+        }
+
+        private List<EntryModel> GetActivity(int day, int month, string babyName)
+        {
+            var entries = new List<EntryModel>();
+
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name," +
+                " strftime('%m', datetime(TIME, 'unixepoch')) AS Month," +
+                " strftime('%d', datetime(TIME, 'unixepoch')) AS Day" +
+                "FROM OtherActivity " +
+                "LEFT JOIN Picture ON OtherActivity.Id == activityid " +
+                "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
+                $" WHERE Month = '{month}' AND Day = '{day}'";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
