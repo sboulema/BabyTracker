@@ -36,7 +36,10 @@ public class MemoriesJob : IJob
 
             _logger.LogInformation($"Found {memories.Count} memories for {babyName}");
 
-            await SendEmail(memories, babyName);
+            if (memories.Count > 0) 
+            {
+                await SendEmail(memories, babyName);
+            }            
         }
     }
 
