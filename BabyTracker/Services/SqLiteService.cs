@@ -349,9 +349,9 @@ namespace BabyTracker.Services
             command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name," +
                 " strftime('%m', datetime(TIME, 'unixepoch')) AS Month," +
                 " strftime('%d', datetime(TIME, 'unixepoch')) AS Day" +
-                "FROM OtherActivity " +
-                "LEFT JOIN Picture ON OtherActivity.Id == activityid " +
-                "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
+                " FROM OtherActivity" +
+                " LEFT JOIN Picture ON OtherActivity.Id == activityid" +
+                " LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
                 $" WHERE Month = '{month}' AND Day = '{day}'";
 
             using var reader = command.ExecuteReader();
