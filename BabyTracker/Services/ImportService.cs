@@ -22,7 +22,7 @@ namespace BabyTracker.Services
         public string HandleImport(IFormFile file)
         {
             var path = SaveFile(file);
-            return Unzip(path);
+            return Unzip(path, Path.GetFileNameWithoutExtension(file.FileName));
         }
 
         private string Unzip(string path, string babyName = "zip")

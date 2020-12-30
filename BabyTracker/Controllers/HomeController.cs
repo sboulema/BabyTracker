@@ -78,6 +78,7 @@ namespace BabyTracker.Controllers
             model.Date = date.ToString("yyyy-MM-dd");
             model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
             model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
+            model.BabyName = babyName;
 
             var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
             model.MemoriesBadgeCount = memories.Count;
@@ -97,6 +98,7 @@ namespace BabyTracker.Controllers
             
             var model = DiaryService.GetDays(importResultModel);
             
+            model.BabyName = babyName;
             model.MemoriesBadgeCount = memories.Count;
             model.ShowMemoriesLink = true;
 

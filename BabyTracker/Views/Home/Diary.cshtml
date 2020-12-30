@@ -184,9 +184,11 @@ else
 
 @section Scripts {
     <script>
+        var babyName = '@Html.Raw(Model.BabyName)';
+
         function filterDate(event) {
             var date = new Date(event.target.value);
-            window.location.href = "/" + @Model.BabyName + "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
+            window.location.href = "/" + babyName + "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
         }
     </script>
 }
