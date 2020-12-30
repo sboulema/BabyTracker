@@ -7,14 +7,14 @@
 <form class="form-inline">
     @if (Model != null)
     {
-        <a class="btn btn-primary mr-2" href="/@Model.DatePrevious" role="button"><i class="fas fa-angle-left"></i></a>
+        <a class="btn btn-primary mr-2" href="/@Model.BabyName/@Model.DatePrevious" role="button"><i class="fas fa-angle-left"></i></a>
     }
 
     <input type="date" id="dateEntry" onblur="filterDate(event)" value="@Model?.Date" class="form-control mr-2" style="width: auto;" />
 
     @if (Model != null)
     {
-        <a class="btn btn-primary" href="/@Model.DateNext" role="button"><i class="fas fa-angle-right"></i></a>
+        <a class="btn btn-primary" href="/@Model.BabyName/@Model.DateNext" role="button"><i class="fas fa-angle-right"></i></a>
     }
 </form>
 
@@ -186,7 +186,7 @@ else
     <script>
         function filterDate(event) {
             var date = new Date(event.target.value);
-            window.location.href = "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
+            window.location.href = "/" + @Model.BabyName + "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
         }
     </script>
 }

@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Quartz;
+using BabyTracker.Extensions;
 
 namespace BabyTracker
 {
@@ -21,6 +17,18 @@ namespace BabyTracker
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddQuartz(q =>  
+                    {
+                        q.UseMicrosoftDependencyInjectionScopedJobFactory();
+
+                        q.AddJobAndTrigger<MemoriesJob>(hostContext.Configuration);
+                    });
+
+                    services.AddQuartzHostedService(
+                        q => q.WaitForJobsToComplete = true);
                 });
     }
 }

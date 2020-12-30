@@ -5,5 +5,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="*"/>
     <PackageReference Include="TimeZoneConverter" Version="*"/>
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="*" />
   </ItemGroup>
 </Project>
