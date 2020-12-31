@@ -5,7 +5,9 @@ using BabyTracker.Models;
 using BabyTracker.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Mjml.AspNetCore;
 using Quartz;
+using Razor.Templating.Core;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -16,14 +18,17 @@ public class MemoriesJob : IJob
     private readonly ISqLiteService _sqLiteService;
     private readonly IConfiguration _configuration;
     private readonly ISendGridClient _sendGridClient;
+    private readonly IMemoriesService _memoriesService;
 
     public MemoriesJob(ILogger<MemoriesJob> logger, ISqLiteService sqLiteService,
-        IConfiguration configuration, ISendGridClient sendGridClient)
+        IConfiguration configuration, ISendGridClient sendGridClient,
+        IMemoriesService memoriesService)
     {
         _logger = logger;
         _sqLiteService = sqLiteService;
         _configuration = configuration;
         _sendGridClient = sendGridClient;
+        _memoriesService = memoriesService;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -50,7 +55,11 @@ public class MemoriesJob : IJob
             From = new EmailAddress(_configuration["MEMORIES_FROM_EMAIL"], _configuration["MEMORIES_FROM_NAME"]),
             Subject = $"BabyTracker - Memories {DateTime.Now.ToString("yyyy-MM-dd")}"
         };
-        msg.AddContent(MimeType.Text, $"Found {memories.Count} memories for {babyName}");
+
+        var mjml = await _memoriesService.GetMJML(memories, babyName);
+        var html = await _memoriesService.GetHTML(mjml);
+
+        msg.AddContent(MimeType.Html, html);
 
         var recipients = _configuration[$"MEMORIES_{babyName.ToUpper()}_TO"].Split(";");
 
@@ -60,5 +69,5 @@ public class MemoriesJob : IJob
         }
         
         return await _sendGridClient.SendEmailAsync(msg).ConfigureAwait(false);
-    } 
+    }
 }

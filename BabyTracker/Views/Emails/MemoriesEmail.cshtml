@@ -1,0 +1,89 @@
+@{ Layout = null; }
+
+@model DiaryViewModel
+
+<mjml>
+  <mj-body>
+    <mj-section background-color="#bd4d85">
+      <mj-column>
+        <mj-navbar base-url="@Model.BaseUrl">
+          <mj-navbar-link href="/" color="#ffffff">BabyTracker</mj-navbar-link>
+          <mj-navbar-link href="/@Model.BabyName" color="#ffffff">@Model.BabyName</mj-navbar-link>
+          <mj-navbar-link href="/@Model.BabyName/memories" color="#ffffff">Memories</mj-navbar-link>
+        </mj-navbar>
+      </mj-column>
+    </mj-section>
+    
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" color="#bd4d85" font-family="helvetica">
+          You have memories waiting for you!
+        </mj-text>
+        
+        <mj-text font-size="20px" color="#bd4d85" font-family="helvetica">
+        	Look back at @DateTime.Now.ToString("yyyy-MM-dd")
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    @foreach (var memory in Model.Entries)
+    {
+      @if (memory is Joy joy) {
+        <mj-wrapper border="1px solid #000000">
+          <mj-section>
+            <mj-column>
+              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
+            </mj-column>
+          </mj-section>
+          <mj-section>
+            <mj-column>
+              <mj-text color="#28a745">Joy</mj-text>
+              <mj-text>@joy.Note</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+      }
+      else if (memory is MilestoneModel milestone)
+      {
+        <mj-wrapper padding="0" border="1px solid #000000">
+          <mj-section padding="0">
+            <mj-column padding="0">
+              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@milestone.Filename" />
+            </mj-column>
+          </mj-section>
+          <mj-section>
+            <mj-column>
+              <mj-text color="#28a745">@milestone.Milestone</mj-text>
+              <mj-text>@milestone.Note</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+      }
+      else if (memory is ActivityModel activity)
+      {
+        <mj-wrapper border="1px solid #000000">
+          <mj-section>
+            <mj-column>
+              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
+            </mj-column>
+          </mj-section>
+          <mj-section>
+            <mj-column>
+              <mj-text color="#28a745">@activity.OtherActivity</mj-text>
+              <mj-text>@activity.Note</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-wrapper>
+      }
+    }
+  
+    <mj-section>
+      <mj-column>
+         <mj-button href="@Model.BaseUrl/@Model.BabyName/memories" font-family="Helvetica" background-color="#bd4d85" color="white">
+          View memories
+         </mj-button>    
+      </mj-column>
+    </mj-section>
+    
+  </mj-body>
+</mjml>

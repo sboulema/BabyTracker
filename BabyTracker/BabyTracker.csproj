@@ -8,5 +8,7 @@
     <PackageReference Include="Quartz.Extensions.Hosting" Version="*"/>
     <PackageReference Include="SendGrid" Version="*"/>
     <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*"/>
+    <PackageReference Include="Razor.Templating.Core" Version="*"/>
+    <PackageReference Include="Mjml.AspNetCore" Version="*"/>
   </ItemGroup>
 </Project>

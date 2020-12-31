@@ -6,6 +6,7 @@ using BabyTracker.Services;
 using System;
 using BabyTracker.Models.ViewModels;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BabyTracker.Controllers
 {
@@ -13,13 +14,16 @@ namespace BabyTracker.Controllers
     {
         private readonly IImportService _importService;
         private readonly ISqLiteService _sqLiteService;
+        private readonly IMemoriesService _memoriesService;
 
         public HomeController(
             IImportService importService,
-            ISqLiteService sqLiteService)
+            ISqLiteService sqLiteService,
+            IMemoriesService memoriesService)
         {
             _importService = importService;
             _sqLiteService = sqLiteService;
+            _memoriesService = memoriesService;
         }
 
         public IActionResult Index()
@@ -107,6 +111,27 @@ namespace BabyTracker.Controllers
             model.ShowMemoriesLink = true;
 
             return View("Memories", model);
+        }
+
+        [HttpGet("{babyName}/memories/email")]
+        public async Task<IActionResult> MemoriesEmail(string babyName)
+        {
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
+            var importResultModel = new ImportResultModel
+            {
+                Entries = memories
+            };
+            
+            var model = DiaryService.GetDays(importResultModel);
+            
+            model.BabyName = babyName;
+            model.MemoriesBadgeCount = memories.Count;
+            model.ShowMemoriesLink = true;
+
+            var mjml = await _memoriesService.GetMJML(memories, babyName);
+            var html = await _memoriesService.GetHTML(mjml);
+
+            return Content(html, "text/html");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
