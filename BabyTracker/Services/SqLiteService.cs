@@ -293,8 +293,8 @@ namespace BabyTracker.Services
 
             var command = _sqliteConnection.CreateCommand();
             command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename," +
-            " strftime('%m', datetime(TIME, 'unixepoch')) AS Month," +
-            " strftime('%d', datetime(TIME, 'unixepoch')) AS Day" +
+            " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
+            " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
             " FROM Joy LEFT JOIN Picture ON Joy.Id == activityid" +
             $" WHERE Month = '{month}' AND Day = '{day}'";
 
@@ -347,8 +347,8 @@ namespace BabyTracker.Services
 
             var command = _sqliteConnection.CreateCommand();
             command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name," +
-                " strftime('%m', datetime(TIME, 'unixepoch')) AS Month," +
-                " strftime('%d', datetime(TIME, 'unixepoch')) AS Day" +
+                " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
+                " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
                 " FROM OtherActivity" +
                 " LEFT JOIN Picture ON OtherActivity.Id == activityid" +
                 " LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
@@ -403,13 +403,13 @@ namespace BabyTracker.Services
             var entries = new List<EntryModel>();
 
             var command = _sqliteConnection.CreateCommand();
-            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name, " +
-                "strftime('%m', datetime(TIME, 'unixepoch')) AS Month, " +
-                "strftime('%d', datetime(TIME, 'unixepoch')) AS Day " +
-                "FROM Milestone " +
-                "LEFT JOIN Picture ON Milestone.Id == activityid " +
-                "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
-            $" WHERE Day = '{day}' AND Month = '{month}'";
+            command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name," +
+                " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
+                " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
+                " FROM Milestone" +
+                " LEFT JOIN Picture ON Milestone.Id == activityid" +
+                " LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
+                $" WHERE Day = '{day}' AND Month = '{month}'";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
