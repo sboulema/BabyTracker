@@ -100,8 +100,10 @@ namespace BabyTracker.Services
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
                     Note = reader.GetString(1),
-                    MedicationName = $"{reader.GetString(3)}",
-                    Amount = reader.GetString(4)
+                    MedicationName = $"{reader.GetString(2)}",
+                    Amount = reader.GetInt32(4),
+                    AmountPerTime = reader.GetInt32(5),
+                    Unit = reader.GetString(6)
                 });
             }
 

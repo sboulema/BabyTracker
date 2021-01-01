@@ -30,11 +30,14 @@
     {
       @if (memory is Joy joy) {
         <mj-wrapper border="1px solid #000000">
-          <mj-section>
-            <mj-column>
-              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
-            </mj-column>
-          </mj-section>
+          @if (!string.IsNullOrEmpty(joy.Filename))
+          {
+            <mj-section>
+              <mj-column>
+                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
+              </mj-column>
+            </mj-section>
+          }
           <mj-section>
             <mj-column>
               <mj-text color="#28a745">Joy</mj-text>
@@ -46,11 +49,14 @@
       else if (memory is MilestoneModel milestone)
       {
         <mj-wrapper padding="0" border="1px solid #000000">
-          <mj-section padding="0">
-            <mj-column padding="0">
-              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@milestone.Filename" />
-            </mj-column>
-          </mj-section>
+          @if (!string.IsNullOrEmpty(milestone.Filename))
+          {
+            <mj-section padding="0">
+              <mj-column padding="0">
+                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@milestone.Filename" />
+              </mj-column>
+            </mj-section>
+          }
           <mj-section>
             <mj-column>
               <mj-text color="#28a745">@milestone.Milestone</mj-text>
@@ -62,11 +68,14 @@
       else if (memory is ActivityModel activity)
       {
         <mj-wrapper border="1px solid #000000">
-          <mj-section>
-            <mj-column>
-              <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
-            </mj-column>
-          </mj-section>
+          @if (!string.IsNullOrEmpty(activity.Filename))
+          {
+            <mj-section>
+              <mj-column>
+                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
+              </mj-column>
+            </mj-section>
+          }
           <mj-section>
             <mj-column>
               <mj-text color="#28a745">@activity.OtherActivity</mj-text>
