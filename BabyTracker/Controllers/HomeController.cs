@@ -15,15 +15,18 @@ namespace BabyTracker.Controllers
         private readonly IImportService _importService;
         private readonly ISqLiteService _sqLiteService;
         private readonly IMemoriesService _memoriesService;
+        private readonly IChartService _chartService;
 
         public HomeController(
             IImportService importService,
             ISqLiteService sqLiteService,
-            IMemoriesService memoriesService)
+            IMemoriesService memoriesService,
+            IChartService chartService)
         {
             _importService = importService;
             _sqLiteService = sqLiteService;
             _memoriesService = memoriesService;
+            _chartService = chartService;
         }
 
         public IActionResult Index()
@@ -132,6 +135,19 @@ namespace BabyTracker.Controllers
             var html = await _memoriesService.GetHTML(mjml);
 
             return Content(html, "text/html");
+        }
+
+        [HttpGet("{babyName}/charts")]
+        public IActionResult Charts(string babyName)
+        {
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
+            var model = _chartService.GetViewModel(babyName);
+
+            model.BabyName = babyName;
+            model.MemoriesBadgeCount = memories.Count;
+            model.ShowMemoriesLink = true;
+
+            return View("Charts", model);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

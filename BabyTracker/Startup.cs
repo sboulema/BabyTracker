@@ -26,6 +26,7 @@ namespace BabyTracker
             services.AddSingleton<IImportService, ImportService>();
             services.AddSingleton<ISqLiteService, SqLiteService>();
             services.AddSingleton<IMemoriesService, MemoriesService>();
+            services.AddSingleton<IChartService, ChartService>();
 
             services.AddSendGrid(options =>
             {

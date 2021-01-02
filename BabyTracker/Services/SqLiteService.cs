@@ -14,6 +14,10 @@ namespace BabyTracker.Services
         List<EntryModel> GetEntriesFromDb(DateTime date, string babyName);
 
         List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName);
+
+        List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName);
+
+        List<EntryModel> GetBaby(string babyName);
     }
 
     public class SqLiteService : ISqLiteService
@@ -55,6 +59,31 @@ namespace BabyTracker.Services
             entries.AddRange(GetActivity(date.Day, date.Month, babyName));
             entries.AddRange(GetJoy(date.Day, date.Month, babyName));
             entries.AddRange(GetMilestone(date.Day, date.Month, babyName));
+
+            return entries;
+        }
+
+        public List<EntryModel> GetBaby(string babyName)
+        {
+            var entries = new List<EntryModel>();
+
+            var command = _sqliteConnection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), Name, dateTime(DOB, 'unixepoch'), dateTime(DueDay, 'unixepoch'), Gender, Picture" +
+            " FROM Baby" +
+            $" WHERE Name = '{babyName}'";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new BabyModel
+                {
+                    TimeUTC = reader.GetDateTime(0),
+                    BabyName = reader.GetString(1),
+                    DateOfBirth = reader.GetDateTime(2),
+                    DueDate = reader.GetDateTime(3),
+                    Gender = reader.GetInt32(4)
+                });
+            }
 
             return entries;
         }
@@ -182,7 +211,7 @@ namespace BabyTracker.Services
             return entries;
         }
 
-        private List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName)
+        public List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName)
         {
             var entries = new List<EntryModel>();
 

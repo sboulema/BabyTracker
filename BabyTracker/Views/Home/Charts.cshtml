@@ -1,0 +1,163 @@
+﻿@model ChartsViewModel
+
+@{
+    ViewData["Title"] = "Charts - BabyTracker";
+}
+
+<h3 class="text-success text-center">Length/Height</h3>
+
+<canvas id="lengthChart"></canvas>
+
+<h3 class="text-success text-center">Weight</h3>
+
+<canvas id="weightChart"></canvas>
+
+<h3 class="text-success text-center">Head Size</h3>
+
+<canvas id="headSizeChart"></canvas>
+
+<h3 class="text-success text-center">BMI</h3>
+
+<canvas id="bmiChart"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+
+    <script>
+        var ctx = document.getElementById('weightChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Weight',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(189,77,133)',
+                    showLine: true,
+                    lineTension: 0,
+                    data: @Html.Raw(Model.WeightPointsAsJson) 
+                },{
+                    label: 'Median',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.WeightPointsMedianAsJson) 
+                }]
+            },
+            options : {
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'age (month)'
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'weight (kg)'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+
+    <script>
+        var ctx = document.getElementById('lengthChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Length',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(189,77,133)',
+                    showLine: true,
+                    lineTension: 0,
+                    data: @Html.Raw(Model.LengthPointsAsJson) 
+                }]
+            },
+            options : {
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'age (month)'
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'length (cm)'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+
+    <script>
+        var ctx = document.getElementById('headSizeChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Head Size',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(189,77,133)',
+                    showLine: true,
+                    lineTension: 0,
+                    data: @Html.Raw(Model.HeadSizePointsAsJson) 
+                }]
+            },
+            options : {
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'age (month)'
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'head size (cm)'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+
+    <script>
+        var ctx = document.getElementById('bmiChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'BMI',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(189,77,133)',
+                    showLine: true,
+                    lineTension: 0,
+                    data: @Html.Raw(Model.BMIPointsAsJson) 
+                }]
+            },
+            options : {
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'age (month)'
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'BMI'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+}
