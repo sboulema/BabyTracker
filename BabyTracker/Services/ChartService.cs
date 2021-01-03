@@ -29,7 +29,7 @@ namespace BabyTracker.Services
 
             foreach (Growth entry in entries)
             {
-                var ageInMonths = (entry.TimeUTC - baby.DateOfBirth).Days / 30;
+                var ageInMonths = (entry.TimeUTC - baby.DateOfBirth).Days / (double)30;
 
                 if (entry.Weight > 0)
                 {

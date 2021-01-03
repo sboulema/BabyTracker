@@ -29,11 +29,11 @@
     @foreach (var memory in Model.Entries)
     {
       @if (memory is Joy joy) {
-        <mj-wrapper border="1px solid #000000">
+        <mj-wrapper padding="0" border="1px solid #000000">
           @if (!string.IsNullOrEmpty(joy.Filename))
           {
-            <mj-section>
-              <mj-column>
+            <mj-section padding="0">
+              <mj-column padding="0">
                 <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
               </mj-column>
             </mj-section>
@@ -67,11 +67,11 @@
       }
       else if (memory is ActivityModel activity)
       {
-        <mj-wrapper border="1px solid #000000">
+        <mj-wrapper padding="0" border="1px solid #000000">
           @if (!string.IsNullOrEmpty(activity.Filename))
           {
-            <mj-section>
-              <mj-column>
+            <mj-section padding="0">
+              <mj-column padding="0">
                 <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
               </mj-column>
             </mj-section>
@@ -84,6 +84,8 @@
           </mj-section>
         </mj-wrapper>
       }
+
+      <mj-spacer height="20px" />
     }
   
     <mj-section>
