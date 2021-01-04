@@ -24,8 +24,12 @@ namespace BabyTracker.Services
         public ChartsViewModel GetViewModel(string babyName)
         {
             var result = new ChartsViewModel();
-            var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName);
-            var baby = _sqLiteService.GetBaby(babyName).FirstOrDefault() as BabyModel;
+
+            var connection = _sqLiteService.OpenConnection($"/data/{babyName}");
+            var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
+            var baby = _sqLiteService.GetBaby(babyName, connection).FirstOrDefault() as BabyModel;
+
+            connection.Close();
 
             foreach (Growth entry in entries)
             {

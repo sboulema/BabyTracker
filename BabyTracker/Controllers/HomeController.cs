@@ -50,8 +50,6 @@ namespace BabyTracker.Controllers
                 return View("Error", new ErrorViewModel { Message = "Unable to import file" });
             }
 
-            _sqLiteService.OpenConnection(path);
-
             return Redirect($"/{Path.GetFileNameWithoutExtension(file.FileName)}/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
 
@@ -64,8 +62,6 @@ namespace BabyTracker.Controllers
             {
                 return View("Error", new ErrorViewModel { Message = $"Unable to load find data for baby '{babyName}'" });
             }
-
-            _sqLiteService.OpenConnection(path);
 
             return Redirect($"/{babyName}/{DateTime.Now.ToString("yyyy-MM-dd")}");
         }
