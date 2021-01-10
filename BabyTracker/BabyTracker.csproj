@@ -12,4 +12,10 @@
     <PackageReference Include="Mjml.AspNetCore" Version="*"/>
     <PackageReference Include="CsvHelper" Version="*" />
   </ItemGroup>
+
+  <ItemGroup> 
+    <Content Include="Charts\**"> 
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> 
+    </Content> 
+  </ItemGroup>
 </Project>

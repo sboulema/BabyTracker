@@ -32,6 +32,13 @@ namespace BabyTracker.Models.ViewModels
 
         public List<Point> BMIPoints { get; set; } = new ();
 
+        public string BMIPointsSD0 { get; set; } = string.Empty;
+
+        public string BMIPointsSD2 { get; set; } = string.Empty;
+
+        public string BMIPointsSD2neg { get; set; } = string.Empty;
+
+
         public string WeightPointsAsJson => JsonSerializer.Serialize(WeightPoints);
 
         public string LengthPointsAsJson => JsonSerializer.Serialize(LengthPoints);

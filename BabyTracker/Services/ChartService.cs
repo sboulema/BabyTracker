@@ -22,6 +22,7 @@ namespace BabyTracker.Services
         private readonly IEnumerable<CsvRow> _weightForAgeData;
         private readonly IEnumerable<CsvRow> _lengthForAgeData;
         private readonly IEnumerable<CsvRow> _headSizeForAgeData;
+        private readonly IEnumerable<CsvRow> _bmiForAgeData;
 
         public ChartService(ISqLiteService sqLiteService)
         {
@@ -29,6 +30,7 @@ namespace BabyTracker.Services
             _weightForAgeData = ReadCsv("wfa-g-z");
             _lengthForAgeData = ReadCsv("lfa-g-z");
             _headSizeForAgeData = ReadCsv("hfa-g-z");
+            _bmiForAgeData = ReadCsv("bfa-g-z");
         }
 
         public ChartsViewModel GetViewModel(string babyName)
@@ -71,6 +73,7 @@ namespace BabyTracker.Services
             SetWeightCsvPoints(result);
             SetLengthCsvPoints(result);
             SetHeadSizeCsvPoints(result);
+            SetBMICsvPoints(result);
 
             return result;
         }
@@ -102,6 +105,15 @@ namespace BabyTracker.Services
             model.HeadSizePointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
             model.HeadSizePointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
             model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+        }
+
+        private void SetBMICsvPoints(ChartsViewModel model) 
+        {
+            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.BMIPoints.Max(p => p.X)) + 1;
+            var data = _bmiForAgeData.Take(maxAgeInMonthsCeiling);
+            model.BMIPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
+            model.BMIPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
+            model.BMIPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
         }
 
         private IEnumerable<CsvRow> ReadCsv(string fileName)

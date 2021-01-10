@@ -235,6 +235,24 @@
                     showLine: true,
                     lineTension: 0,
                     data: @Html.Raw(Model.BMIPointsAsJson) 
+                },{
+                    label: '50%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.BMIPointsSD0) 
+                },{
+                    label: '97%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.BMIPointsSD2) 
+                },{
+                    label: '3%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.BMIPointsSD2neg) 
                 }]
             },
             options : {
