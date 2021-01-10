@@ -8,16 +8,31 @@ namespace BabyTracker.Models.ViewModels
     {
         public List<Point> WeightPoints { get; set; } = new ();
 
-        public List<Point> WeightPointsMedian { get; set; } = new ();
+        public string WeightPointsSD0 { get; set; } = string.Empty;
+
+        public string WeightPointsSD2 { get; set; } = string.Empty;
+
+        public string WeightPointsSD2neg { get; set; } = string.Empty;
 
         public List<Point> LengthPoints { get; set; } = new ();
 
+        public string LengthPointsSD0 { get; set; } = string.Empty;
+
+        public string LengthPointsSD2 { get; set; } = string.Empty;
+
+        public string LengthPointsSD2neg { get; set; } = string.Empty;
+
         public List<Point> HeadSizePoints { get; set; } = new ();
+
+        public string HeadSizePointsSD0 { get; set; } = string.Empty;
+
+        public string HeadSizePointsSD2 { get; set; } = string.Empty;
+
+        public string HeadSizePointsSD2neg { get; set; } = string.Empty;
 
         public List<Point> BMIPoints { get; set; } = new ();
 
         public string WeightPointsAsJson => JsonSerializer.Serialize(WeightPoints);
-        public string WeightPointsMedianAsJson => JsonSerializer.Serialize(WeightPointsMedian);
 
         public string LengthPointsAsJson => JsonSerializer.Serialize(LengthPoints);
 

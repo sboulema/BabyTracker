@@ -1,9 +1,12 @@
 ﻿using BabyTracker.Constants;
 using BabyTracker.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace BabyTracker.Services
 {
@@ -22,16 +25,30 @@ namespace BabyTracker.Services
 
     public class SqLiteService : ISqLiteService
     {
-        public SqliteConnection OpenConnection(string path)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public SqLiteService(IWebHostEnvironment webHostEnvironment)
         {
-            var connection = new SqliteConnection($"Data Source={Path.Combine(path, "EasyLog.db")}");
+            _webHostEnvironment = webHostEnvironment;
+        }
+
+        public SqliteConnection OpenConnection(string babyName)
+        {
+            var path = $"/data/{babyName}/EasyLog.db";
+
+            if (!_webHostEnvironment.IsProduction()) 
+            {
+                path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", babyName, "EasyLog.db");
+            }
+
+            var connection = new SqliteConnection($"Data Source={path}");
             connection.Open();
             return connection;
         }
 
         public List<EntryModel> GetEntriesFromDb(DateTime date, string babyName)
         {
-            var connection = OpenConnection($"/data/{babyName}");
+            var connection = OpenConnection(babyName);
 
             var lowerBound = ToUnixTimestamp(date);
             var upperBound = ToUnixTimestamp(date.AddDays(1));
@@ -57,7 +74,7 @@ namespace BabyTracker.Services
 
         public List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName)
         {
-            var connection = OpenConnection($"/data/{babyName}");
+            var connection = OpenConnection(babyName);
 
             var entries = new List<EntryModel>();
 
@@ -67,7 +84,10 @@ namespace BabyTracker.Services
 
             connection.Close();
 
-            return entries;
+            return entries
+                .OrderByDescending(entry => entry.TimeUTC.Year)
+                .OrderBy(entry => entry.TimeUTC.TimeOfDay)
+                .ToList();
         }
 
         public List<EntryModel> GetBaby(string babyName, SqliteConnection connection)

@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using BabyTracker.Models;
 using BabyTracker.Models.Charts;
 using BabyTracker.Models.ViewModels;
+using CsvHelper;
 
 namespace BabyTracker.Services
 {
@@ -15,17 +19,23 @@ namespace BabyTracker.Services
     public class ChartService : IChartService
     {
         private readonly ISqLiteService _sqLiteService;
+        private readonly IEnumerable<CsvRow> _weightForAgeData;
+        private readonly IEnumerable<CsvRow> _lengthForAgeData;
+        private readonly IEnumerable<CsvRow> _headSizeForAgeData;
 
         public ChartService(ISqLiteService sqLiteService)
         {
             _sqLiteService = sqLiteService;
+            _weightForAgeData = ReadCsv("wfa-g-z");
+            _lengthForAgeData = ReadCsv("lfa-g-z");
+            _headSizeForAgeData = ReadCsv("hfa-g-z");
         }
 
         public ChartsViewModel GetViewModel(string babyName)
         {
             var result = new ChartsViewModel();
 
-            var connection = _sqLiteService.OpenConnection($"/data/{babyName}");
+            var connection = _sqLiteService.OpenConnection(babyName);
             var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
             var baby = _sqLiteService.GetBaby(babyName, connection).FirstOrDefault() as BabyModel;
 
@@ -58,78 +68,48 @@ namespace BabyTracker.Services
                 }
             }
 
-            var MaxAgeInMonthsCeiling = (int)Math.Ceiling(result.WeightPoints.Max(p => p.X));
-
-            result.WeightPointsMedian = GetWeightMedian().Take(MaxAgeInMonthsCeiling + 1).ToList();
+            SetWeightCsvPoints(result);
+            SetLengthCsvPoints(result);
+            SetHeadSizeCsvPoints(result);
 
             return result;
         }
 
-        private List<Point> GetWeightMedian() 
+        private List<Point> GetWeightMedian() => _weightForAgeData.Select(row => new Point(row.Month, row.SD0)).ToList();
+
+        private void SetWeightCsvPoints(ChartsViewModel model) 
         {
-            return new List<Point> {
-                new Point(0, 3.2),
-                new Point(1, 4.2),
-                new Point(2, 5.1),
-                new Point(3, 5.8),
-                new Point(4, 6.4),
-                new Point(5, 6.9),
-                new Point(6, 7.3),
-                new Point(7, 7.6),
-                new Point(8, 7.9),
-                new Point(9, 8.2),
-                new Point(10, 8.5),
-                new Point(11, 8.7),
-                new Point(12, 8.9),
-                new Point(13, 9.2),
-                new Point(14, 9.4),
-                new Point(15, 9.6),
-                new Point(16, 9.8),
-                new Point(17, 10),
-                new Point(18, 10.2),
-                new Point(19, 10.4),
-                new Point(20, 10.6),
-                new Point(21, 10.9),
-                new Point(22, 11.1),
-                new Point(23, 11.3),
-                new Point(24, 11.5),
-                new Point(25, 11.7),
-                new Point(26, 11.9),
-                new Point(27, 12.1),
-                new Point(28, 12.3),
-                new Point(29, 12.5),
-                new Point(30, 12.7),
-                new Point(31, 12.9),
-                new Point(32, 13.1),
-                new Point(33, 13.3),
-                new Point(34, 13.5),
-                new Point(35, 13.7),
-                new Point(36, 13.9),
-                new Point(37, 14),
-                new Point(38, 14.2),
-                new Point(39, 14.4),
-                new Point(40, 14.6),
-                new Point(41, 14.8),
-                new Point(42, 15),
-                new Point(43, 15.2),
-                new Point(44, 15.3),
-                new Point(45, 15.5),
-                new Point(46, 15.7),
-                new Point(47, 15.9),
-                new Point(48, 16.1),
-                new Point(49, 16.3),
-                new Point(50, 16.4),
-                new Point(51, 16.6),
-                new Point(52, 16.8),
-                new Point(53, 17.0),
-                new Point(54, 17.2),
-                new Point(55, 17.3),
-                new Point(56, 17.5),
-                new Point(57, 17.7),
-                new Point(58, 17.9),
-                new Point(59, 18),
-                new Point(60, 18.2),
-            };
+            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.WeightPoints.Max(p => p.X)) + 1;
+            var data = _weightForAgeData.Take(maxAgeInMonthsCeiling);
+            model.WeightPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
+            model.WeightPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
+            model.WeightPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+        }
+
+        private void SetLengthCsvPoints(ChartsViewModel model) 
+        {
+            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.LengthPoints.Max(p => p.X)) + 1;
+            var data = _lengthForAgeData.Take(maxAgeInMonthsCeiling);
+            model.LengthPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
+            model.LengthPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
+            model.LengthPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+        }
+
+        private void SetHeadSizeCsvPoints(ChartsViewModel model) 
+        {
+            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.HeadSizePoints.Max(p => p.X)) + 1;
+            var data = _headSizeForAgeData.Take(maxAgeInMonthsCeiling);
+            model.HeadSizePointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
+            model.HeadSizePointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
+            model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+        }
+
+        private IEnumerable<CsvRow> ReadCsv(string fileName)
+        {
+            using var reader = new StreamReader($"Charts\\{fileName}.csv");
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            var records = csv.GetRecords<CsvRow>().ToList();
+            return records;
         }
     }
 }

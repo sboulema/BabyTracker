@@ -10,5 +10,6 @@
     <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*"/>
     <PackageReference Include="Razor.Templating.Core" Version="*"/>
     <PackageReference Include="Mjml.AspNetCore" Version="*"/>
+    <PackageReference Include="CsvHelper" Version="*" />
   </ItemGroup>
 </Project>

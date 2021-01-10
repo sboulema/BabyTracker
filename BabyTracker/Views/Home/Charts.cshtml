@@ -37,12 +37,25 @@
                     lineTension: 0,
                     data: @Html.Raw(Model.WeightPointsAsJson) 
                 },{
-                    label: 'Median',
+                    label: '50%',
                     backgroundColor: 'rgb(0,0,0,0)',
                     borderColor: 'rgb(220,220,220)',
                     showLine: true,
-                    data: @Html.Raw(Model.WeightPointsMedianAsJson) 
-                }]
+                    data: @Html.Raw(Model.WeightPointsSD0) 
+                },{
+                    label: '97%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.WeightPointsSD2) 
+                },{
+                    label: '3%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.WeightPointsSD2neg) 
+                }
+                ]
             },
             options : {
                 scales: {
@@ -90,6 +103,24 @@
                     showLine: true,
                     lineTension: 0,
                     data: @Html.Raw(Model.LengthPointsAsJson) 
+                },{
+                    label: '50%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.LengthPointsSD0) 
+                },{
+                    label: '97%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.LengthPointsSD2) 
+                },{
+                    label: '3%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.LengthPointsSD2neg) 
                 }]
             },
             options : {
@@ -138,6 +169,24 @@
                     showLine: true,
                     lineTension: 0,
                     data: @Html.Raw(Model.HeadSizePointsAsJson) 
+                },{
+                    label: '50%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.HeadSizePointsSD0) 
+                },{
+                    label: '97%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.HeadSizePointsSD2) 
+                },{
+                    label: '3%',
+                    backgroundColor: 'rgb(0,0,0,0)',
+                    borderColor: 'rgb(220,220,220)',
+                    showLine: true,
+                    data: @Html.Raw(Model.HeadSizePointsSD2neg) 
                 }]
             },
             options : {

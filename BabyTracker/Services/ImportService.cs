@@ -32,7 +32,7 @@ namespace BabyTracker.Services
                 return string.Empty;
             }
 
-            var extractPath = Path.Combine(Path.GetDirectoryName(path), babyName);
+            var extractPath = Path.Combine(Path.GetDirectoryName(path), "Data", babyName);
 
             if (!Directory.Exists(extractPath))
             {
