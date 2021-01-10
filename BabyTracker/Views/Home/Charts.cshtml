@@ -25,6 +25,47 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
 
     <script>
+        function GetChartOptions(xAxesLabel, yAxesLabel) {
+            return {
+                scales: {
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: xAxesLabel
+                        }
+                    }],
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: yAxesLabel
+                        }
+                    }]
+                },
+                legend: {
+                    display: false
+                },
+                plugins: {
+                    datalabels: {
+                        formatter: function(value, context) {
+                            if (context.dataIndex === context.dataset.data.length - 1)
+                            {
+                                return context.dataset.label;
+                            }
+                            return "";
+                        },
+                        align: 'right'
+                    }
+                },
+                layout: {
+                    padding: {
+                        right: 50
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
         var ctx = document.getElementById('weightChart').getContext('2d');
         var chart = new Chart(ctx, {
             type: 'scatter',
@@ -57,37 +98,7 @@
                 }
                 ]
             },
-            options : {
-                scales: {
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'age (month)'
-                        }
-                    }],
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'weight (kg)'
-                        }
-                    }]
-                },
-                legend: {
-                    display: false
-                },
-                plugins: {
-                    datalabels: {
-                        formatter: function(value, context) {
-                            if (context.dataIndex === context.dataset.data.length - 1)
-                            {
-                                return context.dataset.label;
-                            }
-                            return "";
-                        },
-                        align: 'right'
-                    }
-                }
-            }
+            options: GetChartOptions('age (month)', 'weight (kg)') 
         });
     </script>
 
@@ -123,37 +134,7 @@
                     data: @Html.Raw(Model.LengthPointsSD2neg) 
                 }]
             },
-            options : {
-                scales: {
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'age (month)'
-                        }
-                    }],
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'length (cm)'
-                        }
-                    }]
-                },
-                legend: {
-                    display: false
-                },
-                plugins: {
-                    datalabels: {
-                        formatter: function(value, context) {
-                            if (context.dataIndex === context.dataset.data.length - 1)
-                            {
-                                return context.dataset.label;
-                            }
-                            return "";
-                        },
-                        align: 'right'
-                    }
-                }
-            }
+            options: GetChartOptions('age (month)', 'length (cm)')
         });
     </script>
 
@@ -189,37 +170,7 @@
                     data: @Html.Raw(Model.HeadSizePointsSD2neg) 
                 }]
             },
-            options : {
-                scales: {
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'age (month)'
-                        }
-                    }],
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'head size (cm)'
-                        }
-                    }]
-                },
-                legend: {
-                    display: false
-                },
-                plugins: {
-                    datalabels: {
-                        formatter: function(value, context) {
-                            if (context.dataIndex === context.dataset.data.length - 1)
-                            {
-                                return context.dataset.label;
-                            }
-                            return "";
-                        },
-                        align: 'right'
-                    }
-                }
-            }
+            options: GetChartOptions('age (month)', 'head size (cm)') 
         });
     </script>
 
@@ -255,37 +206,7 @@
                     data: @Html.Raw(Model.BMIPointsSD2neg) 
                 }]
             },
-            options : {
-                scales: {
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'age (month)'
-                        }
-                    }],
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'BMI'
-                        }
-                    }]
-                },
-                legend: {
-                    display: false
-                },
-                plugins: {
-                    datalabels: {
-                        formatter: function(value, context) {
-                            if (context.dataIndex === context.dataset.data.length - 1)
-                            {
-                                return context.dataset.label;
-                            }
-                            return "";
-                        },
-                        align: 'right'
-                    }
-                }
-            }
+            options: GetChartOptions('age (month)', 'BMI') 
         });
     </script>
 }
