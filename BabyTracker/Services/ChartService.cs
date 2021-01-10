@@ -118,7 +118,7 @@ namespace BabyTracker.Services
 
         private IEnumerable<CsvRow> ReadCsv(string fileName)
         {
-            using var reader = new StreamReader($"Charts\\{fileName}.csv");
+            using var reader = new StreamReader(Path.Combine("Charts", $"{fileName}.csv"));
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
             var records = csv.GetRecords<CsvRow>().ToList();
             return records;
