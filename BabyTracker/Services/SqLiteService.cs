@@ -84,10 +84,7 @@ namespace BabyTracker.Services
 
             connection.Close();
 
-            return entries
-                .OrderByDescending(entry => entry.TimeUTC.Year)
-                .OrderBy(entry => entry.TimeUTC.TimeOfDay)
-                .ToList();
+            return entries;
         }
 
         public List<EntryModel> GetBaby(string babyName, SqliteConnection connection)

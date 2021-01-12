@@ -31,20 +31,20 @@ else
     <br />
     <br />
 
-    <div class="btn-group-toggle" data-toggle="buttons">
-        @foreach (var entryType in Model.EntryTypes)
-        {
-            <label class="btn btn-outline-info active mb-2">
-                <input type="checkbox" class="entryTypeCheckbox" data-entrytype="@entryType" onchange="filterType(event)" checked autocomplete="off">
-                <img src="~/img/icon_review_@(entryType.ToLower()).png" width="32" style="filter: brightness(0) invert(1);" />
-            </label>
-        }
-    </div>
-
-    <br />
-
     @if (Model.Entries.Any()) 
     {
+        <div class="btn-group-toggle" data-toggle="buttons">
+            @foreach (var entryType in Model.EntryTypes)
+            {
+                <label class="btn btn-outline-info active mb-2" title="@entryType">
+                    <input type="checkbox" class="entryTypeCheckbox" data-entrytype="@entryType" onchange="filterType(event)" checked autocomplete="off">
+                    <img src="~/img/icon_review_@(entryType.ToLower()).png" width="32" style="filter: brightness(0) invert(1);" />
+                </label>
+            }
+        </div>
+
+        <br />
+
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
             <label class="btn btn-outline-primary active">
                 <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked><i class="fas fa-list"></i> List
@@ -129,6 +129,15 @@ else
 
                 tf = new TableFilter('diaryTable', 0, filtersConfig);
                 tf.init();
+
+                var filter = JSON.parse(localStorage.getItem("entryTypeFilter"));
+                Array
+                    .from(document.getElementsByClassName("entryTypeCheckbox"))
+                    .forEach(element => {
+                        if (!filter.includes(element.dataset.entrytype)) {
+                            setTimeout(function() { element.click(); document.activeElement.blur(); }, 300);
+                        }
+                    });
             })();
 
             function filterType(event) {
@@ -144,6 +153,8 @@ else
                 } else {
                     event.target.nextElementSibling.style.filter = "none";
                 }
+
+                localStorage.setItem("entryTypeFilter", JSON.stringify(filter));
             }
 
             function toggleViewStyle() {

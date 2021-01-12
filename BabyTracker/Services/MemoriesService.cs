@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BabyTracker.Models;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +38,10 @@ namespace BabyTracker.Services
             model.MemoriesBadgeCount = memories.Count;
             model.ShowMemoriesLink = true;
             model.BaseUrl = _configuration["BASE_URL"];
+
+            model.Entries = model.Entries
+                .OrderByDescending(entry => entry.TimeUTC.Year)
+                .OrderBy(entry => entry.TimeUTC.TimeOfDay);
 
             var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
 
