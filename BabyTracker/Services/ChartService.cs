@@ -13,7 +13,7 @@ namespace BabyTracker.Services
 {
     public interface IChartService 
     {
-        ChartsViewModel GetViewModel(string babyName);
+        ChartsViewModel GetViewModel(string babyName, int? maxAge = null);
     }
 
     public class ChartService : IChartService
@@ -33,7 +33,7 @@ namespace BabyTracker.Services
             _bmiForAgeData = ReadCsv("bfa-g-z");
         }
 
-        public ChartsViewModel GetViewModel(string babyName)
+        public ChartsViewModel GetViewModel(string babyName, int? maxAge = null)
         {
             var result = new ChartsViewModel();
 
@@ -43,7 +43,7 @@ namespace BabyTracker.Services
 
             connection.Close();
 
-            foreach (Growth entry in entries)
+            foreach (Growth entry in entries.Take(maxAge ?? int.MaxValue))
             {
                 var ageInMonths = (entry.TimeUTC - baby.DateOfBirth).Days / (double)30;
 
@@ -70,46 +70,46 @@ namespace BabyTracker.Services
                 }
             }
 
-            SetWeightCsvPoints(result);
-            SetLengthCsvPoints(result);
-            SetHeadSizeCsvPoints(result);
-            SetBMICsvPoints(result);
+            SetWeightCsvPoints(result, maxAge);
+            SetLengthCsvPoints(result, maxAge);
+            SetHeadSizeCsvPoints(result, maxAge);
+            SetBMICsvPoints(result, maxAge);
 
             return result;
         }
 
         private List<Point> GetWeightMedian() => _weightForAgeData.Select(row => new Point(row.Month, row.SD0)).ToList();
 
-        private void SetWeightCsvPoints(ChartsViewModel model) 
+        private void SetWeightCsvPoints(ChartsViewModel model, int? maxAge) 
         {
-            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.WeightPoints.Max(p => p.X)) + 1;
+            var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.WeightPoints.Max(p => p.X)) + 1;
             var data = _weightForAgeData.Take(maxAgeInMonthsCeiling);
             model.WeightPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
             model.WeightPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
             model.WeightPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
         }
 
-        private void SetLengthCsvPoints(ChartsViewModel model) 
+        private void SetLengthCsvPoints(ChartsViewModel model, int? maxAge) 
         {
-            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.LengthPoints.Max(p => p.X)) + 1;
+            var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.LengthPoints.Max(p => p.X)) + 1;
             var data = _lengthForAgeData.Take(maxAgeInMonthsCeiling);
             model.LengthPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
             model.LengthPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
             model.LengthPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
         }
 
-        private void SetHeadSizeCsvPoints(ChartsViewModel model) 
+        private void SetHeadSizeCsvPoints(ChartsViewModel model, int? maxAge) 
         {
-            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.HeadSizePoints.Max(p => p.X)) + 1;
+            var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.HeadSizePoints.Max(p => p.X)) + 1;
             var data = _headSizeForAgeData.Take(maxAgeInMonthsCeiling);
             model.HeadSizePointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
             model.HeadSizePointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
             model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
         }
 
-        private void SetBMICsvPoints(ChartsViewModel model) 
+        private void SetBMICsvPoints(ChartsViewModel model, int? maxAge) 
         {
-            var maxAgeInMonthsCeiling = (int)Math.Ceiling(model.BMIPoints.Max(p => p.X)) + 1;
+            var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.BMIPoints.Max(p => p.X)) + 1;
             var data = _bmiForAgeData.Take(maxAgeInMonthsCeiling);
             model.BMIPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
             model.BMIPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());

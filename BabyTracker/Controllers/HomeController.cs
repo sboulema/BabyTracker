@@ -123,11 +123,11 @@ namespace BabyTracker.Controllers
             return Content(html, "text/html");
         }
 
-        [HttpGet("{babyName}/charts")]
-        public IActionResult Charts(string babyName)
+        [HttpGet("{babyName}/charts/{months?}")]
+        public IActionResult Charts(string babyName, int? months = null)
         {
             var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
-            var model = _chartService.GetViewModel(babyName);
+            var model = _chartService.GetViewModel(babyName, months + 1);
 
             model.BabyName = babyName;
             model.MemoriesBadgeCount = memories.Count;
