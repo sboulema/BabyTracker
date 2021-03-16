@@ -21,6 +21,8 @@ namespace BabyTracker.Services
         List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName, SqliteConnection connection);
 
         List<EntryModel> GetBaby(string babyName, SqliteConnection connection);
+
+        DateTime GetLastEntryDateTime(string babyName);
     }
 
     public class SqLiteService : ISqLiteService
@@ -110,6 +112,30 @@ namespace BabyTracker.Services
             }
 
             return entries;
+        }
+
+        public DateTime GetLastEntryDateTime(string babyName)
+        {
+            var connection = OpenConnection(babyName);
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Formula UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Growth UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Joy UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Medicine UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Milestone UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM OtherActivity UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Sleep UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Temperature UNION ALL " +
+                                  "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Vaccine " +
+                                  "ORDER BY Timestamp DESC " +
+                                  "LIMIT 1";
+            
+            using var reader = command.ExecuteReader();
+            reader.Read();
+
+            return reader.GetDateTime(0);
         }
 
         private List<EntryModel> GetSupplement(long lowerBound, long upperBound,

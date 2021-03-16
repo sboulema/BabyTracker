@@ -23,6 +23,11 @@
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2020 - BabyTracker
+            @if (ViewData.ContainsKey("LastEntry")) {
+                <text>
+                     - Last entry: @ViewData["LastEntry"]
+                </text>
+            }
         </div>
     </footer>
 

@@ -91,6 +91,8 @@ namespace BabyTracker.Controllers
             model.MemoriesBadgeCount = memories.Count;
             model.ShowMemoriesLink = true;
 
+            ViewData["LastEntry"] = _sqLiteService.GetLastEntryDateTime(babyName);
+
             return View("Diary", model);
         }
 
