@@ -36,7 +36,7 @@ namespace BabyTracker.Services
 
         public SqliteConnection OpenConnection(string babyName)
         {
-            var path = $"/Data/{babyName}/EasyLog.db";
+            var path = $"/data/Data/{babyName}/EasyLog.db";
 
             if (!_webHostEnvironment.IsProduction()) 
             {
