@@ -16,6 +16,12 @@ namespace BabyTracker.Services
         public string HandleLoad(string babyName)
         {
             var path = $"/data/{babyName}.eml";
+
+            if (!File.Exists(path))
+            {
+                path = $"/data/{babyName}.btcp";
+            }
+
             return Unzip(path, babyName);
         }
 
