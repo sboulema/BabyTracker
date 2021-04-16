@@ -104,7 +104,7 @@ namespace BabyTracker.Services
                 entries.Add(new BabyModel
                 {
                     TimeUTC = reader.GetDateTime(0),
-                    BabyName = reader.GetString(1),
+                    BabyName = GetString(reader, 1),
                     DateOfBirth = reader.GetDateTime(2),
                     DueDate = reader.GetDateTime(3),
                     Gender = reader.GetInt32(4)
@@ -154,8 +154,8 @@ namespace BabyTracker.Services
                 entries.Add(new SupplementModel
                 {
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
-                    Supplement = $"{reader.GetString(4)} {reader.GetString(2)} {reader.GetString(3)}",
+                    Note = GetString(reader, 1),
+                    Supplement = $"{GetString(reader, 4)} {GetString(reader, 2)} {GetString(reader, 3)}",
                     BabyName = babyName
                 });
             }
@@ -180,11 +180,11 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
-                    MedicationName = $"{reader.GetString(2)}",
+                    Note = GetString(reader, 1),
+                    MedicationName = $"{GetString(reader, 2)}",
                     Amount = reader.GetInt32(4),
                     AmountPerTime = reader.GetInt32(5),
-                    Unit = reader.GetString(6)
+                    Unit = GetString(reader, 6)
                 });
             }
 
@@ -208,8 +208,8 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
-                    Vaccine = $"{reader.GetString(2)} - {reader.GetString(3)}"
+                    Note = GetString(reader, 1),
+                    Vaccine = $"{GetString(reader, 2)} - {GetString(reader, 3)}"
                 });
             }
 
@@ -233,7 +233,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Temperature = reader.GetDouble(2)
                 });
             }
@@ -258,7 +258,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Duration = reader.GetInt32(2).ToString()
                 });
             }
@@ -283,7 +283,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Weight = reader.GetDouble(2),
                     Length = reader.GetDouble(3),
                     HeadSize = reader.GetDouble(4)
@@ -310,7 +310,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Amount = reader.GetInt32(2).ToString()
                 });
             }
@@ -335,7 +335,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Status = GetDiaperStatus(reader.GetString(2))
                 });
             }
@@ -369,8 +369,8 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
-                    Filename = reader.GetString(2)
+                    Note = GetString(reader, 1),
+                    Filename = GetString(reader, 2)
                 });
             }
 
@@ -396,8 +396,8 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
-                    Filename = reader.GetString(2)
+                    Note = GetString(reader, 1),
+                    Filename = GetString(reader, 2)
                 });
             }
 
@@ -423,7 +423,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Filename = GetString(reader, 2),
                     Duration = reader.GetInt32(3).ToString(),
                     OtherActivity = GetString(reader, 4)
@@ -454,7 +454,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Filename = GetString(reader, 2),
                     Duration = reader.GetInt32(3).ToString(),
                     OtherActivity = GetString(reader, 4)
@@ -483,7 +483,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Filename = GetString(reader, 2),
                     Milestone = GetString(reader, 3)
                 });
@@ -513,7 +513,7 @@ namespace BabyTracker.Services
                 {
                     BabyName = babyName,
                     TimeUTC = reader.GetDateTime(0),
-                    Note = reader.GetString(1),
+                    Note = GetString(reader, 1),
                     Filename = GetString(reader, 2),
                     Milestone = GetString(reader, 3)
                 });
