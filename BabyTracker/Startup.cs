@@ -21,6 +21,8 @@ namespace BabyTracker
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddRouting(options => options.LowercaseUrls = true);
+            
             services.AddControllersWithViews();
 
             services.AddSingleton<IImportService, ImportService>();
