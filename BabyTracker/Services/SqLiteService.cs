@@ -23,6 +23,8 @@ namespace BabyTracker.Services
         List<EntryModel> GetBaby(string babyName, SqliteConnection connection);
 
         DateTime GetLastEntryDateTime(string babyName);
+
+        List<PictureModel> GetPictures(string babyName);
     }
 
     public class SqLiteService : ISqLiteService
@@ -136,6 +138,29 @@ namespace BabyTracker.Services
             reader.Read();
 
             return reader.GetDateTime(0);
+        }
+
+        public List<PictureModel> GetPictures(string babyName)
+        {
+            var pictures = new List<PictureModel>();
+
+            var connection = OpenConnection(babyName);
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), FileName" +
+            " FROM Picture ORDER BY Timestamp DESC";
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                pictures.Add(new PictureModel
+                {
+                    TimeUTC = reader.GetDateTime(0),
+                    Filename = GetString(reader, 1)
+                });
+            }
+
+            return pictures;
         }
 
         private List<EntryModel> GetSupplement(long lowerBound, long upperBound,

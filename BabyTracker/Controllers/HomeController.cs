@@ -138,6 +138,23 @@ namespace BabyTracker.Controllers
             return View("Charts", model);
         }
 
+        [HttpGet("{babyName}/gallery")]
+        public IActionResult Gallery(string babyName)
+        {
+            var pictures = _sqLiteService.GetPictures(babyName);
+            var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
+
+            var model = new GalleryViewModel
+            {
+                Pictures = pictures,
+                BabyName = babyName,
+                MemoriesBadgeCount = memories.Count,
+                ShowMemoriesLink = true
+            };
+
+            return View("Gallery", model);
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

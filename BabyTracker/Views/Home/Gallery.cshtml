@@ -1,0 +1,35 @@
+﻿@model GalleryViewModel
+
+@{
+    ViewData["Title"] = "Gallery - BabyTracker";
+}
+
+<div class="row">
+@foreach (var picture in Model.Pictures)
+{
+    <div class="col-lg-6 col-md-6 col-xs-6">
+        <a href="~/picture/@Model.BabyName/@picture.Filename" class="gallery-item">
+            <img src="~/picture/@Model.BabyName/@picture.Filename/thumbnail" loading="lazy" class="img-thumbnail" />
+        </a>
+    </div>
+}
+</div>
+
+@section Stylesheets
+{
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.0.0/magnific-popup.min.css" integrity="sha512-nIm/JGUwrzblLex/meoxJSPdAKQOe2bLhnrZ81g5Jbh519z8GFJIWu87WAhBH+RAyGbM4+U3S2h+kL5JoV6/wA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+}
+
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.0.0/jquery.magnific-popup.min.js" integrity="sha512-+m6t3R87+6LdtYiCzRhC5+E0l4VQ9qIT1H9+t1wmHkMJvvUQNI5MKKb7b08WL4Kgp9K0IBgHDSLCRJk05cFUYg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        $('.gallery-item').magnificPopup({
+            type: 'image',
+            gallery:{
+                enabled:true
+            }
+        });
+    </script>
+}
