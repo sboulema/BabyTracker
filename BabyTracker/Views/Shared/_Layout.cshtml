@@ -11,6 +11,8 @@
 
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js" integrity="sha256-u/J1Urdrk3nCYFefpoeTMgI5viU1ujCDu2fXXoSJjhg=" crossorigin="anonymous"></script>
+
+    @RenderSection("HeaderScripts", required: false)
 </head>
 <body>
     <header>
@@ -24,7 +26,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2020 - BabyTracker
+            &copy; 2020 - 2021 : BabyTracker
             @if (ViewData.ContainsKey("LastEntry")) {
                 <text>
                      - Last entry: @ViewData["LastEntry"]

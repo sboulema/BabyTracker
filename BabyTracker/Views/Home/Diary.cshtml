@@ -199,10 +199,12 @@ else
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/themes/transparent/transparent.css" integrity="sha256-VHXsvL4pDDrxtrd0OaxD5fYNxfhlS90VCLltrXtHgjc=" crossorigin="anonymous">
 }
 
-@section Scripts {
+@section HeaderScripts {
     <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tablefilter.js" integrity="sha256-VoFNUX5JVmFagSdl8p2r4GMpfy0RX2RqEsYTYbFxhrE=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tf-1-2aa33b10e0e549020c12.js" integrity="sha256-fPZZ9rpwQM8DOSfGdS1UK2MJFxd1K+tMTbytcwm0tNc=" crossorigin="anonymous"></script>
+}
 
+@section Scripts {
     <script>
         var babyName = '@Html.Raw(Model.BabyName)';
 
