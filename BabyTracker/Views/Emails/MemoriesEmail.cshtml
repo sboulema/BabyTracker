@@ -19,73 +19,85 @@
         <mj-text font-size="20px" color="#bd4d85" font-family="helvetica">
           You have memories waiting for you!
         </mj-text>
-        
-        <mj-text font-size="20px" color="#bd4d85" font-family="helvetica">
-        	Look back at @DateTime.Now.ToString("yyyy-MM-dd")
-        </mj-text>
       </mj-column>
     </mj-section>
     
-    @foreach (var memory in Model.Entries)
+    @foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
     {
-      @if (memory is Joy joy) {
-        <mj-wrapper padding="0" border="1px solid #000000">
-          @if (!string.IsNullOrEmpty(joy.Filename))
-          {
-            <mj-section padding="0">
-              <mj-column padding="0">
-                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
-              </mj-column>
-            </mj-section>
-          }
-          <mj-section>
-            <mj-column>
-              <mj-text color="#28a745">Joy</mj-text>
-              <mj-text>@joy.Note</mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-wrapper>
-      }
-      else if (memory is MilestoneModel milestone)
-      {
-        <mj-wrapper padding="0" border="1px solid #000000">
-          @if (!string.IsNullOrEmpty(milestone.Filename))
-          {
-            <mj-section padding="0">
-              <mj-column padding="0">
-                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@milestone.Filename" />
-              </mj-column>
-            </mj-section>
-          }
-          <mj-section>
-            <mj-column>
-              <mj-text color="#28a745">@milestone.Milestone</mj-text>
-              <mj-text>@milestone.Note</mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-wrapper>
-      }
-      else if (memory is ActivityModel activity)
-      {
-        <mj-wrapper padding="0" border="1px solid #000000">
-          @if (!string.IsNullOrEmpty(activity.Filename))
-          {
-            <mj-section padding="0">
-              <mj-column padding="0">
-                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
-              </mj-column>
-            </mj-section>
-          }
-          <mj-section>
-            <mj-column>
-              <mj-text color="#28a745">@activity.OtherActivity</mj-text>
-              <mj-text>@activity.Note</mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-wrapper>
-      }
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="20px" color="#bd4d85" font-family="helvetica">
+            @{
+              var yearsAgo = DateTime.UtcNow.Year - group.Key;
+              <text>
+                @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
+              </text>
+            }
+          </mj-text>
+        </mj-column>
+      </mj-section>
 
-      <mj-spacer height="20px" />
+      @foreach (var memory in group)
+      {
+        @if (memory is Joy joy) {
+          <mj-wrapper padding="0" border="1px solid #000000">
+            @if (!string.IsNullOrEmpty(joy.Filename))
+            {
+              <mj-section padding="0">
+                <mj-column padding="0">
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@joy.Filename" />
+                </mj-column>
+              </mj-section>
+            }
+            <mj-section>
+              <mj-column>
+                <mj-text color="#28a745">Joy</mj-text>
+                <mj-text>@joy.Note</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        }
+        else if (memory is MilestoneModel milestone)
+        {
+          <mj-wrapper padding="0" border="1px solid #000000">
+            @if (!string.IsNullOrEmpty(milestone.Filename))
+            {
+              <mj-section padding="0">
+                <mj-column padding="0">
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@milestone.Filename" />
+                </mj-column>
+              </mj-section>
+            }
+            <mj-section>
+              <mj-column>
+                <mj-text color="#28a745">@milestone.Milestone</mj-text>
+                <mj-text>@milestone.Note</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        }
+        else if (memory is ActivityModel activity)
+        {
+          <mj-wrapper padding="0" border="1px solid #000000">
+            @if (!string.IsNullOrEmpty(activity.Filename))
+            {
+              <mj-section padding="0">
+                <mj-column padding="0">
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.BabyName/@activity.Filename" />
+                </mj-column>
+              </mj-section>
+            }
+            <mj-section>
+              <mj-column>
+                <mj-text color="#28a745">@activity.OtherActivity</mj-text>
+                <mj-text>@activity.Note</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        }
+
+        <mj-spacer height="20px" />
+      }      
     }
   
     <mj-section>

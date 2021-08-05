@@ -12,9 +12,9 @@
   <div class="card-body">
     <h5 class="card-title">Upload your own BabyTracker Data Clone</h5>
     <form asp-controller="Home" asp-action="ImportFile" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="importFile">Upload file</label>
-            <input type="file" class="form-control-file" name="file" id="importFile" accept=".eml,.btcp">
+        <div class="mb-3">
+          <label for="importFile" class="form-label">Upload file</label>
+          <input type="file" class="form-control" name="file" id="importFile" accept=".eml,.btcp">
         </div>
 
         <button type="submit" class="btn btn-success">Upload</button>
@@ -32,7 +32,7 @@
   <div class="card-body">
     <h5 class="card-title">Load from an existing BabyTracker Data Clone</h5>
     <form asp-controller="Home" asp-action="LoadFile" method="post">
-        <div class="form-group">
+        <div class="mb-3">
             <label for="loadFile">Baby name</label>
             <input type="text" class="form-control" name="babyName" id="loadFile" placeholder="baby name">
         </div>

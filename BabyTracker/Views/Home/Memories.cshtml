@@ -4,30 +4,37 @@
     ViewData["Title"] = "Memories - BabyTracker";
 }
 
-<div class="btn-group btn-group-toggle" data-toggle="buttons">
-    <label class="btn btn-outline-primary active">
-        <input type="radio" name="viewStyle" onchange="toggleViewStyle()" checked><i class="fas fa-list"></i> List
-    </label>
-    <label class="btn btn-outline-primary">
-        <input type="radio" name="viewStyle" onchange="toggleViewStyle()"><i class="fas fa-image"></i> Card
-    </label>
+<div class="btn-group mb-3">
+    <input type="radio" class="btn-check" name="viewStyle" id="viewStyleList" onchange="toggleViewStyle()" autocomplete="off" checked>
+    <label class="btn btn-outline-primary" for="viewStyleList"><i class="fas fa-list"></i> List</label>
+
+    <input type="radio" class="btn-check" name="viewStyle" id="viewStyleCard" onchange="toggleViewStyle()" autocomplete="off">
+    <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
 </div>
 
 <table id="diaryTable" class="table">
     <tbody>
-        @foreach (var entry in Model.Entries.ToList())
+        @foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
         {
-            if (entry is Joy joy)
+            var yearsAgo = DateTime.UtcNow.Year - group.Key;
+            <h1 style="color: #bd4d85;">
+            @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
+            </h1>
+
+            @foreach (var entry in group)
             {
-                @await Html.PartialAsync("Diary/_Joy", joy)
-            }
-            else if (entry is MilestoneModel milestone)
-            {
-                @await Html.PartialAsync("Diary/_Milestone", milestone)
-            }
-            else if (entry is ActivityModel activity)
-            {
-                @await Html.PartialAsync("Diary/_Activity", activity)
+                if (entry is Joy joy)
+                {
+                    @await Html.PartialAsync("Diary/_Joy", joy)
+                }
+                else if (entry is MilestoneModel milestone)
+                {
+                    @await Html.PartialAsync("Diary/_Milestone", milestone)
+                }
+                else if (entry is ActivityModel activity)
+                {
+                    @await Html.PartialAsync("Diary/_Activity", activity)
+                }
             }
         }
     </tbody>
