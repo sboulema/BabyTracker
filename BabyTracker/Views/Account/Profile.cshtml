@@ -8,21 +8,24 @@
 
 <br />
 
-<form asp-action="ProfileSave" asp-controller="Account">
-  <div class="mb-3">
-    <label for="memoriesEmailAddresses" class="form-label">Share with other users</label>
-    <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.ShareList" value="@Model.ShareList"></textarea>
-  </div>
+@if (Model != null)
+{
+    <form asp-action="ProfileSave" asp-controller="Account">
+      <div class="mb-3">
+        <label for="memoriesEmailAddresses" class="form-label">Share with other users</label>
+        <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.ShareList" value="@Model.ShareList"></textarea>
+      </div>
 
-  <div class="mb-3 form-check">
-    <input asp-for="EnableMemoriesEmail" class="form-check-input" />
-    <label class="form-check-label" for="enableMemoriesEmail">Enable memories email</label>
-  </div>
+      <div class="mb-3 form-check">
+        <input asp-for="EnableMemoriesEmail" class="form-check-input" />
+        <label class="form-check-label" for="enableMemoriesEmail">Enable memories email</label>
+      </div>
 
-  <div class="mb-3">
-    <label for="memoriesEmailAddresses" class="form-label">Memories email addresses</label>
-    <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.MemoriesAddresses" value="@Model.MemoriesAddresses"></textarea>
-  </div>
+      <div class="mb-3">
+        <label for="memoriesEmailAddresses" class="form-label">Memories email addresses</label>
+        <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.MemoriesAddresses" value="@Model.MemoriesAddresses"></textarea>
+      </div>
 
-  <button type="submit" class="btn btn-primary">Save</button>
-</form> 
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form> 
+}

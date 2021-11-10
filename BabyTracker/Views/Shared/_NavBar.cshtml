@@ -11,7 +11,7 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto">
-                @if (!string.IsNullOrEmpty(Model.BabyName))
+                @if (!string.IsNullOrEmpty(Model?.BabyName))
                 {
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/@Model.BabyName">
@@ -32,7 +32,7 @@
                     </li>
                 }
 
-                @if (Model.ShowMemoriesLink)
+                @if (Model?.ShowMemoriesLink == true)
                 {
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/@Model.BabyName/memories">
@@ -53,8 +53,8 @@
                 {
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img class="rounded-circle article-img" src="@Model.Profile?.Image" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model.Profile?.Name"/>
-                            @Model.Profile?.Nickname
+                            <img class="rounded-circle article-img" src="@Model?.Profile?.Image" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model?.Profile?.Name"/>
+                            @Model?.Profile?.Nickname
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/account/profile">Profile</a></li>

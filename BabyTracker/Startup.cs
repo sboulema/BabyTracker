@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Auth0.AspNetCore.Authentication;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Builder;
@@ -27,6 +29,20 @@ public class Startup
         services.AddAuth0WebAppAuthentication(options => {
             options.Domain = Configuration["AUTH0_DOMAIN"];
             options.ClientId = Configuration["AUTH0_CLIENTID"];
+            options.OpenIdConnectEvents = new()
+            {
+                OnRedirectToIdentityProvider = context =>
+                {
+                    var builder = new UriBuilder(context.ProtocolMessage.RedirectUri)
+                    {
+                        Scheme = "https"
+                    };
+
+                    context.ProtocolMessage.RedirectUri = builder.ToString();
+
+                    return Task.FromResult(0);
+                }
+            };
         });
 
         services.AddControllersWithViews();
