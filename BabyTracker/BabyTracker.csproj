@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -6,9 +6,9 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.0.0" />
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.12.0" />
     <PackageReference Include="Auth0.ManagementApi" Version="7.12.0" />
+    <PackageReference Include="IdentityModel.AspNetCore" Version="4.0.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="*" />
     <PackageReference Include="TimeZoneConverter" Version="*" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="*" />

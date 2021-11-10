@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Auth0.AuthenticationApi;
@@ -8,6 +7,8 @@ using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Auth0.ManagementApi.Paging;
 using BabyTracker.Models.Account;
+using BabyTracker.Models.ViewModels;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
@@ -15,6 +16,8 @@ namespace BabyTracker.Services;
 
 public interface IAccountService
 {
+    Task<ClaimsPrincipal> Login(LoginViewModel model);
+
     Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user);
 
     Task SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
@@ -25,10 +28,40 @@ public interface IAccountService
 public class AccountService : IAccountService
 {
     private readonly IConfiguration _configuration;
+    private readonly AuthenticationApiClient _authenticationApiClient;
 
-    public AccountService(IConfiguration configuration)
+    public AccountService(IConfiguration configuration,
+        AuthenticationApiClient authenticationApiClient)
     {
         _configuration = configuration;
+        _authenticationApiClient = authenticationApiClient;
+    }
+
+    public async Task<ClaimsPrincipal> Login(LoginViewModel model)
+    {
+        var result = await _authenticationApiClient.GetTokenAsync(new ResourceOwnerTokenRequest
+        {
+            ClientId = _configuration["AUTH0_CLIENTID"],
+            ClientSecret = _configuration["AUTH0_CLIENTSECRET"],
+            Scope = "openid profile",
+            Realm = "Username-Password-Authentication",
+            Username = model.EmailAddress,
+            Password = model.Password
+        });
+
+        var user = await _authenticationApiClient.GetUserInfoAsync(result.AccessToken);
+
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim("nickname", user.NickName),
+            new Claim("picture", user.Picture),
+        }, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        return claimsPrincipal;
     }
 
     public static Profile? GetProfile(ClaimsPrincipal user)
@@ -41,8 +74,8 @@ public class AccountService : IAccountService
         return new()
         {
             Name = user.Identity?.Name ?? string.Empty,
-            Nickname = user.Claims.FirstOrDefault(c => c.Type == "nickname")?.Value ?? string.Empty,
-            Image = user.Claims.FirstOrDefault(c => c.Type == "picture")?.Value ?? string.Empty,
+            Nickname = user.FindFirst("nickname")?.Value ?? string.Empty,
+            Image = user.FindFirst("picture")?.Value ?? string.Empty,
             UserId = GetUserId(user)
         };
     }
@@ -116,9 +149,7 @@ public class AccountService : IAccountService
 
     private async Task<string> GetAccessToken()
     {
-        var client = new AuthenticationApiClient(_configuration["AUTH0_DOMAIN"]);
-
-        var token = await client.GetTokenAsync(new ClientCredentialsTokenRequest
+        var token = await _authenticationApiClient.GetTokenAsync(new ClientCredentialsTokenRequest
         {
             ClientId = _configuration["AUTH0_MACHINE_CLIENTID"],
             ClientSecret = _configuration["AUTH0_MACHINE_CLIENTSECRET"],

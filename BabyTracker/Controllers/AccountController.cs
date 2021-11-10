@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
-using Auth0.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -22,24 +21,29 @@ public class AccountController : Controller
     }
 
     [HttpGet("[action]")]
-    public async Task Login(string returnUrl = "/")
+    public IActionResult Login()
     {
-        var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
-            .WithRedirectUri(returnUrl)
-            .Build();
+        return View(new LoginViewModel());
+    }
 
-        await HttpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+    [HttpPost("[action]")]
+    public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = "")
+    {
+        var claimsPrincipal = await _accountService.Login(model);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+
+        return RedirectToLocal(returnUrl);
     }
 
     [Authorize]
     [HttpGet("[action]")]
     public async Task Logout()
     {
-        var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
-            .WithRedirectUri(Url.Action("Index", "Home") ?? "/")
-            .Build();
-
-        await HttpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+        await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties
+        {
+            RedirectUri = Url.Action("Index", "Home")
+        });
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 
@@ -74,5 +78,17 @@ public class AccountController : Controller
         await _accountService.SaveUserMetaData(User, userMetaDate);
 
         return RedirectToAction("Profile");
+    }
+
+    private IActionResult RedirectToLocal(string returnUrl)
+    {
+        if (Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+        else
+        {
+            return RedirectToAction("Index", "Home");
+        }
     }
 }
