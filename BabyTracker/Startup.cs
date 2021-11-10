@@ -120,6 +120,8 @@ public class Startup
 
         app.UseStaticFiles();
 
+        app.UseCors(builder => { builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin(); });
+
         app.UseRouting();
 
         app.UseAuthentication();

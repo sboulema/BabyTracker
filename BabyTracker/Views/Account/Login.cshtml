@@ -4,22 +4,24 @@
     ViewData["Title"] = "BabyTracker";
 }
 
-<h1 class="display-4 text-center mb-5">login</h1>
+<h1 class="display-4 text-center mb-5">Login</h1>
 
 <br />
 
 <div class="card col-12 col-lg-6 offset-lg-3">
     <form asp-action="Login" asp-controller="Account">
-      <div class="mb-3">
-        <label class="form-label">Email address</label>
-        <input type="text" class="form-control" asp-for="@Model.EmailAddress" value="@Model.EmailAddress" />
+      <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1"><i class="fas fa-at"></i></span>
+        <input type="text" class="form-control" placeholder="Email" asp-for="@Model.EmailAddress" value="@Model.EmailAddress" >
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input type="password" class="form-control" asp-for="@Model.Password" value="@Model.Password" />
+      <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1"><i class="fas fa-key"></i></span>
+        <input type="password" class="form-control" asp-for="@Model.Password" value="@Model.Password" >
       </div>
 
-      <button type="submit" class="btn btn-primary">Login</button>
+      <center>
+          <button type="submit" class="btn btn-primary">Login</button>
+      </center>
     </form> 
 </div>
