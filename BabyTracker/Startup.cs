@@ -33,10 +33,7 @@ public class Startup
             {
                 OnRedirectToIdentityProvider = context =>
                 {
-                    var builder = new UriBuilder(context.ProtocolMessage.RedirectUri)
-                    {
-                        Scheme = "https"
-                    };
+                    var builder = new UriBuilder($"{Configuration["BASE_URL"]}/callback");
 
                     context.ProtocolMessage.RedirectUri = builder.ToString();
 

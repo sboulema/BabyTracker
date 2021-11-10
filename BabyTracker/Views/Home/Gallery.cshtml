@@ -4,16 +4,19 @@
     ViewData["Title"] = "Gallery - BabyTracker";
 }
 
-<div class="row">
-@foreach (var picture in Model.Pictures)
+@if (Model != null)
 {
-    <div class="col-lg-6 col-md-6 col-xs-6">
-        <a href="~/picture/@picture.Filename" class="gallery-item">
-            <img src="~/picture/@picture.Filename/thumbnail" loading="lazy" class="img-thumbnail" />
-        </a>
-    </div>
+   <div class="row">
+    @foreach (var picture in Model.Pictures)
+    {
+        <div class="col-lg-6 col-md-6 col-xs-6 mb-3">
+            <a href="~/picture/@picture.Filename" class="gallery-item">
+                <img src="~/picture/@picture.Filename/thumbnail" loading="lazy" class="img-thumbnail" />
+            </a>
+        </div>
+    }
+    </div> 
 }
-</div>
 
 @section Stylesheets
 {

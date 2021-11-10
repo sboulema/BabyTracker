@@ -104,17 +104,6 @@ public class HomeController : Controller
         return View("Memories", model);
     }
 
-    [HttpGet("{babyName}/memories/email")]
-    public async Task<IActionResult> MemoriesEmail(string babyName)
-    {
-        var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
-
-        var mjml = await _memoriesService.GetMJML(memories, babyName);
-        var html = await _memoriesService.GetHTML(mjml);
-
-        return Content(html, "text/html");
-    }
-
     [Authorize]
     [HttpGet("{babyName}/charts/{months?}")]
     public IActionResult Charts(string babyName, int? months = null)
