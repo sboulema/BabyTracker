@@ -1,13 +1,12 @@
-namespace BabyTracker.Models.ViewModels
+namespace BabyTracker.Models.ViewModels;
+
+public class BaseViewModel
 {
-    public class BaseViewModel
-    {
-        public bool ShowMemoriesLink { get; set; }
+    public bool ShowMemoriesLink { get; set; }
 
-        public int MemoriesBadgeCount { get; set; }
+    public int MemoriesBadgeCount { get; set; }
 
-        public string BabyName { get; set; }
+    public string BabyName { get; set; }
 
-        public string BaseUrl { get; set; }
-    }
+    public string BaseUrl { get; set; }
 }

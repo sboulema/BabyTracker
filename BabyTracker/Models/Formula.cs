@@ -1,7 +1,6 @@
-﻿namespace BabyTracker.Models
+﻿namespace BabyTracker.Models;
+
+public class Formula : EntryModel
 {
-    public class Formula : EntryModel
-    {
-        public string Amount { get; set; }
-    }
+    public string Amount { get; set; }
 }

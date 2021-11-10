@@ -1,15 +1,14 @@
 using System;
 
-namespace BabyTracker.Models
+namespace BabyTracker.Models;
+
+public class BabyModel : EntryModel
 {
-    public class BabyModel : EntryModel
-    {
-        public DateTime DateOfBirth { get; set; }
+    public DateTime DateOfBirth { get; set; }
 
-        public DateTime DueDate { get; set; }
+    public DateTime DueDate { get; set; }
 
-        public int Gender { get; set; }
+    public int Gender { get; set; }
 
-        public string Filename { get; set; }
-    }
+    public string Filename { get; set; }
 }

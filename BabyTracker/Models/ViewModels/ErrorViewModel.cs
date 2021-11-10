@@ -1,11 +1,10 @@
-namespace BabyTracker.Models.ViewModels
+namespace BabyTracker.Models.ViewModels;
+
+public class ErrorViewModel : BaseViewModel
 {
-    public class ErrorViewModel : BaseViewModel
-    {
-        public string RequestId { get; set; }
+    public string RequestId { get; set; }
 
-        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-        public string Message { get; set; }
-    }
+    public string Message { get; set; }
 }

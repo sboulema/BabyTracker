@@ -6,52 +6,51 @@ using Microsoft.Extensions.Configuration;
 using Mjml.AspNetCore;
 using Razor.Templating.Core;
 
-namespace BabyTracker.Services
+namespace BabyTracker.Services;
+
+public interface IMemoriesService
 {
-    public interface IMemoriesService 
+    Task<string> GetMJML(List<EntryModel> memories, string babyName);
+    Task<string> GetHTML(string mjml);
+}
+
+public class MemoriesService : IMemoriesService
+{
+    private readonly IConfiguration _configuration;
+    private readonly IMjmlServices _mjmlServices;
+
+    public MemoriesService(IConfiguration configuration, IMjmlServices mjmlServices)
     {
-        Task<string> GetMJML(List<EntryModel> memories, string babyName);
-        Task<string> GetHTML(string mjml);
+        _configuration = configuration;
+        _mjmlServices = mjmlServices;
     }
 
-    public class MemoriesService : IMemoriesService
+    public async Task<string> GetMJML(List<EntryModel> memories, string babyName)
     {
-        private readonly IConfiguration _configuration;
-        private readonly IMjmlServices _mjmlServices;
-
-        public MemoriesService(IConfiguration configuration, IMjmlServices mjmlServices)
+        var importResultModel = new ImportResultModel
         {
-            _configuration = configuration;
-            _mjmlServices = mjmlServices;
-        }
+            Entries = memories
+        };
 
-        public async Task<string> GetMJML(List<EntryModel> memories, string babyName) 
-        {
-            var importResultModel = new ImportResultModel
-            {
-                Entries = memories
-            };
-            
-            var model = DiaryService.GetDays(importResultModel);
-            
-            model.BabyName = babyName;
-            model.MemoriesBadgeCount = memories.Count;
-            model.ShowMemoriesLink = true;
-            model.BaseUrl = _configuration["BASE_URL"];
+        var model = DiaryService.GetDays(importResultModel);
 
-            model.Entries = model.Entries
-                .OrderByDescending(entry => entry.TimeUTC.Year)
-                .OrderBy(entry => entry.TimeUTC.TimeOfDay);
+        model.BabyName = babyName;
+        model.MemoriesBadgeCount = memories.Count;
+        model.ShowMemoriesLink = true;
+        model.BaseUrl = _configuration["BASE_URL"];
 
-            var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
+        model.Entries = model.Entries
+            .OrderByDescending(entry => entry.TimeUTC.Year)
+            .OrderBy(entry => entry.TimeUTC.TimeOfDay);
 
-            return mjml;
-        }
+        var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
 
-        public async Task<string> GetHTML(string mjml) 
-        {
-            var result = await _mjmlServices.Render(mjml);
-            return result.Html;
-        }
+        return mjml;
+    }
+
+    public async Task<string> GetHTML(string mjml)
+    {
+        var result = await _mjmlServices.Render(mjml);
+        return result.Html;
     }
 }

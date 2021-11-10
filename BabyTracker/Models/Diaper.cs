@@ -1,7 +1,6 @@
-﻿namespace BabyTracker.Models
+﻿namespace BabyTracker.Models;
+
+public class Diaper : EntryModel
 {
-    public class Diaper : EntryModel
-    {
-        public string Status { get; set; }
-    }
+    public string Status { get; set; }
 }

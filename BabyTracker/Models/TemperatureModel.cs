@@ -1,7 +1,6 @@
-﻿namespace BabyTracker.Models
+﻿namespace BabyTracker.Models;
+
+public class TemperatureModel : EntryModel
 {
-    public class TemperatureModel : EntryModel
-    {
-        public double Temperature { get; set; }
-    }
+    public double Temperature { get; set; }
 }

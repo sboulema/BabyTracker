@@ -1,9 +1,8 @@
-﻿namespace BabyTracker.Models
-{
-    public class SupplementModel : EntryModel
-    {
-        public string Supplement { get; set; }
+﻿namespace BabyTracker.Models;
 
-        public string Amount { get; set; }
-    }
+public class SupplementModel : EntryModel
+{
+    public string Supplement { get; set; }
+
+    public string Amount { get; set; }
 }

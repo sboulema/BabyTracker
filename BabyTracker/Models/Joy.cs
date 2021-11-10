@@ -1,7 +1,6 @@
-﻿namespace BabyTracker.Models
+﻿namespace BabyTracker.Models;
+
+public class Joy : EntryModel
 {
-    public class Joy : EntryModel
-    {
-        public string Filename { get; set; }
-    }
+    public string Filename { get; set; }
 }

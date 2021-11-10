@@ -1,7 +1,6 @@
-﻿namespace BabyTracker.Models
+﻿namespace BabyTracker.Models;
+
+public class VaccineModel : EntryModel
 {
-    public class VaccineModel : EntryModel
-    {
-        public string Vaccine { get; set; }
-    }
+    public string Vaccine { get; set; }
 }
