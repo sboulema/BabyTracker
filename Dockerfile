@@ -20,6 +20,9 @@ RUN apt-get update -yq \
     && apt-get install nodejs -yq
 
 WORKDIR /app
+
 COPY --from=build /app/BabyTracker/out ./
+
 VOLUME /data
+
 ENTRYPOINT ["dotnet", "BabyTracker.dll"]
