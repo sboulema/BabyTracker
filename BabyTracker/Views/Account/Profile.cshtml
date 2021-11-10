@@ -24,6 +24,7 @@
       <div class="mb-3">
         <label for="memoriesEmailAddresses" class="form-label">Memories email addresses</label>
         <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.MemoriesAddresses" value="@Model.MemoriesAddresses"></textarea>
+        <div id="memoriesEmailAddressesHelp" class="form-text">You can specify multiple valid email addresses by comma-separating them.</div>
       </div>
 
       <button type="submit" class="btn btn-primary">Save</button>

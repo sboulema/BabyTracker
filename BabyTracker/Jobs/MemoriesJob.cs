@@ -79,7 +79,7 @@ public class MemoriesJob : IJob
 
         var userMetaData = AccountService.GetUserMetaData(user);
 
-        var recipients = userMetaData?.MemoriesAddresses.Split(";");
+        var recipients = userMetaData?.MemoriesAddresses.Split(",");
 
         if (recipients?.Any() != true)
         {

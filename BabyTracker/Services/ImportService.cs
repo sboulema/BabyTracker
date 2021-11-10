@@ -80,6 +80,6 @@ public static class ImportService
     {
         var profile = AccountService.GetProfile(user);
 
-        return Directory.Exists($"Data/{profile?.UserId}");
+        return Directory.Exists($"/data/Data/{profile?.UserId}");
     }
 }
