@@ -1,15 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>cdd039dd-6e1f-42ee-95de-d149916af726</UserSecretsId>
   </PropertyGroup>
+  
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="*"/>
-    <PackageReference Include="TimeZoneConverter" Version="*"/>
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="*"/>
-    <PackageReference Include="SendGrid" Version="*"/>
-    <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*"/>
-    <PackageReference Include="Razor.Templating.Core" Version="*"/>
-    <PackageReference Include="Mjml.AspNetCore" Version="*"/>
+    <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.0.0" />
+    <PackageReference Include="Auth0.AuthenticationApi" Version="7.12.0" />
+    <PackageReference Include="Auth0.ManagementApi" Version="7.12.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="*" />
+    <PackageReference Include="TimeZoneConverter" Version="*" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="*" />
+    <PackageReference Include="SendGrid" Version="*" />
+    <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*" />
+    <PackageReference Include="Razor.Templating.Core" Version="*" />
+    <PackageReference Include="Mjml.AspNetCore" Version="*" />
     <PackageReference Include="CsvHelper" Version="*" />
   </ItemGroup>
 
@@ -17,5 +23,12 @@
     <Content Include="Charts\**"> 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> 
     </Content> 
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Data\**" />
+    <Content Remove="Data\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <None Remove="Data\**" />
   </ItemGroup>
 </Project>

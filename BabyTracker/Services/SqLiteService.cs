@@ -6,24 +6,29 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Claims;
 
 namespace BabyTracker.Services;
 
 public interface ISqLiteService
 {
-    SqliteConnection OpenConnection(string path);
+    SqliteConnection OpenConnection(ClaimsPrincipal user);
 
-    List<EntryModel> GetEntriesFromDb(DateTime date, string babyName);
+    List<EntryModel> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
 
-    List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName);
+    List<EntryModel> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
+
+    List<EntryModel> GetMemoriesFromDb(DateTime date, string userId, string babyName);
 
     List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName, SqliteConnection connection);
 
-    List<EntryModel> GetBaby(string babyName, SqliteConnection connection);
+    List<EntryModel> GetBabiesFromDb(ClaimsPrincipal user);
 
-    DateTime GetLastEntryDateTime(string babyName);
+    List<EntryModel> GetBabiesFromDb(string userId);
 
-    List<PictureModel> GetPictures(string babyName);
+    DateTime GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
+
+    List<PictureModel> GetPictures(ClaimsPrincipal user, string babyName);
 }
 
 public class SqLiteService : ISqLiteService
@@ -35,13 +40,25 @@ public class SqLiteService : ISqLiteService
         _webHostEnvironment = webHostEnvironment;
     }
 
-    public SqliteConnection OpenConnection(string babyName)
+    public SqliteConnection OpenConnection(ClaimsPrincipal user)
     {
-        var path = $"/data/Data/{babyName}/EasyLog.db";
+        var profile = AccountService.GetProfile(user);
+
+        return OpenConnection(profile?.UserId);
+    }
+
+    /// <summary>
+    /// Open a connection with the sqlite db file
+    /// </summary>
+    /// <param name="userId">userId without prefix</param>
+    /// <returns></returns>
+    public SqliteConnection OpenConnection(string userId)
+    {
+        var path = $"/data/Data/{userId}/EasyLog.db";
 
         if (!_webHostEnvironment.IsProduction())
         {
-            path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", babyName, "EasyLog.db");
+            path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
         }
 
         var connection = new SqliteConnection($"Data Source={path}");
@@ -49,9 +66,9 @@ public class SqLiteService : ISqLiteService
         return connection;
     }
 
-    public List<EntryModel> GetEntriesFromDb(DateTime date, string babyName)
+    public List<EntryModel> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(babyName);
+        var connection = OpenConnection(user);
 
         var lowerBound = ToUnixTimestamp(date);
         var upperBound = ToUnixTimestamp(date.AddDays(1));
@@ -75,9 +92,9 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public List<EntryModel> GetMemoriesFromDb(DateTime date, string babyName)
+    public List<EntryModel> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(babyName);
+        var connection = OpenConnection(user);
 
         var entries = new List<EntryModel>();
 
@@ -90,14 +107,42 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public List<EntryModel> GetBaby(string babyName, SqliteConnection connection)
+    public List<EntryModel> GetMemoriesFromDb(DateTime date, string userId, string babyName)
     {
+        var connection = OpenConnection(userId);
+
+        var entries = new List<EntryModel>();
+
+        entries.AddRange(GetActivity(date.Day, date.Month, babyName, connection));
+        entries.AddRange(GetJoy(date.Day, date.Month, babyName, connection));
+        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, connection));
+
+        connection.Close();
+
+        return entries;
+    }
+
+    public List<EntryModel> GetBabiesFromDb(ClaimsPrincipal user)
+    {
+        var profile = AccountService.GetProfile(user);
+
+        return GetBabiesFromDb(profile?.UserId);
+    }
+
+    public List<EntryModel> GetBabiesFromDb(string userId)
+    {
+        var connection = OpenConnection(userId);
+
         var entries = new List<EntryModel>();
 
         var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), Name, dateTime(DOB, 'unixepoch'), dateTime(DueDay, 'unixepoch'), Gender, Picture" +
-        " FROM Baby" +
-        $" WHERE Name = '{babyName}'";
+        command.CommandText =
+            "SELECT " +
+                "dateTime(Timestamp, 'unixepoch'), " +
+                "Name, dateTime(DOB, 'unixepoch'), " +
+                "dateTime(DueDay, 'unixepoch'), " +
+                "Gender, Picture" +
+            " FROM Baby";
 
         using var reader = command.ExecuteReader();
         while (reader.Read())
@@ -108,16 +153,19 @@ public class SqLiteService : ISqLiteService
                 BabyName = GetString(reader, 1),
                 DateOfBirth = reader.GetDateTime(2),
                 DueDate = reader.GetDateTime(3),
-                Gender = reader.GetInt32(4)
+                Gender = reader.GetInt32(4),
+                PictureFileName = reader.GetString(5)
             });
         }
+
+        connection.Close();
 
         return entries;
     }
 
-    public DateTime GetLastEntryDateTime(string babyName)
+    public DateTime GetLastEntryDateTime(ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(babyName);
+        var connection = OpenConnection(user);
 
         var command = connection.CreateCommand();
         command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION ALL " +
@@ -139,11 +187,11 @@ public class SqLiteService : ISqLiteService
         return reader.GetDateTime(0);
     }
 
-    public List<PictureModel> GetPictures(string babyName)
+    public List<PictureModel> GetPictures(ClaimsPrincipal user, string babyName)
     {
         var pictures = new List<PictureModel>();
 
-        var connection = OpenConnection(babyName);
+        var connection = OpenConnection(user);
 
         var command = connection.CreateCommand();
         command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), FileName" +
@@ -162,7 +210,7 @@ public class SqLiteService : ISqLiteService
         return pictures;
     }
 
-    private List<EntryModel> GetSupplement(long lowerBound, long upperBound,
+    private static List<EntryModel> GetSupplement(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -187,7 +235,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetMedication(long lowerBound, long upperBound,
+    private static List<EntryModel> GetMedication(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -215,7 +263,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetVaccine(long lowerBound, long upperBound,
+    private static List<EntryModel> GetVaccine(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -240,7 +288,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetTemperature(long lowerBound, long upperBound,
+    private static List<EntryModel> GetTemperature(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -265,7 +313,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetSleep(long lowerBound, long upperBound,
+    private static List<EntryModel> GetSleep(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -317,7 +365,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetFormula(long lowerBound, long upperBound,
+    private static List<EntryModel> GetFormula(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -342,7 +390,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetDiapers(long lowerBound, long upperBound,
+    private static List<EntryModel> GetDiapers(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -376,7 +424,7 @@ public class SqLiteService : ISqLiteService
             _ => string.Empty,
         };
 
-    private List<EntryModel> GetJoy(long lowerBound, long upperBound,
+    private static List<EntryModel> GetJoy(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -401,7 +449,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetJoy(int day, int month,
+    private static List<EntryModel> GetJoy(int day, int month,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -428,7 +476,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetActivity(long lowerBound, long upperBound,
+    private static List<EntryModel> GetActivity(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -457,7 +505,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetActivity(int day, int month,
+    private static List<EntryModel> GetActivity(int day, int month,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -488,7 +536,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetMilestone(long lowerBound, long upperBound,
+    private static List<EntryModel> GetMilestone(long lowerBound, long upperBound,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -516,7 +564,7 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private List<EntryModel> GetMilestone(int day, int month,
+    private static List<EntryModel> GetMilestone(int day, int month,
         string babyName, SqliteConnection connection)
     {
         var entries = new List<EntryModel>();
@@ -546,7 +594,9 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    private static string GetString(SqliteDataReader reader, int column) => reader.IsDBNull(column) ? string.Empty : reader.GetString(column);
+    private static string GetString(SqliteDataReader reader, int column)
+        => reader.IsDBNull(column) ? string.Empty : reader.GetString(column);
 
-    private long ToUnixTimestamp(DateTime date) => new DateTimeOffset(date).ToUnixTimeSeconds();
+    private static long ToUnixTimestamp(DateTime date)
+        => new DateTimeOffset(date).ToUnixTimeSeconds();
 }

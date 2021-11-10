@@ -19,14 +19,14 @@
         }
         @if (!string.IsNullOrEmpty(Model.Filename))
         {
-            <br /><a href="~/picture/@Model.BabyName/@Model.Filename" target="_blank"><img src="~/picture/@Model.BabyName/@Model.Filename/thumbnail" width="200" /></a>
+            <br /><a href="~/picture/@Model.Filename" target="_blank"><img src="~/picture/@Model.Filename/thumbnail" width="200" /></a>
         }
     </td>
     <td>
         <div class="card" id="milestone_@Model.Time.Ticks">
             @if (!string.IsNullOrEmpty(Model.Filename))
             {
-                <img class="card-img-top" src="~/picture/@Model.BabyName/@Model.Filename/thumbnail">
+                <img class="card-img-top" src="~/picture/@Model.Filename/thumbnail">
             }
             <div class="card-body">
                 <h5 class="card-title text-success">@Model.Milestone</h5>

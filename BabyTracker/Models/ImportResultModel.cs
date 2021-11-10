@@ -4,5 +4,5 @@ namespace BabyTracker.Models;
 
 public class ImportResultModel
 {
-    public List<EntryModel> Entries { get; set; }
+    public List<EntryModel> Entries { get; set; } = new();
 }

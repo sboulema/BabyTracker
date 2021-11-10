@@ -1,0 +1,20 @@
+﻿@model BabiesViewModel
+
+@{
+    ViewData["Title"] = "BabyTracker";
+}
+
+<h1 class="display-4 text-center mb-5">BabyTracker</h1>
+
+<br />
+
+@foreach (BabyModel baby in Model.Babies)
+{
+    <div class="card" style="width: 18rem;">
+        <img src="~/picture/@baby.PictureFileName" class="card-img-top">
+        <div class="card-body">
+        <h5 class="card-title">@baby.BabyName</h5>
+        <a href="/@baby.BabyName" class="btn btn-primary stretched-link">Load</a>
+        </div>
+    </div>
+}    

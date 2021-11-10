@@ -2,5 +2,5 @@
 
 public class VaccineModel : EntryModel
 {
-    public string Vaccine { get; set; }
+    public string Vaccine { get; set; } = string.Empty;
 }

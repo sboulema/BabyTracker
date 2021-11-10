@@ -1,55 +1,59 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Claims;
 
 namespace BabyTracker.Services;
 
-public interface IImportService
+public static class ImportService
 {
-    string HandleImport(IFormFile file);
-
-    string HandleLoad(string fileName);
-}
-
-public class ImportService : IImportService
-{
-    public string HandleLoad(string babyName)
+    public static string HandleImport(IFormFile file, ClaimsPrincipal user)
     {
-        var path = $"/data/{babyName}.eml";
-
-        if (!File.Exists(path))
-        {
-            path = $"/data/{babyName}.btcp";
-        }
-
-        return Unzip(path, babyName);
-    }
-
-    public string HandleImport(IFormFile file)
-    {
+        // Save and extract Data Clone file
         var path = SaveFile(file);
-        return Unzip(path, Path.GetFileNameWithoutExtension(file.FileName));
+        var extractPath = Unzip(path, user);
+
+        // Delete Data Clone file
+        File.Delete(path);
+
+        // Return location of extracted Data Clone
+        return extractPath;
     }
 
-    private string Unzip(string path, string babyName = "zip")
+    /// <summary>
+    /// Unzip Data Clone file to user specific folder
+    /// </summary>
+    /// <param name="path">Path to a Data Clone file</param>
+    /// <param name="user">Logged in user</param>
+    /// <returns></returns>
+    private static string Unzip(string path, ClaimsPrincipal user)
     {
         if (!File.Exists(path))
         {
             return string.Empty;
         }
 
-        var extractPath = Path.Combine(Path.GetDirectoryName(path), "Data", babyName);
+        var profile = AccountService.GetProfile(user);
 
-        if (!Directory.Exists(extractPath))
+        var extractPath = Path.Combine(Path.GetDirectoryName(path), "Data", profile?.UserId);
+
+        if (Directory.Exists(extractPath))
         {
-            using ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Read);
-            archive.ExtractToDirectory(extractPath, true);
-            archive.Dispose();
+            Directory.Delete(extractPath, true);
         }
+
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Read);
+        archive.ExtractToDirectory(extractPath, true);
+        archive.Dispose();
 
         return extractPath;
     }
 
+    /// <summary>
+    /// Save uploaded Data Clone file to a file on the server
+    /// </summary>
+    /// <param name="file">Uploaded file</param>
+    /// <returns></returns>
     private static string SaveFile(IFormFile file)
     {
         if (file == null)
@@ -70,5 +74,12 @@ public class ImportService : IImportService
         uploadedFile.CopyTo(localFile);
 
         return localFile.Name;
+    }
+
+    public static bool HasDataClone(ClaimsPrincipal user)
+    {
+        var profile = AccountService.GetProfile(user);
+
+        return Directory.Exists($"Data/{profile?.UserId}");
     }
 }

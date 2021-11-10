@@ -1,0 +1,21 @@
+﻿@model BaseViewModel
+
+@{
+    ViewData["Title"] = "BabyTracker";
+}
+
+<br />
+
+<div class="card col-12 col-lg-6 offset-lg-3">
+  <div class="card-body">
+    <h5 class="card-title">Upload your own BabyTracker Data Clone</h5>
+    <form asp-controller="Import" asp-action="ImportFile" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="importFile" class="form-label">Upload file</label>
+          <input type="file" class="form-control" name="file" id="importFile" accept=".eml,.btcp">
+        </div>
+
+        <button type="submit" class="btn btn-success">Upload</button>
+    </form>
+  </div>
+</div>

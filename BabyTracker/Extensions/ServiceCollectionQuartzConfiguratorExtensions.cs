@@ -8,15 +8,15 @@ public static class ServiceCollectionQuartzConfiguratorExtensions
 {
     public static void AddJobAndTrigger<T>(
         this IServiceCollectionQuartzConfigurator quartz,
-        IConfiguration config)
+        IConfiguration configuration)
         where T : IJob
     {
         // Use the name of the IJob as the appsettings.json key
-        string jobName = typeof(T).Name;
+        var jobName = typeof(T).Name;
 
         // Try and load the schedule from configuration
-        var configKey = $"MEMORIES_CRON";
-        var cronSchedule = config[configKey];
+        var configKey = "MEMORIES_CRON";
+        var cronSchedule = configuration[configKey];
 
         // Some minor validation
         if (string.IsNullOrEmpty(cronSchedule))

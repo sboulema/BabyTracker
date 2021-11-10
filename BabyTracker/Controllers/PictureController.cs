@@ -1,24 +1,27 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using BabyTracker.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
 public class PictureController : Controller
 {
-    [Route("{babyName}/{fileName}")]
-    public async Task<IActionResult> GetPicture(string babyName, string fileName)
+    [Authorize]
+    [Route("{fileName}")]
+    public async Task<IActionResult> GetPicture(string fileName)
     {
-        var picture = await PictureService.GetPicture(babyName, fileName);
+        var picture = await PictureService.GetPicture(User, fileName);
 
         return File(picture, "image/jpg");
     }
 
-    [Route("{babyName}/{filename}/thumbnail")]
-    public async Task<IActionResult> GetThumbnail(string babyName, string fileName)
+    [Authorize]
+    [Route("{filename}/thumbnail")]
+    public async Task<IActionResult> GetThumbnail(string fileName)
     {
-        var thumbnail = await PictureService.GetPicture(babyName, $"{fileName}__thumbnail");
+        var thumbnail = await PictureService.GetPicture(User, $"{fileName}__thumbnail");
 
         return File(thumbnail, "image/jpg");
     }

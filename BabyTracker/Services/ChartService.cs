@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using BabyTracker.Models;
 using BabyTracker.Models.Charts;
@@ -13,7 +14,7 @@ namespace BabyTracker.Services;
 
 public interface IChartService
 {
-    ChartsViewModel GetViewModel(string babyName, int? maxAge = null);
+    ChartsViewModel GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null);
 }
 
 public class ChartService : IChartService
@@ -33,13 +34,13 @@ public class ChartService : IChartService
         _bmiForAgeData = ReadCsv("bfa-g-z");
     }
 
-    public ChartsViewModel GetViewModel(string babyName, int? maxAge = null)
+    public ChartsViewModel GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null)
     {
         var result = new ChartsViewModel();
 
-        var connection = _sqLiteService.OpenConnection(babyName);
+        var connection = _sqLiteService.OpenConnection(user);
         var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
-        var baby = _sqLiteService.GetBaby(babyName, connection).FirstOrDefault() as BabyModel;
+        var baby = _sqLiteService.GetBabiesFromDb(user).FirstOrDefault(baby => baby.BabyName == babyName) as BabyModel;
 
         connection.Close();
 
@@ -116,7 +117,7 @@ public class ChartService : IChartService
         model.BMIPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
     }
 
-    private IEnumerable<CsvRow> ReadCsv(string fileName)
+    private static IEnumerable<CsvRow> ReadCsv(string fileName)
     {
         using var reader = new StreamReader(Path.Combine("Charts", $"{fileName}.csv"));
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);

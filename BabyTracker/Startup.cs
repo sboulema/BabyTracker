@@ -1,3 +1,4 @@
+using Auth0.AspNetCore.Authentication;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -25,7 +26,7 @@ public class Startup
 
         services.AddControllersWithViews();
 
-        services.AddSingleton<IImportService, ImportService>();
+        services.AddSingleton<IAccountService, AccountService>();
         services.AddSingleton<ISqLiteService, SqLiteService>();
         services.AddSingleton<IMemoriesService, MemoriesService>();
         services.AddSingleton<IChartService, ChartService>();
@@ -36,6 +37,11 @@ public class Startup
         });
 
         services.AddMjmlServices();
+
+        services.AddAuth0WebAppAuthentication(options => {
+            options.Domain = Configuration["AUTH0_DOMAIN"];
+            options.ClientId = Configuration["AUTH0_CLIENTID"];
+        });
 
         services.Configure<FormOptions>(options =>
         {
@@ -55,14 +61,18 @@ public class Startup
         }
         else
         {
-            app.UseExceptionHandler("/Home/Error");
+            app.UseExceptionHandler("/Error");
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
+
         app.UseHttpsRedirection();
+
         app.UseStaticFiles();
 
         app.UseRouting();
+
+        app.UseAuthentication();
 
         app.UseAuthorization();
 

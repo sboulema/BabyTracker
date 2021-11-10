@@ -2,7 +2,7 @@
 
 public class SleepModel : EntryModel
 {
-    public string Duration { get; set; }
+    public string Duration { get; set; } = string.Empty;
 
     public string DurationText {
         get {
@@ -18,7 +18,7 @@ public class SleepModel : EntryModel
                 return $"{durationInMins} min";
             }
 
-            return $"{(durationInMins / 60)} hrs {durationInMins % 60} min";
+            return $"{durationInMins / 60} hrs {durationInMins % 60} min";
         }
     }
 }

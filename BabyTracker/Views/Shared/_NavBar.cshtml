@@ -10,7 +10,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
+            <ul class="navbar-nav me-auto">
                 @if (!string.IsNullOrEmpty(Model.BabyName))
                 {
                     <li class="nav-item">
@@ -41,6 +41,35 @@
                             {
                                 <span class="badge bg-light text-dark">@Model.MemoriesBadgeCount</span>
                             }                               
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img class="rounded-circle article-img" src="@Model.Profile?.Image" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model.Profile?.Name"/>
+                            @Model.Profile?.Nickname
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="/account/profile">Profile</a></li>
+                            <li><a class="dropdown-item" href="/import">Import</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/account/logout">Logout</a></li>
+                        </ul>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/account/login">
+                            <i class="fas fa-user-circle"></i>
+                            Login                               
                         </a>
                     </li>
                 }

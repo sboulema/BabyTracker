@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Quartz;
 using BabyTracker.Extensions;
+using BabyTracker.Jobs;
 
 namespace BabyTracker;
 
