@@ -34,8 +34,6 @@ public class Startup
 
         services
             .AddControllersWithViews()
-            .AddRazorPagesOptions(o => { o.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()); })
-            .InitializeTagHelper<FormTagHelper>((helper, context) => helper.Antiforgery = false);
 
         services
             .AddAuthentication(options =>
@@ -117,15 +115,11 @@ public class Startup
         else
         {
             app.UseExceptionHandler("/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            //app.UseHsts();
         }
 
         app.UseHttpsRedirection();
 
         app.UseStaticFiles();
-
-        app.UseCors(builder => { builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin(); });
 
         app.UseRouting();
 

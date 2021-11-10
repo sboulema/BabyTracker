@@ -14,7 +14,8 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 | Variable					 | Description								|
 |----------------------------|------------------------------------------|
 | ASPNETCORE_ENVIRONMENT	 | .NET environment should be set to "Production" when using Docker, in order to used mapped volumes |
-| AUTH0_CLIENTID			 | Auth0 clientid to use for authentication |
+| AUTH0_CLIENTID			 | Auth0 clientid used for authentication |
+| AUTH0_CLIENTSECRET		 | Auth0 client secret used for authentication |
 | AUTH0_DOMAIN				 | Auth0 domain to use for authentication |
 | AUTH0_MACHINE_CLIENTID	 | Auth0 machine to machine clientid used for user profile management |
 | AUTH0_MACHINE_CLIENTSECRET | Auth0 machine to machine client secret used for user profile management |
