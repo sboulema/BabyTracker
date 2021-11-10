@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +32,10 @@ public class Startup
     {
         services.AddRouting(options => options.LowercaseUrls = true);
 
-        services.AddControllersWithViews();
+        services
+            .AddControllersWithViews()
+            .AddRazorPagesOptions(o => { o.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()); })
+            .InitializeTagHelper<FormTagHelper>((helper, context) => helper.Antiforgery = false);
 
         services
             .AddAuthentication(options =>
@@ -113,7 +118,7 @@ public class Startup
         {
             app.UseExceptionHandler("/Error");
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
+            //app.UseHsts();
         }
 
         app.UseHttpsRedirection();
