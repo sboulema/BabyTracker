@@ -76,10 +76,17 @@ public static class ImportService
         return localFile.Name;
     }
 
-    public static bool HasDataClone(ClaimsPrincipal user)
+    public static bool HasDataClone(ClaimsPrincipal user, bool isProduction)
     {
         var profile = AccountService.GetProfile(user);
 
-        return Directory.Exists($"/data/Data/{profile?.UserId}");
+        var path = $"/data/Data/{profile?.UserId}";
+
+        if (!isProduction)
+        {
+            path = $"/Data/{profile?.UserId}";
+        }
+
+        return Directory.Exists(path);
     }
 }
