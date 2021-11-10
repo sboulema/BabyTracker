@@ -36,6 +36,20 @@ public class AccountController : Controller
         return RedirectToLocal(returnUrl);
     }
 
+    [HttpGet("[action]")]
+    public IActionResult Register()
+    {
+        return View(new LoginViewModel());
+    }
+
+    [HttpPost("[action]")]
+    public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
+    {
+        await _accountService.Register(model);
+
+        return await Login(model, returnUrl);
+    }
+
     [Authorize]
     [HttpGet("[action]")]
     public async Task Logout()

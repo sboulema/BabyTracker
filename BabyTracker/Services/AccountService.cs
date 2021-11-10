@@ -18,6 +18,8 @@ public interface IAccountService
 {
     Task<ClaimsPrincipal> Login(LoginViewModel model);
 
+    Task<SignupUserResponse?> Register(LoginViewModel model);
+
     Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user);
 
     Task SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
@@ -62,6 +64,20 @@ public class AccountService : IAccountService
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
         return claimsPrincipal;
+    }
+
+    public async Task<SignupUserResponse?> Register(LoginViewModel model)
+    {
+        var result = await _authenticationApiClient.SignupUserAsync(new SignupUserRequest
+        {
+            ClientId = _configuration["AUTH0_CLIENTID"],
+            Username = model.EmailAddress,
+            Email = model.EmailAddress,
+            Nickname = model.EmailAddress.Split("@")[0],
+            Password = model.Password
+        });
+
+        return result;
     }
 
     public static Profile? GetProfile(ClaimsPrincipal user)
