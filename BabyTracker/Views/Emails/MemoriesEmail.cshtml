@@ -2,7 +2,9 @@
 
 @model DiaryViewModel
 
-<mjml>
+@if (Model != null)
+{
+   <mjml>
   <mj-body>
     <mj-section background-color="#bd4d85">
       <mj-column>
@@ -109,4 +111,5 @@
     </mj-section>
     
   </mj-body>
-</mjml>
+</mjml> 
+}

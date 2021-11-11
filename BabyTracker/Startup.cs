@@ -7,13 +7,17 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Mjml.AspNetCore;
 using SendGrid.Extensions.DependencyInjection;
+using tusdotnet;
+using tusdotnet.Interfaces;
+using tusdotnet.Models;
+using tusdotnet.Models.Configuration;
+using tusdotnet.Stores;
 
 namespace BabyTracker;
 
@@ -86,6 +90,7 @@ public class Startup
         services.AddSingleton<ISqLiteService, SqLiteService>();
         services.AddSingleton<IMemoriesService, MemoriesService>();
         services.AddSingleton<IChartService, ChartService>();
+        services.AddSingleton<IImportService, ImportService>();
 
         services.AddSendGrid(options =>
         {
@@ -94,14 +99,7 @@ public class Startup
 
         services.AddMjmlServices();
 
-        services.Configure<FormOptions>(options =>
-        {
-            options.MultipartBodyLengthLimit = int.MaxValue;
-            options.MemoryBufferThreshold = int.MaxValue;
-            options.ValueCountLimit = int.MaxValue;
-            options.ValueLengthLimit = int.MaxValue;
-            options.MultipartBodyLengthLimit = long.MaxValue;
-        });
+        services.AddHttpContextAccessor();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -124,6 +122,28 @@ public class Startup
         app.UseAuthentication();
 
         app.UseAuthorization();
+
+        app.UseTus(httpContext => new DefaultTusConfiguration
+        {
+            Store = new TusDiskStore(env.IsProduction() ? "/data/Data" : $"{env.ContentRootPath}/Data"),
+            UrlPath = "/import",
+            Events = new Events
+            {
+                OnFileCompleteAsync = async eventContext =>
+                {
+                    var file = await eventContext.GetFileAsync();
+                    var stream = await file.GetContentAsync(eventContext.CancellationToken);
+
+                    var importService = app.ApplicationServices.GetService<IImportService>();
+
+                    importService?.Unzip(stream);
+
+                    await stream.DisposeAsync();
+                    var terminationStore = (ITusTerminationStore)eventContext.Store;
+                    await terminationStore.DeleteFileAsync(file.Id, eventContext.CancellationToken);
+                }
+            }
+        });
 
         app.UseEndpoints(endpoints =>
         {

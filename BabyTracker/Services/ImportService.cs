@@ -1,92 +1,71 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Services;
 
-public static class ImportService
+public interface IImportService
 {
-    public static string HandleImport(IFormFile file, ClaimsPrincipal user)
+    string Unzip(Stream stream);
+
+    bool HasDataClone();
+}
+
+public class ImportService : IImportService
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+
+    public ImportService(IHttpContextAccessor httpContextAccessor,
+        IWebHostEnvironment webHostEnvironment)
     {
-        // Save and extract Data Clone file
-        var path = SaveFile(file);
-        var extractPath = Unzip(path, user);
-
-        // Delete Data Clone file
-        File.Delete(path);
-
-        // Return location of extracted Data Clone
-        return extractPath;
+        _httpContextAccessor = httpContextAccessor;
+        _webHostEnvironment = webHostEnvironment;
     }
 
-    /// <summary>
-    /// Unzip Data Clone file to user specific folder
-    /// </summary>
-    /// <param name="path">Path to a Data Clone file</param>
-    /// <param name="user">Logged in user</param>
-    /// <returns></returns>
-    private static string Unzip(string path, ClaimsPrincipal user)
+    public string Unzip(Stream stream)
     {
-        if (!File.Exists(path))
-        {
-            return string.Empty;
-        }
-
-        var profile = AccountService.GetProfile(user);
-
-        var extractPath = Path.Combine(Path.GetDirectoryName(path), "Data", profile?.UserId);
+        var extractPath = GetDataClonePath();
 
         if (Directory.Exists(extractPath))
         {
             Directory.Delete(extractPath, true);
         }
 
-        using var archive = ZipFile.Open(path, ZipArchiveMode.Read);
+        using var archive = new ZipArchive(stream);
         archive.ExtractToDirectory(extractPath, true);
         archive.Dispose();
 
         return extractPath;
     }
 
-    /// <summary>
-    /// Save uploaded Data Clone file to a file on the server
-    /// </summary>
-    /// <param name="file">Uploaded file</param>
-    /// <returns></returns>
-    private static string SaveFile(IFormFile file)
+    public bool HasDataClone()
     {
-        if (file == null)
+        var path = GetDataClonePath();
+
+        return Directory.Exists(path);
+    }
+
+    private string GetDataClonePath()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+
+        if (user == null)
         {
             return string.Empty;
         }
 
-        var fileName = Path.GetFileName(file.FileName);
-
-        if (File.Exists(fileName))
-        {
-            File.Delete(fileName);
-        }
-
-        using var localFile = File.OpenWrite(fileName);
-        using var uploadedFile = file.OpenReadStream();
-
-        uploadedFile.CopyTo(localFile);
-
-        return localFile.Name;
-    }
-
-    public static bool HasDataClone(ClaimsPrincipal user, bool isProduction)
-    {
         var profile = AccountService.GetProfile(user);
 
         var path = $"/data/Data/{profile?.UserId}";
 
-        if (!isProduction)
+        if (!_webHostEnvironment.IsProduction())
         {
-            path = $"/Data/{profile?.UserId}";
+            path = $"{_webHostEnvironment.ContentRootPath}/Data/{profile?.UserId}";
         }
 
-        return Directory.Exists(path);
+        return path;
     }
 }

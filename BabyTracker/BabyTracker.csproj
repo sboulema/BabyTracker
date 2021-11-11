@@ -17,6 +17,7 @@
     <PackageReference Include="Razor.Templating.Core" Version="*" />
     <PackageReference Include="Mjml.AspNetCore" Version="*" />
     <PackageReference Include="CsvHelper" Version="*" />
+    <PackageReference Include="tusdotnet" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup> 

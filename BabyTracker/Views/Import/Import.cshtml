@@ -15,7 +15,61 @@
           <input type="file" class="form-control" name="file" id="importFile" accept=".eml,.btcp">
         </div>
 
-        <button type="submit" class="btn btn-success">Upload</button>
+        <div class="progress d-none" id="progress">
+          <div class="progress-bar" id="progress-bar" role="progressbar">0%</div>
+        </div>
     </form>
   </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js"></script>
+    
+    <script>
+        const input = document.querySelector('input');
+        const progress = document.querySelector('#progress');
+        const progressBar = document.querySelector('#progress-bar');
+
+        input.addEventListener("change", function(e) {
+            // Get the selected file from the input element
+            var file = e.target.files[0]
+
+            // Create a new tus upload
+            var upload = new tus.Upload(file, {
+                endpoint: "/import",
+                retryDelays: [0, 3000, 5000, 10000, 20000],
+                metadata: {
+                    filename: file.name,
+                    filetype: file.type
+                },
+                onError: function(error) {
+                    console.log("Failed because: " + error)
+                },
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    var percentage = (bytesUploaded / bytesTotal * 100).toFixed(0)
+                    progress.classList.remove("d-none")
+                    progressBar.style.width = percentage + "%"
+                    progressBar.textContent = percentage + "%"
+
+                    if (percentage === "100") {
+                        progressBar.classList.add("progress-bar-animated")
+                    }
+                },
+                onSuccess: function() {
+                    window.location.replace("/");
+                }
+            })
+
+            // Check if there are any previous uploads to continue.
+            upload.findPreviousUploads().then(function (previousUploads) {
+                // Found previous uploads so we select the first one. 
+                if (previousUploads.length) {
+                    upload.resumeFromPreviousUpload(previousUploads[0])
+                }
+
+                // Start the upload
+                upload.start()
+            })
+        })
+    </script>
+}

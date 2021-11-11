@@ -4,23 +4,21 @@ using BabyTracker.Services;
 using System;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IImportService _importService;
     private readonly ISqLiteService _sqLiteService;
     private readonly IChartService _chartService;
 
     public HomeController(
-        IWebHostEnvironment webHostEnvironment,
+        IImportService importService,
         ISqLiteService sqLiteService,
         IChartService chartService)
     {
-        _webHostEnvironment = webHostEnvironment;
+        _importService = importService;
         _sqLiteService = sqLiteService;
         _chartService = chartService;
     }
@@ -34,7 +32,7 @@ public class HomeController : Controller
         };
 
         if (User.Identity?.IsAuthenticated == true &&
-            ImportService.HasDataClone(User, _webHostEnvironment.IsProduction()))
+            _importService.HasDataClone())
         {
             var babiesViewModel = new BabiesViewModel
             {
