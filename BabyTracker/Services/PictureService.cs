@@ -4,11 +4,23 @@ using System.Threading.Tasks;
 
 namespace BabyTracker.Services;
 
-public static class PictureService
+public interface IPictureService
 {
-    public static async Task<byte[]> GetPicture(ClaimsPrincipal user, string fileName)
+    Task<byte[]> GetPicture(ClaimsPrincipal user, string fileName);
+}
+
+public class PictureService : IPictureService
+{
+    private readonly IAccountService _accountService;
+
+    public PictureService(IAccountService accountService)
     {
-        var profile = AccountService.GetProfile(user);
+        _accountService = accountService;
+    }
+
+    public async Task<byte[]> GetPicture(ClaimsPrincipal user, string fileName)
+    {
+        var profile = await _accountService.GetProfile(user);
 
         var path = Path.Combine(Directory.GetCurrentDirectory(), "Data", profile?.UserId, $"{fileName}.jpg");
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading.Tasks;
 using BabyTracker.Models;
 using BabyTracker.Models.Charts;
 using BabyTracker.Models.ViewModels;
@@ -14,7 +15,7 @@ namespace BabyTracker.Services;
 
 public interface IChartService
 {
-    ChartsViewModel GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null);
+    Task<ChartsViewModel> GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null);
 }
 
 public class ChartService : IChartService
@@ -34,13 +35,14 @@ public class ChartService : IChartService
         _bmiForAgeData = ReadCsv("bfa-g-z");
     }
 
-    public ChartsViewModel GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null)
+    public async Task<ChartsViewModel> GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null)
     {
         var result = new ChartsViewModel();
 
-        var connection = _sqLiteService.OpenConnection(user);
+        var connection = await _sqLiteService.OpenConnection(user);
         var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
-        var baby = _sqLiteService.GetBabiesFromDb(user).FirstOrDefault(baby => baby.BabyName == babyName) as BabyModel;
+        var babies = await _sqLiteService.GetBabiesFromDb(user);
+        var baby = babies.FirstOrDefault(baby => baby.BabyName == babyName) as BabyModel;
 
         connection.Close();
 

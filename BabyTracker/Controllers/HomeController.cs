@@ -4,6 +4,7 @@ using BabyTracker.Services;
 using System;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 
 namespace BabyTracker.Controllers;
 
@@ -12,47 +13,49 @@ public class HomeController : Controller
     private readonly IImportService _importService;
     private readonly ISqLiteService _sqLiteService;
     private readonly IChartService _chartService;
+    private readonly IAccountService _accountService;
 
     public HomeController(
         IImportService importService,
         ISqLiteService sqLiteService,
-        IChartService chartService)
+        IChartService chartService,
+        IAccountService accountService)
     {
         _importService = importService;
         _sqLiteService = sqLiteService;
         _chartService = chartService;
+        _accountService = accountService;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var model = new BaseViewModel
-        {
-            ShowMemoriesLink = false,
-            Profile = AccountService.GetProfile(User)
-        };
-
         if (User.Identity?.IsAuthenticated == true &&
-            _importService.HasDataClone())
+            await _importService.HasDataClone())
         {
             var babiesViewModel = new BabiesViewModel
             {
-                Profile = AccountService.GetProfile(User),
-                Babies = _sqLiteService.GetBabiesFromDb(User)
+                Profile = await _accountService.GetProfile(User),
+                Babies = await _sqLiteService.GetBabiesFromDb(User)
             };
 
             return View("Babies", babiesViewModel);
         }
         else if (User.Identity?.IsAuthenticated == true)
         {
+            var model = new BaseViewModel
+            {
+                Profile = await _accountService.GetProfile(User)
+            };
+
             return View("LoggedIn", model);
         }
 
-        return View(model);
+        return View(new BaseViewModel());
     }
 
     [Authorize]
     [HttpGet("{babyName}/{inputDate?}")]
-    public IActionResult Diary(string babyName, string inputDate)
+    public async Task<IActionResult> Diary(string babyName, string inputDate)
     {
         var date = DateTime.Now;
 
@@ -61,7 +64,7 @@ public class HomeController : Controller
             date = DateTime.Parse(inputDate);
         }
 
-        var entries = _sqLiteService.GetEntriesFromDb(date, User, babyName);
+        var entries = await _sqLiteService.GetEntriesFromDb(date, User, babyName);
         var importResultModel = new ImportResultModel
         {
             Entries = entries
@@ -72,22 +75,22 @@ public class HomeController : Controller
         model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
         model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
         model.BabyName = babyName;
-        model.Profile = AccountService.GetProfile(User);
+        model.Profile = await _accountService.GetProfile(User);
 
-        var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
 
-        ViewData["LastEntry"] = _sqLiteService.GetLastEntryDateTime(User, babyName);
+        ViewData["LastEntry"] = await _sqLiteService.GetLastEntryDateTime(User, babyName);
 
         return View("Diary", model);
     }
 
     [Authorize]
     [HttpGet("{babyName}/memories")]
-    public IActionResult Memories(string babyName)
+    public async Task<IActionResult> Memories(string babyName)
     {
-        var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
         var importResultModel = new ImportResultModel
         {
             Entries = memories
@@ -98,32 +101,32 @@ public class HomeController : Controller
         model.BabyName = babyName;
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
-        model.Profile = AccountService.GetProfile(User);
+        model.Profile = await _accountService.GetProfile(User);
 
         return View("Memories", model);
     }
 
     [Authorize]
     [HttpGet("{babyName}/charts/{months?}")]
-    public IActionResult Charts(string babyName, int? months = null)
+    public async Task<IActionResult> Charts(string babyName, int? months = null)
     {
-        var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
-        var model = _chartService.GetViewModel(User, babyName, months + 1);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        var model = await _chartService.GetViewModel(User, babyName, months + 1);
 
         model.BabyName = babyName;
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
-        model.Profile = AccountService.GetProfile(User);
+        model.Profile = await _accountService.GetProfile(User);
 
         return View("Charts", model);
     }
 
     [Authorize]
     [HttpGet("{babyName}/gallery")]
-    public IActionResult Gallery(string babyName)
+    public async Task<IActionResult> Gallery(string babyName)
     {
-        var pictures = _sqLiteService.GetPictures(User, babyName);
-        var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        var pictures = await _sqLiteService.GetPictures(User, babyName);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
 
         var model = new GalleryViewModel
         {
@@ -131,7 +134,7 @@ public class HomeController : Controller
             BabyName = babyName,
             MemoriesBadgeCount = memories.Count,
             ShowMemoriesLink = true,
-            Profile = AccountService.GetProfile(User)
+            Profile = await _accountService.GetProfile(User)
         };
 
         return View("Gallery", model);

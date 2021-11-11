@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
@@ -8,26 +9,29 @@ namespace BabyTracker.Services;
 
 public interface IImportService
 {
-    string Unzip(Stream stream);
+    Task<string> Unzip(Stream stream);
 
-    bool HasDataClone();
+    Task<bool> HasDataClone();
 }
 
 public class ImportService : IImportService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IAccountService _accountService;
 
     public ImportService(IHttpContextAccessor httpContextAccessor,
-        IWebHostEnvironment webHostEnvironment)
+        IWebHostEnvironment webHostEnvironment,
+        IAccountService accountService)
     {
         _httpContextAccessor = httpContextAccessor;
         _webHostEnvironment = webHostEnvironment;
+        _accountService = accountService;
     }
 
-    public string Unzip(Stream stream)
+    public async Task<string> Unzip(Stream stream)
     {
-        var extractPath = GetDataClonePath();
+        var extractPath = await GetDataClonePath();
 
         if (Directory.Exists(extractPath))
         {
@@ -41,14 +45,14 @@ public class ImportService : IImportService
         return extractPath;
     }
 
-    public bool HasDataClone()
+    public async Task<bool> HasDataClone()
     {
-        var path = GetDataClonePath();
+        var path = await GetDataClonePath();
 
         return Directory.Exists(path);
     }
 
-    private string GetDataClonePath()
+    private async Task<string> GetDataClonePath()
     {
         var user = _httpContextAccessor.HttpContext?.User;
 
@@ -57,7 +61,7 @@ public class ImportService : IImportService
             return string.Empty;
         }
 
-        var profile = AccountService.GetProfile(user);
+        var profile = await _accountService.GetProfile(user);
 
         var path = $"/data/Data/{profile?.UserId}";
 

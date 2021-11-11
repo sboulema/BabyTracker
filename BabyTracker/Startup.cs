@@ -91,6 +91,7 @@ public class Startup
         services.AddSingleton<IMemoriesService, MemoriesService>();
         services.AddSingleton<IChartService, ChartService>();
         services.AddSingleton<IImportService, ImportService>();
+        services.AddSingleton<IPictureService, PictureService>();
 
         services.AddSendGrid(options =>
         {
@@ -136,7 +137,7 @@ public class Startup
 
                     var importService = app.ApplicationServices.GetService<IImportService>();
 
-                    importService?.Unzip(stream);
+                    await importService?.Unzip(stream);
 
                     await stream.DisposeAsync();
                     var terminationStore = (ITusTerminationStore)eventContext.Store;

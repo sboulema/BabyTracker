@@ -7,42 +7,46 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace BabyTracker.Services;
 
 public interface ISqLiteService
 {
-    SqliteConnection OpenConnection(ClaimsPrincipal user);
+    Task<SqliteConnection> OpenConnection(ClaimsPrincipal user);
 
-    List<EntryModel> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
+    Task<List<EntryModel>> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
 
-    List<EntryModel> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
+    Task<List<EntryModel>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
 
     List<EntryModel> GetMemoriesFromDb(DateTime date, string userId, string babyName);
 
     List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName, SqliteConnection connection);
 
-    List<EntryModel> GetBabiesFromDb(ClaimsPrincipal user);
+    Task<List<EntryModel>> GetBabiesFromDb(ClaimsPrincipal user);
 
     List<EntryModel> GetBabiesFromDb(string userId);
 
-    DateTime GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
+    Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
 
-    List<PictureModel> GetPictures(ClaimsPrincipal user, string babyName);
+    Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName);
 }
 
 public class SqLiteService : ISqLiteService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IAccountService _accountService;
 
-    public SqLiteService(IWebHostEnvironment webHostEnvironment)
+    public SqLiteService(IWebHostEnvironment webHostEnvironment,
+        IAccountService accountService)
     {
         _webHostEnvironment = webHostEnvironment;
+        _accountService = accountService;
     }
 
-    public SqliteConnection OpenConnection(ClaimsPrincipal user)
+    public async Task<SqliteConnection> OpenConnection(ClaimsPrincipal user)
     {
-        var profile = AccountService.GetProfile(user);
+        var profile = await _accountService.GetProfile(user);
 
         return OpenConnection(profile?.UserId);
     }
@@ -66,9 +70,9 @@ public class SqLiteService : ISqLiteService
         return connection;
     }
 
-    public List<EntryModel> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
+    public async Task<List<EntryModel>> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(user);
+        var connection = await OpenConnection(user);
 
         var lowerBound = ToUnixTimestamp(date);
         var upperBound = ToUnixTimestamp(date.AddDays(1));
@@ -92,9 +96,9 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public List<EntryModel> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
+    public async Task<List<EntryModel>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(user);
+        var connection = await OpenConnection(user);
 
         var entries = new List<EntryModel>();
 
@@ -122,9 +126,9 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public List<EntryModel> GetBabiesFromDb(ClaimsPrincipal user)
+    public async Task<List<EntryModel>> GetBabiesFromDb(ClaimsPrincipal user)
     {
-        var profile = AccountService.GetProfile(user);
+        var profile = await _accountService.GetProfile(user);
 
         return GetBabiesFromDb(profile?.UserId);
     }
@@ -163,9 +167,9 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public DateTime GetLastEntryDateTime(ClaimsPrincipal user, string babyName)
+    public async Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName)
     {
-        var connection = OpenConnection(user);
+        var connection = await OpenConnection(user);
 
         var command = connection.CreateCommand();
         command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION ALL " +
@@ -187,11 +191,11 @@ public class SqLiteService : ISqLiteService
         return reader.GetDateTime(0);
     }
 
-    public List<PictureModel> GetPictures(ClaimsPrincipal user, string babyName)
+    public async Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName)
     {
         var pictures = new List<PictureModel>();
 
-        var connection = OpenConnection(user);
+        var connection = await OpenConnection(user);
 
         var command = connection.CreateCommand();
         command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), FileName" +

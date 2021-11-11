@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Auth0.AuthenticationApi;
@@ -25,6 +27,8 @@ public interface IAccountService
     Task SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
 
     Task<List<User>?> SearchUsersWithEnableMemoriesEmail();
+
+    Task<Profile?> GetProfile(ClaimsPrincipal user);
 }
 
 public class AccountService : IAccountService
@@ -71,16 +75,15 @@ public class AccountService : IAccountService
         var result = await _authenticationApiClient.SignupUserAsync(new SignupUserRequest
         {
             ClientId = _configuration["AUTH0_CLIENTID"],
-            Username = model.EmailAddress,
             Email = model.EmailAddress,
-            Nickname = model.EmailAddress.Split("@")[0],
-            Password = model.Password
+            Password = model.Password,
+            Connection = "Username-Password-Authentication",
+            Name = model.EmailAddress,
         });
-
         return result;
     }
 
-    public static Profile? GetProfile(ClaimsPrincipal user)
+    public async Task<Profile?> GetProfile(ClaimsPrincipal user)
     {
         if (user == null)
         {
@@ -92,7 +95,7 @@ public class AccountService : IAccountService
             Name = user.Identity?.Name ?? string.Empty,
             Nickname = user.FindFirst("nickname")?.Value ?? string.Empty,
             Image = user.FindFirst("picture")?.Value ?? string.Empty,
-            UserId = GetUserId(user)
+            UserId = await GetUserId(user)
         };
     }
 
@@ -153,12 +156,44 @@ public class AccountService : IAccountService
         return users;
     }
 
+    private async Task<User?> SearchUsersWithShareList(string emailAddress)
+    {
+        var client = new ManagementApiClient(await GetAccessToken(), _configuration["AUTH0_DOMAIN"]);
+
+        var users = new List<User>();
+
+        var pageNo = 0;
+
+        IPagedList<User> page;
+
+        do
+        {
+            page = await client.Users.GetAllAsync(
+                new() { Query = $"user_metadata.ShareList:{emailAddress}" },
+                new(pageNo)
+            );
+
+            users.AddRange(page);
+
+            pageNo++;
+        } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
+
+        return users.FirstOrDefault();
+    }
+
     public static string GetUserId(string userIdWithIdentifier)
         => userIdWithIdentifier.Replace("auth0|", string.Empty);
 
-    private static string GetUserId(ClaimsPrincipal user)
+    private async Task<string> GetUserId(ClaimsPrincipal user)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var shareUser = await SearchUsersWithShareList(user.FindFirstValue(ClaimTypes.Name));
+
+        if (shareUser != null)
+        {
+            userId = shareUser.UserId;
+        }
 
         return GetUserId(userId);
     }

@@ -69,7 +69,7 @@ public class AccountController : Controller
 
         var model = new ProfileViewModel
         {
-            Profile = AccountService.GetProfile(User),
+            Profile = await _accountService.GetProfile(User),
             EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
             MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
             ShareList = userMetaData?.ShareList ?? string.Empty
