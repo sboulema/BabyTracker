@@ -148,7 +148,7 @@ public class AccountService : IAccountService
             users.AddRange(page);
 
             pageNo++;
-        } while (page.Paging.Length == page.Paging.Limit);
+        } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
 
         return users;
     }
