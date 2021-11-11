@@ -15,6 +15,10 @@ public class MemoriesController : Controller
         _memoriesService = memoriesService;
     }
 
+    /// <summary>
+    /// Used for testing the memories job
+    /// </summary>
+    /// <returns></returns>
     [Authorize]
     [HttpGet("[action]")]
     public async Task Send()

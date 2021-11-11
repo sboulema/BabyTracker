@@ -127,6 +127,8 @@ public class MemoriesService : IMemoriesService
             msg.AddTo(new EmailAddress(recipient));
         }
 
-        return await _sendGridClient.SendEmailAsync(msg).ConfigureAwait(false);
+        var response = await _sendGridClient.SendEmailAsync(msg);
+
+        return response;
     }
 }
