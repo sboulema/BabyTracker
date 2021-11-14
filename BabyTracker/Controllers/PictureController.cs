@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using BabyTracker.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace BabyTracker.Controllers;
 
@@ -15,7 +14,6 @@ public class PictureController : Controller
         _pictureService = pictureService;
     }
 
-    [Authorize]
     [Route("{fileName}")]
     public async Task<IActionResult> GetPicture(string fileName)
     {
@@ -24,7 +22,6 @@ public class PictureController : Controller
         return File(picture, "image/jpg");
     }
 
-    [Authorize]
     [Route("{filename}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string fileName)
     {
