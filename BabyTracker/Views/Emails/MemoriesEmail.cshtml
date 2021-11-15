@@ -47,7 +47,7 @@
             {
               <mj-section padding="0">
                 <mj-column padding="0">
-                  <mj-image padding="0" src="@Model.BaseUrl/picture/@joy.Filename" />
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.Profile?.UserId/@joy.Filename" />
                 </mj-column>
               </mj-section>
             }
@@ -66,7 +66,7 @@
             {
               <mj-section padding="0">
                 <mj-column padding="0">
-                  <mj-image padding="0" src="@Model.BaseUrl/picture/@milestone.Filename" />
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.Profile?.UserId/@milestone.Filename" />
                 </mj-column>
               </mj-section>
             }
@@ -85,7 +85,7 @@
             {
               <mj-section padding="0">
                 <mj-column padding="0">
-                  <mj-image padding="0" src="@Model.BaseUrl/picture/@activity.Filename" />
+                  <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.Profile?.UserId/@activity.Filename" />
                 </mj-column>
               </mj-section>
             }

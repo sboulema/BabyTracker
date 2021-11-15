@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Auth0.ManagementApi.Models;
 using BabyTracker.Models;
+using BabyTracker.Models.Account;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Mjml.AspNetCore;
@@ -65,13 +66,13 @@ public class MemoriesService : IMemoriesService
 
                 if (memories.Count > 0)
                 {
-                    await SendEmail(memories, user, baby.BabyName);
+                    await SendEmail(memories, user, shortUserId, baby.BabyName);
                 }
             }
         }
     }
 
-    private async Task<string> GetMJML(List<EntryModel> memories, string babyName)
+    private async Task<string> GetMJML(List<EntryModel> memories, string userId, string babyName)
     {
         var importResultModel = new ImportResultModel
         {
@@ -84,6 +85,10 @@ public class MemoriesService : IMemoriesService
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
         model.BaseUrl = _configuration["BASE_URL"];
+        model.Profile = new Profile
+        {
+            UserId = userId
+        };
 
         model.Entries = model.Entries
             .OrderByDescending(entry => entry.TimeUTC.Year)
@@ -100,7 +105,7 @@ public class MemoriesService : IMemoriesService
         return result.Html;
     }
 
-    private async Task<Response?> SendEmail(List<EntryModel> memories, User user, string babyName)
+    private async Task<Response?> SendEmail(List<EntryModel> memories, User user, string userId, string babyName)
     {
         var msg = new SendGridMessage()
         {
@@ -108,7 +113,7 @@ public class MemoriesService : IMemoriesService
             Subject = $"BabyTracker - Memories {DateTime.Now.ToShortDateString()}"
         };
 
-        var mjml = await GetMJML(memories, babyName);
+        var mjml = await GetMJML(memories, userId, babyName);
         var html = await GetHTML(mjml);
 
         msg.AddContent(MimeType.Html, html);
