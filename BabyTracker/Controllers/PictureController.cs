@@ -16,19 +16,45 @@ public class PictureController : Controller
     }
 
     [Authorize]
-    [Route("{fileName}")]
+    [HttpGet("{fileName}")]
     public async Task<IActionResult> GetPicture(string fileName)
     {
         var picture = await _pictureService.GetPicture(User, fileName);
+
+        if (picture == null)
+        {
+            return NotFound();
+        }
 
         return File(picture, "image/jpg");
     }
 
     [Authorize]
-    [Route("{filename}/thumbnail")]
+    [HttpGet("{filename}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string fileName)
     {
         var thumbnail = await _pictureService.GetPicture(User, $"{fileName}__thumbnail");
+
+        if (thumbnail == null)
+        {
+            return NotFound();
+        }
+
+        return File(thumbnail, "image/jpg");
+    }
+
+    [HttpGet("{userId}/{fileName}")]
+    public async Task<IActionResult> GetPicture(string userId, string fileName)
+    {
+        var picture = await _pictureService.GetPicture(userId, fileName);
+
+        return File(picture, "image/jpg");
+    }
+
+    [HttpGet("{userId}/{filename}/thumbnail")]
+    public async Task<IActionResult> GetThumbnail(string userId, string fileName)
+    {
+        var thumbnail = await _pictureService.GetPicture(userId, $"{fileName}__thumbnail");
 
         return File(thumbnail, "image/jpg");
     }
