@@ -8,16 +8,16 @@
   <ItemGroup>
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.12.0" />
     <PackageReference Include="Auth0.ManagementApi" Version="7.12.0" />
+    <PackageReference Include="CsvHelper" Version="27.2.1" />
     <PackageReference Include="IdentityModel.AspNetCore" Version="4.0.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="*" />
-    <PackageReference Include="TimeZoneConverter" Version="*" />
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="*" />
-    <PackageReference Include="SendGrid" Version="*" />
-    <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="*" />
-    <PackageReference Include="Razor.Templating.Core" Version="*" />
-    <PackageReference Include="Mjml.AspNetCore" Version="*" />
-    <PackageReference Include="CsvHelper" Version="*" />
-    <PackageReference Include="tusdotnet" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.0" />
+    <PackageReference Include="Mjml.AspNetCore" Version="1.3.0" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.3.3" />
+    <PackageReference Include="Razor.Templating.Core" Version="1.7.0" />
+    <PackageReference Include="SendGrid" Version="9.25.0" />
+    <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="1.0.1" />
+    <PackageReference Include="TimeZoneConverter" Version="3.5.0" />
+    <PackageReference Include="tusdotnet" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup> 

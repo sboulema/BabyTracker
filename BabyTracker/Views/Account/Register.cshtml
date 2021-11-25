@@ -4,24 +4,27 @@
     ViewData["Title"] = "BabyTracker";
 }
 
-<h1 class="display-4 text-center mb-5">Register</h1>
+@if (Model != null)
+{
+    <h1 class="display-4 text-center mb-5">Register</h1>
 
-<br />
+    <br />
 
-<div class="card col-12 col-lg-6 offset-lg-3 p-3">
-    <form asp-action="Register" asp-controller="Account">
-      <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1"><i class="fas fa-at"></i></span>
-        <input type="text" class="form-control" placeholder="Email" asp-for="@Model!.EmailAddress" value="@Model.EmailAddress" >
-      </div>
+    <div class="card col-12 col-lg-6 offset-lg-3 p-3">
+        <form asp-action="Register" asp-controller="Account">
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1"><i class="fas fa-at"></i></span>
+            <input type="text" class="form-control" placeholder="Email" asp-for="@Model.EmailAddress" value="@Model.EmailAddress" >
+          </div>
 
-      <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1"><i class="fas fa-key"></i></span>
-        <input type="password" class="form-control" placeholder="Password" asp-for="@Model.Password" value="@Model.Password" >
-      </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1"><i class="fas fa-key"></i></span>
+            <input type="password" class="form-control" placeholder="Password" asp-for="@Model.Password" value="@Model.Password" >
+          </div>
 
-      <center>
-          <button type="submit" class="btn btn-primary">Register</button>
-      </center>
-    </form> 
-</div>
+          <center>
+              <button type="submit" class="btn btn-primary">Register</button>
+          </center>
+        </form> 
+    </div>
+}
