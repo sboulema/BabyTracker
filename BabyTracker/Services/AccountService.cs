@@ -18,7 +18,7 @@ namespace BabyTracker.Services;
 
 public interface IAccountService
 {
-    Task<ClaimsPrincipal> Login(LoginViewModel model);
+    Task<ClaimsPrincipal?> Login(LoginViewModel model);
 
     Task<SignupUserResponse?> Register(LoginViewModel model);
 
@@ -43,17 +43,26 @@ public class AccountService : IAccountService
         _authenticationApiClient = authenticationApiClient;
     }
 
-    public async Task<ClaimsPrincipal> Login(LoginViewModel model)
+    public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
     {
-        var result = await _authenticationApiClient.GetTokenAsync(new ResourceOwnerTokenRequest
+        AccessTokenResponse? result;
+
+        try
         {
-            ClientId = _configuration["AUTH0_CLIENTID"],
-            ClientSecret = _configuration["AUTH0_CLIENTSECRET"],
-            Scope = "openid profile",
-            Realm = "Username-Password-Authentication",
-            Username = model.EmailAddress,
-            Password = model.Password
-        });
+            result = await _authenticationApiClient.GetTokenAsync(new ResourceOwnerTokenRequest
+            {
+                ClientId = _configuration["AUTH0_CLIENTID"],
+                ClientSecret = _configuration["AUTH0_CLIENTSECRET"],
+                Scope = "openid profile",
+                Realm = "Username-Password-Authentication",
+                Username = model.EmailAddress,
+                Password = model.Password
+            });
+        }
+        catch (Exception)
+        {
+            return null;
+        }
 
         var user = await _authenticationApiClient.GetUserInfoAsync(result.AccessToken);
 
@@ -63,6 +72,7 @@ public class AccountService : IAccountService
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim("nickname", user.NickName),
             new Claim("picture", user.Picture),
+            new Claim("userId", await GetUserId(user.UserId, user.FullName))
         }, CookieAuthenticationDefaults.AuthenticationScheme);
 
         var claimsPrincipal = new ClaimsPrincipal(identity);
@@ -189,6 +199,18 @@ public class AccountService : IAccountService
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         
         var shareUser = await SearchUsersWithShareList(user.FindFirstValue(ClaimTypes.Name));
+
+        if (shareUser != null)
+        {
+            userId = shareUser.UserId;
+        }
+
+        return GetUserId(userId);
+    }
+
+    private async Task<string> GetUserId(string userId, string userName)
+    {
+        var shareUser = await SearchUsersWithShareList(userName);
 
         if (shareUser != null)
         {

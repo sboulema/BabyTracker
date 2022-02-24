@@ -12,15 +12,20 @@
     <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
 </div>
 
-<table id="diaryTable" class="table">
-    <tbody>
-        @foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
-        {
-            var yearsAgo = DateTime.UtcNow.Year - group.Key;
-            <h1 style="color: #bd4d85;">
-            @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
-            </h1>
+@foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
+{
+    @if (group.Any() == false)
+    {
+        continue;
+    }
 
+    var yearsAgo = DateTime.UtcNow.Year - group.Key;
+    <h1 style="color: #bd4d85;">
+        @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
+    </h1>
+
+    <table id="diaryTable-@yearsAgo" class="table">
+        <tbody>
             @foreach (var entry in group)
             {
                 if (entry is Joy joy)
@@ -36,26 +41,11 @@
                     @await Html.PartialAsync("Diary/_Activity", activity)
                 }
             }
-        }
-    </tbody>
-</table>
-
-@section Stylesheets
-{
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/tablefilter.css" integrity="sha256-c7YN3IgXXHvHcnOWkftGwcQ9F0l2tsH2Ua8+AmzG0pQ=" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/colsVisibility.css" integrity="sha256-+Q6jko+sEPdnOH+MHab8hGoxCpzj0AlcJ6JMQuB/vgU=" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/themes/transparent/transparent.css" integrity="sha256-VHXsvL4pDDrxtrd0OaxD5fYNxfhlS90VCLltrXtHgjc=" crossorigin="anonymous">
-}
-
-@section Scripts
-{
-    <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tablefilter.js" integrity="sha256-VoFNUX5JVmFagSdl8p2r4GMpfy0RX2RqEsYTYbFxhrE=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tf-1-2aa33b10e0e549020c12.js" integrity="sha256-fPZZ9rpwQM8DOSfGdS1UK2MJFxd1K+tMTbytcwm0tNc=" crossorigin="anonymous"></script>
+        </tbody>
+    </table>
 
     <script>
-        var tf;
-
-        (function () {
+        $(document).ready(function() {
             var filtersConfig = {
                 col_0: 'none',
                 col_1: 'checklist',
@@ -72,9 +62,26 @@
                 }]
             };
 
-            tf = new TableFilter('diaryTable', 0, filtersConfig);
+            tf = new TableFilter('diaryTable-@yearsAgo', 0, filtersConfig);
             tf.init();
-        })();
+        });
+    </script>
+}
+
+@section Stylesheets
+{
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/tablefilter.css" integrity="sha256-c7YN3IgXXHvHcnOWkftGwcQ9F0l2tsH2Ua8+AmzG0pQ=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/colsVisibility.css" integrity="sha256-+Q6jko+sEPdnOH+MHab8hGoxCpzj0AlcJ6JMQuB/vgU=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/style/themes/transparent/transparent.css" integrity="sha256-VHXsvL4pDDrxtrd0OaxD5fYNxfhlS90VCLltrXtHgjc=" crossorigin="anonymous">
+}
+
+@section Scripts
+{
+    <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tablefilter.js" integrity="sha256-VoFNUX5JVmFagSdl8p2r4GMpfy0RX2RqEsYTYbFxhrE=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tf-1-2aa33b10e0e549020c12.js" integrity="sha256-fPZZ9rpwQM8DOSfGdS1UK2MJFxd1K+tMTbytcwm0tNc=" crossorigin="anonymous"></script>
+
+    <script>
+        var tf;
 
         function toggleViewStyle() {
             var tfColsVisibility = tf.extension('colsVisibility');

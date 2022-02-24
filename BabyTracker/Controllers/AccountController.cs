@@ -31,6 +31,11 @@ public class AccountController : Controller
     {
         var claimsPrincipal = await _accountService.Login(model);
 
+        if (claimsPrincipal == null)
+        {
+            return RedirectToAction("Login");
+        }
+
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
 
         return RedirectToLocal(returnUrl);

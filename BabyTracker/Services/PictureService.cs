@@ -22,14 +22,14 @@ public class PictureService : IPictureService
 
     public async Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName)
     {
-        var profile = await _accountService.GetProfile(user);
+        var userId = user.FindFirstValue("userId");
 
-        if (profile == null)
+        if (string.IsNullOrEmpty(userId))
         {
             return null;
         }
 
-        return await GetPicture(profile.UserId, fileName);
+        return await GetPicture(userId, fileName);
     }
 
     public async Task<byte[]> GetPicture(string userId, string fileName)
