@@ -28,12 +28,17 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2020 - 2022 : BabyTracker
-            @if (ViewData.ContainsKey("LastEntry")) {
-                <text>
-                     - Last entry: @ViewData["LastEntry"]
-                </text>
-            }
+            <div class="row">
+                <div class="col-auto">
+                    &copy; 2020 - 2022 : BabyTracker
+                </div>
+                
+                @if (ViewData.ContainsKey("LastEntry")) {
+                    <div class="col order-sm-last order-first">
+                        Last entry: @ViewData["LastEntry"]
+                    </div>
+                }           
+            </div>
         </div>
     </footer>
 
