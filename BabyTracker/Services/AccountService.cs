@@ -29,6 +29,8 @@ public interface IAccountService
     Task<List<User>?> SearchUsersWithEnableMemoriesEmail();
 
     Task<Profile?> GetProfile(ClaimsPrincipal user);
+
+    Task<string> ResetPassword(LoginViewModel model);
 }
 
 public class AccountService : IAccountService
@@ -89,6 +91,17 @@ public class AccountService : IAccountService
             Password = model.Password,
             Connection = "Username-Password-Authentication",
             Name = model.EmailAddress,
+        });
+        return result;
+    }
+
+    public async Task<string> ResetPassword(LoginViewModel model)
+    {
+        var result = await _authenticationApiClient.ChangePasswordAsync(new()
+        {
+            ClientId = _configuration["AUTH0_CLIENTID"],
+            Connection = "Username-Password-Authentication",
+            Email = model.EmailAddress
         });
         return result;
     }

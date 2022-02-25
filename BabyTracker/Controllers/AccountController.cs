@@ -33,6 +33,9 @@ public class AccountController : Controller
 
         if (claimsPrincipal == null)
         {
+            TempData["notificationMessage"] = "Username and/or password are incorrect.";
+            TempData["notificationSuccess"] = "false";
+
             return RedirectToAction("Login");
         }
 
@@ -53,6 +56,23 @@ public class AccountController : Controller
         await _accountService.Register(model);
 
         return await Login(model, returnUrl);
+    }
+
+    [HttpGet("[action]")]
+    public IActionResult ResetPassword()
+    {
+        return View(new LoginViewModel());
+    }
+
+    [HttpPost("[action]")]
+    public async Task<IActionResult> ResetPassword(LoginViewModel model)
+    {
+        var result = await _accountService.ResetPassword(model);
+
+        TempData["notificationMessage"] = result;
+        TempData["notificationSuccess"] = "true";
+
+        return RedirectToAction("Login");
     }
 
     [Authorize]

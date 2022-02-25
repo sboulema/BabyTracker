@@ -8,6 +8,8 @@
 
 <br />
 
+@await Html.PartialAsync("_Notification")
+
 <div class="card col-12 col-lg-6 offset-lg-3 p-3">
     <form asp-action="Login" asp-controller="Account">
       <div class="input-group mb-3">
@@ -32,4 +34,10 @@
     <h3>Or</h3>
     <br />
     <a href="/account/register">Register</a>
+</div>
+
+<div class="col-12 col-lg-6 offset-lg-3 p-3 text-center">
+    <h3>Or</h3>
+    <br />
+    <a href="/account/resetpassword">Reset password</a>
 </div>

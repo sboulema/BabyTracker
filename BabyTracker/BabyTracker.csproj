@@ -32,4 +32,11 @@
     <EmbeddedResource Remove="Data\**" />
     <None Remove="Data\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\Account\ResetPassword.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

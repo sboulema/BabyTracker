@@ -1,0 +1,16 @@
+﻿@{
+    var notificationClass = "alert-success";
+
+    if (TempData.ContainsKey("notificationSuccess"))
+    {
+        notificationClass = bool.Parse(TempData["notificationSuccess"].ToString() ?? "true") ? "alert-success" : "alert-danger";
+    }
+}
+
+@if (TempData.ContainsKey("notificationMessage"))
+{
+    <div class="alert @notificationClass alert-dismissible" role="alert">
+        @TempData["notificationMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
