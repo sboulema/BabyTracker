@@ -62,8 +62,9 @@
                 }]
             };
 
-            tf = new TableFilter('diaryTable-@yearsAgo', 0, filtersConfig);
+            var tf = new TableFilter('diaryTable-@yearsAgo', 0, filtersConfig);
             tf.init();
+            tableFilters.push(tf);
         });
     </script>
 }
@@ -81,13 +82,15 @@
     <script src="https://cdn.jsdelivr.net/npm/tablefilter@0.7.2/dist/tablefilter/tf-1-2aa33b10e0e549020c12.js" integrity="sha256-fPZZ9rpwQM8DOSfGdS1UK2MJFxd1K+tMTbytcwm0tNc=" crossorigin="anonymous"></script>
 
     <script>
-        var tf;
+        var tableFilters = [];
 
         function toggleViewStyle() {
-            var tfColsVisibility = tf.extension('colsVisibility');
-            tfColsVisibility.toggleCol(2);
-            tfColsVisibility.toggleCol(3);
-            tfColsVisibility.toggleCol(4);
+            tableFilters.forEach(tf => {
+                var tfColsVisibility = tf.extension('colsVisibility');
+                tfColsVisibility.toggleCol(2);
+                tfColsVisibility.toggleCol(3);
+                tfColsVisibility.toggleCol(4);
+            })
         }
 
         function saveCard(selector) {
