@@ -1,26 +1,20 @@
 ﻿using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Services;
 
 public interface IPictureService
 {
-    Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName);
+    Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName);
 
-    Task<byte[]> GetPicture(string userId, string fileName);
+    Task<byte[]> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName);
 }
 
 public class PictureService : IPictureService
 {
-    private readonly IAccountService _accountService;
-
-    public PictureService(IAccountService accountService)
-    {
-        _accountService = accountService;
-    }
-
-    public async Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName)
+    public async Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName)
     {
         var userId = user.FindFirstValue("userId");
 
@@ -29,18 +23,14 @@ public class PictureService : IPictureService
             return null;
         }
 
-        return await GetPicture(userId, fileName);
+        return await GetPicture(hostEnvironment, userId, fileName);
     }
 
-    public async Task<byte[]> GetPicture(string userId, string fileName)
+    public async Task<byte[]> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName)
     {
-        var path = Path.Combine(Directory.GetCurrentDirectory(), "Data", userId, $"{fileName}.jpg");
+        var basePath = hostEnvironment.IsProduction() ? "/data/Data" : $"{hostEnvironment.ContentRootPath}/Data";
+        var picturePath = Path.Combine(basePath, userId, $"{fileName}.jpg");
 
-        if (!File.Exists(path))
-        {
-            path = $"/data/Data/{userId}/{fileName}.jpg";
-        }
-
-        return await File.ReadAllBytesAsync(path);
+        return await File.ReadAllBytesAsync(picturePath);
     }
 }

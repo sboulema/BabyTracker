@@ -1,5 +1,5 @@
 using System;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Quartz;
 
 namespace BabyTracker.Extensions;
@@ -8,15 +8,20 @@ public static class ServiceCollectionQuartzConfiguratorExtensions
 {
     public static void AddJobAndTrigger<T>(
         this IServiceCollectionQuartzConfigurator quartz,
-        IConfiguration configuration)
+        HostBuilderContext context)
         where T : IJob
     {
+        if (context.HostingEnvironment.IsDevelopment())
+        {
+            return;
+        }
+
         // Use the name of the IJob as the appsettings.json key
         var jobName = typeof(T).Name;
 
         // Try and load the schedule from configuration
         var configKey = "MEMORIES_CRON";
-        var cronSchedule = configuration[configKey];
+        var cronSchedule = context.Configuration[configKey];
 
         // Some minor validation
         if (string.IsNullOrEmpty(cronSchedule))

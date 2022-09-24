@@ -21,8 +21,5 @@ public class MemoriesController : Controller
     /// <returns></returns>
     [Authorize]
     [HttpGet("[action]")]
-    public async Task Send()
-    {
-        await _memoriesService.SendMemoriesEmail();
-    }
+    public async Task Send() => await _memoriesService.SendMemoriesEmail();
 }

@@ -29,7 +29,7 @@ public class Program
                 {
                     q.UseMicrosoftDependencyInjectionJobFactory();
 
-                    q.AddJobAndTrigger<MemoriesJob>(hostContext.Configuration);
+                    q.AddJobAndTrigger<MemoriesJob>(hostContext);
                 });
 
                 services.AddQuartzHostedService(

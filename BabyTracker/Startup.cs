@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Auth0.AuthenticationApi;
 using BabyTracker.Services;
@@ -120,6 +121,12 @@ public class Startup
         app.UseAuthentication();
 
         app.UseAuthorization();
+
+        if (env.IsDevelopment() &&
+            !Directory.Exists($"{env.ContentRootPath}/Data"))
+        {
+            Directory.CreateDirectory($"{env.ContentRootPath}/Data");
+        }
 
         app.UseTus(httpContext => new DefaultTusConfiguration
         {

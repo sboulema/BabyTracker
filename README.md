@@ -60,7 +60,6 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 
 ## Building Dependencies
 - .NET 6.0
-- NodeJS 17.1.0
 
 ## Disclaimer
 This website is not produced, endorsed, supported, or affiliated with nighp software.

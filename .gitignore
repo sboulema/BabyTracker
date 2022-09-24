@@ -4,7 +4,7 @@
 /BabyTracker/.vs
 /BabyTracker/bin
 /BabyTracker/obj
-/BabyTracker/zip
 /BabyTracker/data
 .vscode/launch.json
 .vscode/tasks.json
+/BabyTracker/appsettings.development.json
