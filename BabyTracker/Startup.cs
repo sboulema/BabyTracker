@@ -11,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Mjml.AspNetCore;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet;
 using tusdotnet.Interfaces;
@@ -97,8 +96,6 @@ public class Startup
         {
             options.ApiKey = Configuration["SENDGRID_API_KEY"];
         });
-
-        services.AddMjmlServices();
 
         services.AddHttpContextAccessor();
     }

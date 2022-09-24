@@ -7,7 +7,7 @@ using BabyTracker.Models;
 using BabyTracker.Models.Account;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Mjml.AspNetCore;
+using Mjml.Net;
 using Razor.Templating.Core;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -22,21 +22,18 @@ public interface IMemoriesService
 public class MemoriesService : IMemoriesService
 {
     private readonly IConfiguration _configuration;
-    private readonly IMjmlServices _mjmlServices;
     private readonly IAccountService _accountService;
     private readonly ISqLiteService _sqLiteService;
     private readonly ISendGridClient _sendGridClient;
     private readonly ILogger<MemoriesService> _logger;
 
     public MemoriesService(IConfiguration configuration,
-        IMjmlServices mjmlServices,
         IAccountService accountService,
         ISqLiteService sqLiteService,
         ISendGridClient sendGridClient,
         ILogger<MemoriesService> logger)
     {
         _configuration = configuration;
-        _mjmlServices = mjmlServices;
         _accountService = accountService;
         _sqLiteService = sqLiteService;
         _sendGridClient = sendGridClient;
@@ -99,9 +96,12 @@ public class MemoriesService : IMemoriesService
         return mjml;
     }
 
-    private async Task<string> GetHTML(string mjml)
+    private string GetHTML(string mjml)
     {
-        var result = await _mjmlServices.Render(mjml);
+        var result = new MjmlRenderer().Render(mjml, new() {
+            Beautify = false
+        });
+
         return result.Html;
     }
 
@@ -114,7 +114,7 @@ public class MemoriesService : IMemoriesService
         };
 
         var mjml = await GetMJML(memories, userId, babyName);
-        var html = await GetHTML(mjml);
+        var html = GetHTML(mjml);
 
         msg.AddContent(MimeType.Html, html);
 
