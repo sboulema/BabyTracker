@@ -38,7 +38,7 @@
       </mj-column>
     </mj-section>
 
-    @if (Model.Entries.GroupBy(entry => entry.TimeUTC.Year).Count() > 1)
+    @if (Model.Entries.GroupBy(entry => entry.TimeUTC.Year).Count() == 1)
     {
         foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
         {
