@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace BabyTracker.Controllers;
 
+[Route("")]
 public class HomeController : Controller
 {
     private readonly IImportService _importService;
@@ -27,6 +28,7 @@ public class HomeController : Controller
         _accountService = accountService;
     }
 
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         if (User.Identity?.IsAuthenticated == true &&

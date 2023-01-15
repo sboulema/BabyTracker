@@ -1,4 +1,5 @@
 using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Quartz;
 
@@ -8,10 +9,10 @@ public static class ServiceCollectionQuartzConfiguratorExtensions
 {
     public static void AddJobAndTrigger<T>(
         this IServiceCollectionQuartzConfigurator quartz,
-        HostBuilderContext context)
+        WebApplicationBuilder builder)
         where T : IJob
     {
-        if (context.HostingEnvironment.IsDevelopment())
+        if (builder.Environment.IsDevelopment())
         {
             return;
         }
@@ -21,7 +22,7 @@ public static class ServiceCollectionQuartzConfiguratorExtensions
 
         // Try and load the schedule from configuration
         var configKey = "MEMORIES_CRON";
-        var cronSchedule = context.Configuration[configKey];
+        var cronSchedule = builder.Configuration[configKey];
 
         // Some minor validation
         if (string.IsNullOrEmpty(cronSchedule))
