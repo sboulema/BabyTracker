@@ -29,6 +29,8 @@ public interface ISqLiteService
 
     Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
 
+    Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName);
+
     Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName);
 }
 
@@ -189,6 +191,35 @@ public class SqLiteService : ISqLiteService
         reader.Read();
 
         return reader.GetDateTime(0);
+    }
+
+    public async Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName)
+    {
+        var dates = new List<DateOnly>();
+
+        var connection = await OpenConnection(user);
+
+        var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION 
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Formula UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Growth UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Joy UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Medicine UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Milestone UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM OtherActivity UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Sleep UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Temperature UNION
+            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Vaccine
+            """;
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            dates.Add(DateOnly.FromDateTime(reader.GetDateTime(0)));
+        }
+
+        return dates;
     }
 
     public async Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName)

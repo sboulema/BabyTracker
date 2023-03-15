@@ -141,4 +141,13 @@ public class HomeController : Controller
 
         return View("Gallery", model);
     }
+
+    [Authorize]
+    [HttpGet("{babyName}/dates")]
+    public async Task<IActionResult> Dates(string babyName)
+    {
+        var dates = await _sqLiteService.GetAllEntryDates(User, babyName);
+
+        return Ok(dates);
+    }
 }
