@@ -17,7 +17,7 @@
         <h5 class="bt-green-title">Temperature @Model.Temp.ToString("n1") &deg;C</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
-            <br />@Model.Note
+            <div class="pb-1 my-1 bt-green-background bt-entry-note">@Model.Note</div>
         }
     </td>
     <td>
@@ -25,7 +25,7 @@
             <img class="card-img-top" src="~/img/icon_review_temperature.png">
             <div class="card-body">
                 <h5 class="card-title text-success">Temperature @Model.Temp.ToString("n1") &deg;C</h5>
-                <p class="card-text">@Model.Note</p>
+                <p class="card-text bt-entry-note">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
         </div>

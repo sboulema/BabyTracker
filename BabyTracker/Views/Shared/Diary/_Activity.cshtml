@@ -17,7 +17,7 @@
         <h5 class="bt-green-title">@Model.Name</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
-            <div class="pb-1 my-1 bt-green-background">@Model.Note</div>
+            <div class="pb-1 my-1 bt-green-background bt-entry-note">@Model.Note</div>
         }
         @if (!string.IsNullOrEmpty(Model.FileName))
         {
@@ -32,7 +32,7 @@
             }
             <div class="card-body">
                 <h5 class="card-title text-success">@Model.Name</h5>
-                <p class="card-text">@Model.Note</p>
+                <p class="card-text bt-entry-note">@Model.Note</p>
                 <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
             <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.Time.ToDateTimeLocal().Ticks');return false;"><i class="fas fa-camera"></i> Screenshot</a>
