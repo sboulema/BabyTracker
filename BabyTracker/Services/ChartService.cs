@@ -40,13 +40,23 @@ public class ChartService : IChartService
     {
         var result = new ChartsViewModel();
 
-        using var connection = _sqLiteService.OpenDataConnection(user);
+        using var db = _sqLiteService.OpenDataConnection(user);
 
-        var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
-        var babies = await _sqLiteService.GetBabiesFromDb(user);
+        if (db == null)
+        {
+            return result;
+        }
+
+        var entries = await SqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, db);
+        var babies = await SqLiteService.GetBabiesFromDb(db);
         var baby = babies.FirstOrDefault(baby => baby.Name == babyName);
 
-        foreach (Growth entry in entries.Take(maxAge ?? int.MaxValue))
+        if (baby == null)
+        {
+            return result;
+        }
+
+        foreach (var entry in entries.Take(maxAge ?? int.MaxValue))
         {
             var ageInMonths = (entry.Time.ToDateTimeUTC() - baby.DOB.ToDateTimeUTC()).Days / (double)30;
 
@@ -80,8 +90,6 @@ public class ChartService : IChartService
 
         return result;
     }
-
-    private List<Point> GetWeightMedian() => _weightForAgeData.Select(row => new Point(row.Month, row.SD0)).ToList();
 
     private void SetWeightCsvPoints(ChartsViewModel model, int? maxAge)
     {

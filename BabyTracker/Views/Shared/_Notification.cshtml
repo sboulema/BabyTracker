@@ -3,7 +3,7 @@
 
     if (TempData.ContainsKey("notificationSuccess"))
     {
-        notificationClass = bool.Parse(TempData["notificationSuccess"].ToString() ?? "true") ? "alert-success" : "alert-danger";
+        notificationClass = bool.Parse(TempData["notificationSuccess"]!.ToString() ?? "true") ? "alert-success" : "alert-danger";
     }
 }
 

@@ -1,35 +1,30 @@
 ﻿using System.IO;
 using System.IO.Compression;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Services;
 
 public interface IImportService
 {
-    Task<string> Unzip(Stream stream);
+    string Unzip(ClaimsPrincipal user, Stream stream);
 
-    Task<bool> HasDataClone();
+    bool HasDataClone(ClaimsPrincipal user);
 }
 
 public class ImportService : IImportService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public ImportService(IHttpContextAccessor httpContextAccessor,
-        IWebHostEnvironment webHostEnvironment)
+    public ImportService(IWebHostEnvironment webHostEnvironment)
     {
-        _httpContextAccessor = httpContextAccessor;
         _webHostEnvironment = webHostEnvironment;
     }
 
-    public async Task<string> Unzip(Stream stream)
+    public string Unzip(ClaimsPrincipal user, Stream stream)
     {
-        var extractPath = await GetDataClonePath();
+        var extractPath = GetDataClonePath(user);
 
         if (Directory.Exists(extractPath))
         {
@@ -43,22 +38,11 @@ public class ImportService : IImportService
         return extractPath;
     }
 
-    public async Task<bool> HasDataClone()
+    public bool HasDataClone(ClaimsPrincipal user)
+        => Directory.Exists(GetDataClonePath(user));
+
+    private string GetDataClonePath(ClaimsPrincipal user)
     {
-        var path = await GetDataClonePath();
-
-        return Directory.Exists(path);
-    }
-
-    private async Task<string> GetDataClonePath()
-    {
-        var user = _httpContextAccessor.HttpContext?.User;
-
-        if (user == null)
-        {
-            return string.Empty;
-        }
-
         var activeUserId = user.FindFirstValue("activeUserId");
 
         var path = $"/data/Data/{activeUserId}";

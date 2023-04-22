@@ -54,11 +54,13 @@ public class MemoriesService : IMemoriesService
         {
             var userId = user.UserId.Replace("auth0|", string.Empty);
 
-            var babies = _sqLiteService.GetBabiesFromDb(userId);
+            var db = _sqLiteService.OpenDataConnection(userId);
+
+            var babies = await SqLiteService.GetBabiesFromDb(db);
 
             foreach (var baby in babies)
             {
-                var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, userId, baby.Name);
+                var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name, db);
 
                 _logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
 

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using BabyTracker.Models.Database;
 
 namespace BabyTracker.Models.ViewModels;
@@ -11,5 +12,5 @@ public class MemoriesEmailViewModel
 
     public string UserId { get; set; } = string.Empty;
 
-    public IOrderedEnumerable<IGrouping<int, IDbEntry>> Entries { get; set; }
+    public IEnumerable<IGrouping<int, IDbEntry>> Entries { get; set; } = Enumerable.Empty<IGrouping<int, IDbEntry>>();
 }

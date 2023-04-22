@@ -98,8 +98,6 @@ builder.Services.AddSendGrid(options =>
     options.ApiKey = builder.Configuration["SENDGRID_API_KEY"];
 });
 
-builder.Services.AddHttpContextAccessor();
-
 var app = builder.Build();
 
 if (builder.Environment.IsDevelopment())
@@ -152,7 +150,7 @@ Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpContext)
                     return;
                 }
 
-                await importService.Unzip(stream);
+                importService.Unzip(httpContext.User, stream);
 
                 await stream.DisposeAsync();
                 var terminationStore = (ITusTerminationStore)eventContext.Store;

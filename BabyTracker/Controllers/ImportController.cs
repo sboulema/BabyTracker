@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
 using System.Security.Claims;
 
 namespace BabyTracker.Controllers;
@@ -11,7 +10,7 @@ public class ImportController : Controller
 {
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> Import()
+    public IActionResult Import()
     {
         var model = new BaseViewModel
         {

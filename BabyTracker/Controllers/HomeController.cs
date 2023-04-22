@@ -31,11 +31,18 @@ public class HomeController : Controller
     {
         // User logged in and has a data clone available
         if (User.Identity?.IsAuthenticated == true &&
-            await _importService.HasDataClone())
+            _importService.HasDataClone(User))
         {
+            using var db = _sqLiteService.OpenDataConnection(User);
+
+            if (db == null)
+            {
+                return View(new BaseViewModel());
+            }
+
             var babiesViewModel = new BabiesViewModel
             {
-                Babies = await _sqLiteService.GetBabiesFromDb(User),
+                Babies = await SqLiteService.GetBabiesFromDb(db),
                 NickName = User.FindFirstValue("nickname") ?? string.Empty,
                 ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
                 UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
@@ -65,7 +72,14 @@ public class HomeController : Controller
     [HttpGet("{babyName}/{date?}")]
     public async Task<IActionResult> Diary(string babyName, DateOnly? date)
     {
-        var availableDates = await _sqLiteService.GetAllEntryDates(User, babyName);
+        using var db = _sqLiteService.OpenDataConnection(User);
+
+        if (db == null)
+        {
+            return View(new DiaryViewModel());
+        }
+
+        var availableDates = await SqLiteService.GetAllEntryDates(babyName, db);
 
         if (date == null)
         {
@@ -77,7 +91,7 @@ public class HomeController : Controller
             }
         }
 
-        var entries = await _sqLiteService.GetEntriesFromDb(date.Value, User, babyName);
+        var entries = await SqLiteService.GetEntriesFromDb(date.Value, babyName, db);
         var model = DiaryService.GetDays(entries);
 
         var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
@@ -93,11 +107,11 @@ public class HomeController : Controller
         model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
         model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
-        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
 
-        ViewData["LastEntry"] = await _sqLiteService.GetLastEntryDateTime(User, babyName);
+        ViewData["LastEntry"] = await SqLiteService.GetLastEntryDateTime(babyName, db);
 
         return View("Diary", model);
     }
@@ -106,7 +120,14 @@ public class HomeController : Controller
     [HttpGet("{babyName}/memories")]
     public async Task<IActionResult> Memories(string babyName)
     {
-        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        using var db = _sqLiteService.OpenDataConnection(User);
+
+        if (db == null)
+        {
+            return View(new DiaryViewModel());
+        }
+
+        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
         var model = DiaryService.GetDays(memories);
 
         model.BabyName = babyName;
@@ -124,7 +145,14 @@ public class HomeController : Controller
     [HttpGet("{babyName}/charts/{months?}")]
     public async Task<IActionResult> Charts(string babyName, int? months = null)
     {
-        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        using var db = _sqLiteService.OpenDataConnection(User);
+
+        if (db == null)
+        {
+            return View(new ChartsViewModel());
+        }
+
+        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
         var model = await _chartService.GetViewModel(User, babyName, months + 1);
 
         model.BabyName = babyName;
@@ -142,8 +170,15 @@ public class HomeController : Controller
     [HttpGet("{babyName}/gallery")]
     public async Task<IActionResult> Gallery(string babyName)
     {
-        var pictures = await _sqLiteService.GetPictures(User, babyName);
-        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
+        using var db = _sqLiteService.OpenDataConnection(User);
+
+        if (db == null)
+        {
+            return View(new GalleryViewModel());
+        }
+
+        var pictures = await SqLiteService.GetPictures(babyName, db);
+        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
 
         var model = new GalleryViewModel
         {

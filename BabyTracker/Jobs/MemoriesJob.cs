@@ -15,7 +15,5 @@ public class MemoriesJob : IJob
     }
 
     public async Task Execute(IJobExecutionContext context)
-    {
-        await _memoriesService.SendMemoriesEmail();
-    }
+        => await _memoriesService.SendMemoriesEmail();
 }

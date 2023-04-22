@@ -16,25 +16,9 @@ namespace BabyTracker.Services;
 
 public interface ISqLiteService
 {
-    DataConnection OpenDataConnection(ClaimsPrincipal user);
+    DataConnection? OpenDataConnection(ClaimsPrincipal user);
 
-    Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, ClaimsPrincipal user, string babyName);
-
-    Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
-
-    List<IDbEntry> GetMemoriesFromDb(DateTime date, string userId, string babyName);
-
-    List<Growth> GetGrowth(long lowerBound, long upperBound, string babyName, DataConnection db);
-
-    Task<List<Baby>> GetBabiesFromDb(ClaimsPrincipal user);
-
-    List<Baby> GetBabiesFromDb(string userId);
-
-    Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
-
-    Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName);
-
-    Task<List<Picture>> GetPictures(ClaimsPrincipal user, string babyName);
+    DataConnection OpenDataConnection(string userId);
 }
 
 public class SqLiteService : ISqLiteService
@@ -46,9 +30,14 @@ public class SqLiteService : ISqLiteService
         _webHostEnvironment = webHostEnvironment;
     }
 
-    public DataConnection OpenDataConnection(ClaimsPrincipal user)
+    public DataConnection? OpenDataConnection(ClaimsPrincipal user)
     {
         var activeUserId = user.FindFirstValue("activeUserId");
+
+        if (string.IsNullOrEmpty(activeUserId))
+        {
+            return null;
+        }
 
         return OpenDataConnection(activeUserId);
     }
@@ -74,80 +63,49 @@ public class SqLiteService : ISqLiteService
         return db;
     }
 
-    public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, ClaimsPrincipal user, string babyName)
+    public static async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName, DataConnection db)
     {
-        using var dataConnection = OpenDataConnection(user);
-
         var lowerBound = date.ToDateTime(TimeOnly.MinValue).ToUnixTimestamp();
         var upperBound = date.AddDays(1).ToDateTime(TimeOnly.MinValue).ToUnixTimestamp();
 
         var entries = new List<IDbEntry>();
 
-        entries.AddRange(GetActivity(lowerBound, upperBound, dataConnection));
-        entries.AddRange(GetDiapers(lowerBound, upperBound, dataConnection));
-        entries.AddRange(GetFormula(lowerBound, upperBound, dataConnection));
-        entries.AddRange(GetGrowth(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetJoy(lowerBound, upperBound, dataConnection));
-        entries.AddRange(GetMedication(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetMilestone(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetSleep(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetSupplement(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetTemperature(lowerBound, upperBound, babyName, dataConnection));
-        entries.AddRange(GetVaccine(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(await GetActivity(lowerBound, upperBound, db));
+        entries.AddRange(await GetDiapers(lowerBound, upperBound, db));
+        entries.AddRange(await GetFormula(lowerBound, upperBound, db));
+        entries.AddRange(await GetGrowth(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetJoy(lowerBound, upperBound, db));
+        entries.AddRange(await GetMedication(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetMilestone(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetSleep(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetSupplement(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetTemperature(lowerBound, upperBound, babyName, db));
+        entries.AddRange(await GetVaccine(lowerBound, upperBound, babyName, db));
 
         return entries;
     }
 
-    public async Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
+    public static async Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, string babyName, DataConnection db)
     {
-        using var dataConnection = OpenDataConnection(user);
-
         var entries = new List<IDbEntry>();
 
-        entries.AddRange(GetActivity(date.Day, date.Month, babyName, dataConnection));
-        entries.AddRange(GetJoy(date.Day, date.Month, babyName, dataConnection));
-        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, dataConnection));
+        entries.AddRange(await GetActivity(date.Day, date.Month, babyName, db));
+        entries.AddRange(await GetJoy(date.Day, date.Month, babyName, db));
+        entries.AddRange(await GetMilestone(date.Day, date.Month, babyName, db));
 
         return entries;
     }
 
-    public List<IDbEntry> GetMemoriesFromDb(DateTime date, string userId, string babyName)
+    public static async Task<List<Baby>> GetBabiesFromDb(DataConnection db)
     {
-        using var dataConnection = OpenDataConnection(userId);
+        var babies = await db.GetTable<Baby>()
+            .ToListAsync();
 
-        var entries = new List<IDbEntry>();
-
-        entries.AddRange(GetActivity(date.Day, date.Month, babyName, dataConnection));
-        entries.AddRange(GetJoy(date.Day, date.Month, babyName, dataConnection));
-        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, dataConnection));
-
-        return entries;
-    }
-
-    public async Task<List<Baby>> GetBabiesFromDb(ClaimsPrincipal user)
-    {
-        var userId = user.FindFirstValue("activeUserId");
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            return new();
-        }
-
-        return GetBabiesFromDb(userId);
-    }
-
-    public List<Baby> GetBabiesFromDb(string userId)
-    {
-        using var db = OpenDataConnection(userId);
-
-        var babies = db.GetTable<Baby>().ToList();
         return babies;
     }
 
-    public async Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName)
+    public static async Task<DateTime> GetLastEntryDateTime(string babyName, DataConnection db)
     {
-        using var db = OpenDataConnection(user);
-
         var timestamp = await db.GetTable<Diaper>().Select(diaper => diaper.Time)
             .Union(db.GetTable<Formula>().Select(formula => formula.Time))
             .Union(db.GetTable<Growth>().Select(growth => growth.Time))
@@ -165,10 +123,8 @@ public class SqLiteService : ISqLiteService
         return timestamp.ToDateTimeLocal();
     }
 
-    public async Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName)
+    public static async Task<List<DateOnly>> GetAllEntryDates(string babyName, DataConnection db)
     {
-        using var db = OpenDataConnection(user);
-
         var timestamps = await db.GetTable<Diaper>().Select(diaper => diaper.Time)
             .Union(db.GetTable<Formula>().Select(formula => formula.Time))
             .Union(db.GetTable<Growth>().Select(growth => growth.Time))
@@ -187,21 +143,19 @@ public class SqLiteService : ISqLiteService
             .ToList();
     }
 
-    public async Task<List<Picture>> GetPictures(ClaimsPrincipal user, string babyName)
+    public static async Task<List<Picture>> GetPictures(string babyName, DataConnection db)
     {
-        using var db = OpenDataConnection(user);
-
-        var pictures = db.GetTable<Picture>()
+        var pictures = await db.GetTable<Picture>()
             .OrderByDescending(picture => picture.Timestamp)
-            .ToList();
+            .ToListAsync();
 
         return pictures;
     }
 
-    private static List<Supplement> GetSupplement(long lowerBound, long upperBound,
+    private static async Task<List<Supplement>> GetSupplement(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Supplement>()
+        var entries = await db.GetTable<Supplement>()
             .Where(supplement => supplement.Time >= lowerBound && supplement.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<SupplementSelection>(),
@@ -212,15 +166,15 @@ public class SqLiteService : ISqLiteService
                     Note = supplement.Note,
                     Title = $"{supplement.Amount} {supplement.Unit} {supplementSelection.Name}"
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Medication> GetMedication(long lowerBound, long upperBound,
+    private static async Task<List<Medication>> GetMedication(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Medication>()
+        var entries = await db.GetTable<Medication>()
             .Where(medication => medication.Time >= lowerBound && medication.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<MedicationSelection>(),
@@ -234,15 +188,15 @@ public class SqLiteService : ISqLiteService
                     AmountPerTime = medicationSelection.AmountPerTime,
                     Unit = medicationSelection.Unit
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Vaccine> GetVaccine(long lowerBound, long upperBound,
+    private static async Task<List<Vaccine>> GetVaccine(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Vaccine>()
+        var entries = await db.GetTable<Vaccine>()
             .Where(vaccine => vaccine.Time >= lowerBound && vaccine.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<VaccineSelection>(),
@@ -254,65 +208,65 @@ public class SqLiteService : ISqLiteService
                     Note = vaccine.Note,
                     Title = $"{vaccineSelection.Name} - {vaccineSelection.Description}"
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Temperature> GetTemperature(long lowerBound, long upperBound,
+    private static async Task<List<Temperature>> GetTemperature(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Temperature>()
+        var entries = await db.GetTable<Temperature>()
             .Where(temperature => temperature.Time >= lowerBound && temperature.Time <= upperBound)
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Sleep> GetSleep(long lowerBound, long upperBound,
+    private static async Task<List<Sleep>> GetSleep(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Sleep>()
+        var entries = await db.GetTable<Sleep>()
             .Where(sleep => sleep.Time >= lowerBound && sleep.Time <= upperBound)
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    public List<Growth> GetGrowth(long lowerBound, long upperBound,
+    public static async Task<List<Growth>> GetGrowth(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Growth>()
+        var entries = await db.GetTable<Growth>()
             .Where(growth => growth.Time >= lowerBound && growth.Time <= upperBound)
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Formula> GetFormula(long lowerBound, long upperBound,
+    private static async Task<List<Formula>> GetFormula(long lowerBound, long upperBound,
         DataConnection db)
     {
-        var entries = db.GetTable<Formula>()
+        var entries = await db.GetTable<Formula>()
             .Where(formula => formula.Time >= lowerBound && formula.Time <= upperBound)
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Diaper> GetDiapers(long lowerBound, long upperBound,
+    private static async Task<List<Diaper>> GetDiapers(long lowerBound, long upperBound,
         DataConnection db)
     {
-        var entries = db.GetTable<Diaper>()
+        var entries = await db.GetTable<Diaper>()
             .Where(diaper => diaper.Time >= lowerBound && diaper.Time <= upperBound)
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Joy> GetJoy(long lowerBound, long upperBound,
+    private static async Task<List<Joy>> GetJoy(long lowerBound, long upperBound,
         DataConnection db)
     {
-        var entries = db.GetTable<Joy>()
+        var entries = await db.GetTable<Joy>()
             .Where(joy => joy.Time >= lowerBound && joy.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<Picture>(),
@@ -323,15 +277,15 @@ public class SqLiteService : ISqLiteService
                     Note = joy.Note,
                     FileName = picture.FileName
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Joy> GetJoy(int day, int month,
+    private static async Task<List<Joy>> GetJoy(int day, int month,
         string babyName, DataConnection db)
     {
-        var entries = db.Query<Joy>($"""
+        var entries = await db.QueryToListAsync<Joy>($"""
             SELECT
                 Time,
                 Note,
@@ -341,16 +295,15 @@ public class SqLiteService : ISqLiteService
             FROM Joy 
             LEFT JOIN Picture ON Joy.Id == activityid 
             WHERE Month = '{month}' and Day = '{day}'
-            """)
-            .ToList();
+            """);
 
         return entries;
     }
 
-    private static List<Activity> GetActivity(long lowerBound, long upperBound,
+    private static async Task<List<Activity>> GetActivity(long lowerBound, long upperBound,
         DataConnection db)
     {
-        var entries = db.GetTable<Activity>()
+        var entries = await db.GetTable<Activity>()
             .Where(activity => activity.Time >= lowerBound && activity.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<ActivityDescription>(),
@@ -370,15 +323,15 @@ public class SqLiteService : ISqLiteService
                     FileName = picture.FileName,
                     Name = result.Description.Name
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Activity> GetActivity(int day, int month,
+    private static async Task<List<Activity>> GetActivity(int day, int month,
         string babyName, DataConnection db)
     {
-        var entries = db.Query<Activity>($"""
+        var entries = await db.QueryToListAsync<Activity>($"""
             SELECT
                 Time,
                 Note,
@@ -390,16 +343,15 @@ public class SqLiteService : ISqLiteService
             LEFT JOIN OtherActivityDesc ON OtherActivity.DescID == OtherActivityDesc.ID 
             LEFT JOIN Picture ON OtherActivity.Id == activityid 
             WHERE Month = '{month}' and Day = '{day}'
-            """)
-            .ToList();
+            """);
 
         return entries;
     }
 
-    private static List<Milestone> GetMilestone(long lowerBound, long upperBound,
+    private static async Task<List<Milestone>> GetMilestone(long lowerBound, long upperBound,
         string babyName, DataConnection db)
     {
-        var entries = db.GetTable<Milestone>()
+        var entries = await db.GetTable<Milestone>()
             .Where(milestone => milestone.Time >= lowerBound && milestone.Time <= upperBound)
             .LeftJoin(
                 db.GetTable<MilestoneSelection>(),
@@ -418,15 +370,15 @@ public class SqLiteService : ISqLiteService
                     Name = result.MilestoneSelection.Name,
                     Filename = picture.FileName
                 })
-            .ToList();
+            .ToListAsync();
 
         return entries;
     }
 
-    private static List<Milestone> GetMilestone(int day, int month,
+    private static async Task<List<Milestone>> GetMilestone(int day, int month,
         string babyName, DataConnection db)
     {
-        var entries = db.Query<Milestone>($"""
+        var entries = await db.QueryToListAsync<Milestone>($"""
             SELECT
                 Time,
                 Note,
@@ -438,8 +390,7 @@ public class SqLiteService : ISqLiteService
             LEFT JOIN Picture ON Milestone.Id == activityid 
             LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid 
             WHERE Month = '{month}' and Day = '{day}'
-            """)
-            .ToList();
+            """);
 
         return entries;
     }

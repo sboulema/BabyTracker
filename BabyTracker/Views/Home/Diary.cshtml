@@ -197,7 +197,7 @@ else
 
 @section Scripts {
     <script>
-        var babyName = '@Html.Raw(Model.BabyName)';
+        var babyName = '@Html.Raw(Model!.BabyName)';
 
         var availableDates = @Html.Raw(JsonSerializer.Serialize(Model.AvailableDates));
 
