@@ -1,4 +1,4 @@
-﻿@model GalleryViewModel
+﻿@model BabyTracker.Models.ViewModels.GalleryViewModel
 
 @{
     ViewData["Title"] = "Gallery - BabyTracker";
@@ -10,8 +10,8 @@
     @foreach (var picture in Model.Pictures)
     {
         <div class="col-lg-6 col-md-6 col-xs-6 mb-3">
-            <a href="~/picture/@picture.Filename" class="gallery-item">
-                <img src="~/picture/@picture.Filename/thumbnail" loading="lazy" class="img-thumbnail" />
+            <a href="~/picture/@picture.FileName" class="gallery-item">
+                <img src="~/picture/@picture.FileName/thumbnail" loading="lazy" class="img-thumbnail" />
             </a>
         </div>
     }

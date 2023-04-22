@@ -1,4 +1,4 @@
-@model BaseViewModel
+@model BabyTracker.Models.ViewModels.BaseViewModel
 
 <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark border-bottom box-shadow mb-3" style="background-color: #bd4d85">
     <div class="container">
@@ -48,12 +48,13 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto">
-                @if (User.Identity?.IsAuthenticated == true)
+                @if (Model != null &&
+                     User.Identity?.IsAuthenticated == true)
                 {
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img class="rounded-circle article-img" src="@Model?.Profile?.Image" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model?.Profile?.Name"/>
-                            @Model?.Profile?.Nickname
+                            <img class="rounded-circle article-img" src="@Model.ProfileImageUrl" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model.NickName"/>
+                            @Model.NickName
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/account/profile">Profile</a></li>

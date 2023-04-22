@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using BabyTracker.Models.Database;
 
 namespace BabyTracker.Models.ViewModels;
 
 public class BabiesViewModel : BaseViewModel
 {
-    public List<EntryModel> Babies { get; set; } = new();
+    public List<Baby> Babies { get; set; } = new();
 }

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.IO.Compression;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -18,15 +19,12 @@ public class ImportService : IImportService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IWebHostEnvironment _webHostEnvironment;
-    private readonly IAccountService _accountService;
 
     public ImportService(IHttpContextAccessor httpContextAccessor,
-        IWebHostEnvironment webHostEnvironment,
-        IAccountService accountService)
+        IWebHostEnvironment webHostEnvironment)
     {
         _httpContextAccessor = httpContextAccessor;
         _webHostEnvironment = webHostEnvironment;
-        _accountService = accountService;
     }
 
     public async Task<string> Unzip(Stream stream)
@@ -61,13 +59,13 @@ public class ImportService : IImportService
             return string.Empty;
         }
 
-        var profile = await _accountService.GetProfile(user);
+        var activeUserId = user.FindFirstValue("activeUserId");
 
-        var path = $"/data/Data/{profile?.UserId}";
+        var path = $"/data/Data/{activeUserId}";
 
         if (!_webHostEnvironment.IsProduction())
         {
-            path = $"{_webHostEnvironment.ContentRootPath}/Data/{profile?.UserId}";
+            path = $"{_webHostEnvironment.ContentRootPath}/Data/{activeUserId}";
         }
 
         return path;

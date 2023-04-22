@@ -1,11 +1,14 @@
-﻿using BabyTracker.Constants;
-using BabyTracker.Models;
+﻿using BabyTracker.Extensions;
+using BabyTracker.Models.Database;
+using LinqToDB;
+using LinqToDB.Data;
+using LinqToDB.SqlQuery;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -13,44 +16,41 @@ namespace BabyTracker.Services;
 
 public interface ISqLiteService
 {
-    Task<SqliteConnection> OpenConnection(ClaimsPrincipal user);
+    DataConnection OpenDataConnection(ClaimsPrincipal user);
 
-    Task<List<EntryModel>> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
+    Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, ClaimsPrincipal user, string babyName);
 
-    Task<List<EntryModel>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
+    Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName);
 
-    List<EntryModel> GetMemoriesFromDb(DateTime date, string userId, string babyName);
+    List<IDbEntry> GetMemoriesFromDb(DateTime date, string userId, string babyName);
 
-    List<EntryModel> GetGrowth(long lowerBound, long upperBound, string babyName, SqliteConnection connection);
+    List<Growth> GetGrowth(long lowerBound, long upperBound, string babyName, DataConnection db);
 
-    Task<List<EntryModel>> GetBabiesFromDb(ClaimsPrincipal user);
+    Task<List<Baby>> GetBabiesFromDb(ClaimsPrincipal user);
 
-    List<EntryModel> GetBabiesFromDb(string userId);
+    List<Baby> GetBabiesFromDb(string userId);
 
     Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName);
 
     Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName);
 
-    Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName);
+    Task<List<Picture>> GetPictures(ClaimsPrincipal user, string babyName);
 }
 
 public class SqLiteService : ISqLiteService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
-    private readonly IAccountService _accountService;
 
-    public SqLiteService(IWebHostEnvironment webHostEnvironment,
-        IAccountService accountService)
+    public SqLiteService(IWebHostEnvironment webHostEnvironment)
     {
         _webHostEnvironment = webHostEnvironment;
-        _accountService = accountService;
     }
 
-    public async Task<SqliteConnection> OpenConnection(ClaimsPrincipal user)
+    public DataConnection OpenDataConnection(ClaimsPrincipal user)
     {
-        var profile = await _accountService.GetProfile(user);
+        var activeUserId = user.FindFirstValue("activeUserId");
 
-        return OpenConnection(profile?.UserId);
+        return OpenDataConnection(activeUserId);
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class SqLiteService : ISqLiteService
     /// </summary>
     /// <param name="userId">userId without prefix</param>
     /// <returns></returns>
-    public SqliteConnection OpenConnection(string userId)
+    public DataConnection OpenDataConnection(string userId)
     {
         var path = $"/data/Data/{userId}/EasyLog.db";
 
@@ -67,571 +67,380 @@ public class SqLiteService : ISqLiteService
             path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
         }
 
-        var connection = new SqliteConnection($"Data Source={path}");
-        connection.Open();
-        return connection;
+        var db = new DataConnection(
+            new DataOptions()
+            .UseSQLite($"Data Source={path}"));
+
+        return db;
     }
 
-    public async Task<List<EntryModel>> GetEntriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
+    public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, ClaimsPrincipal user, string babyName)
     {
-        var connection = await OpenConnection(user);
+        using var dataConnection = OpenDataConnection(user);
 
-        var lowerBound = ToUnixTimestamp(date);
-        var upperBound = ToUnixTimestamp(date.AddDays(1));
+        var lowerBound = date.ToDateTime(TimeOnly.MinValue).ToUnixTimestamp();
+        var upperBound = date.AddDays(1).ToDateTime(TimeOnly.MinValue).ToUnixTimestamp();
 
-        var entries = new List<EntryModel>();
+        var entries = new List<IDbEntry>();
 
-        entries.AddRange(GetActivity(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetDiapers(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetFormula(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetGrowth(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetJoy(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetMedication(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetMilestone(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetSleep(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetSupplement(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetTemperature(lowerBound, upperBound, babyName, connection));
-        entries.AddRange(GetVaccine(lowerBound, upperBound, babyName, connection));
-
-        connection.Close();
+        entries.AddRange(GetActivity(lowerBound, upperBound, dataConnection));
+        entries.AddRange(GetDiapers(lowerBound, upperBound, dataConnection));
+        entries.AddRange(GetFormula(lowerBound, upperBound, dataConnection));
+        entries.AddRange(GetGrowth(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetJoy(lowerBound, upperBound, dataConnection));
+        entries.AddRange(GetMedication(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetMilestone(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetSleep(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetSupplement(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetTemperature(lowerBound, upperBound, babyName, dataConnection));
+        entries.AddRange(GetVaccine(lowerBound, upperBound, babyName, dataConnection));
 
         return entries;
     }
 
-    public async Task<List<EntryModel>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
+    public async Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, ClaimsPrincipal user, string babyName)
     {
-        var connection = await OpenConnection(user);
+        using var dataConnection = OpenDataConnection(user);
 
-        var entries = new List<EntryModel>();
+        var entries = new List<IDbEntry>();
 
-        entries.AddRange(GetActivity(date.Day, date.Month, babyName, connection));
-        entries.AddRange(GetJoy(date.Day, date.Month, babyName, connection));
-        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, connection));
-
-        connection.Close();
+        entries.AddRange(GetActivity(date.Day, date.Month, babyName, dataConnection));
+        entries.AddRange(GetJoy(date.Day, date.Month, babyName, dataConnection));
+        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, dataConnection));
 
         return entries;
     }
 
-    public List<EntryModel> GetMemoriesFromDb(DateTime date, string userId, string babyName)
+    public List<IDbEntry> GetMemoriesFromDb(DateTime date, string userId, string babyName)
     {
-        var connection = OpenConnection(userId);
+        using var dataConnection = OpenDataConnection(userId);
 
-        var entries = new List<EntryModel>();
+        var entries = new List<IDbEntry>();
 
-        entries.AddRange(GetActivity(date.Day, date.Month, babyName, connection));
-        entries.AddRange(GetJoy(date.Day, date.Month, babyName, connection));
-        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, connection));
-
-        connection.Close();
+        entries.AddRange(GetActivity(date.Day, date.Month, babyName, dataConnection));
+        entries.AddRange(GetJoy(date.Day, date.Month, babyName, dataConnection));
+        entries.AddRange(GetMilestone(date.Day, date.Month, babyName, dataConnection));
 
         return entries;
     }
 
-    public async Task<List<EntryModel>> GetBabiesFromDb(ClaimsPrincipal user)
+    public async Task<List<Baby>> GetBabiesFromDb(ClaimsPrincipal user)
     {
-        var profile = await _accountService.GetProfile(user);
+        var userId = user.FindFirstValue("activeUserId");
 
-        return GetBabiesFromDb(profile?.UserId);
-    }
-
-    public List<EntryModel> GetBabiesFromDb(string userId)
-    {
-        var connection = OpenConnection(userId);
-
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText =
-            "SELECT " +
-                "dateTime(Timestamp, 'unixepoch'), " +
-                "Name, dateTime(DOB, 'unixepoch'), " +
-                "dateTime(DueDay, 'unixepoch'), " +
-                "Gender, Picture" +
-            " FROM Baby";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        if (string.IsNullOrEmpty(userId))
         {
-            entries.Add(new BabyModel
-            {
-                TimeUTC = reader.GetDateTime(0),
-                BabyName = GetString(reader, 1),
-                DateOfBirth = reader.GetDateTime(2),
-                DueDate = reader.GetDateTime(3),
-                Gender = reader.GetInt32(4),
-                PictureFileName = reader.GetString(5)
-            });
+            return new();
         }
 
-        connection.Close();
+        return GetBabiesFromDb(userId);
+    }
 
-        return entries;
+    public List<Baby> GetBabiesFromDb(string userId)
+    {
+        using var db = OpenDataConnection(userId);
+
+        var babies = db.GetTable<Baby>().ToList();
+        return babies;
     }
 
     public async Task<DateTime> GetLastEntryDateTime(ClaimsPrincipal user, string babyName)
     {
-        var connection = await OpenConnection(user);
+        using var db = OpenDataConnection(user);
 
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Formula UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Growth UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Joy UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Medicine UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Milestone UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM OtherActivity UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Sleep UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Temperature UNION ALL " +
-                              "SELECT dateTime(Timestamp, 'unixepoch') AS Timestamp FROM Vaccine " +
-                              "ORDER BY Timestamp DESC " +
-                              "LIMIT 1";
+        var timestamp = await db.GetTable<Diaper>().Select(diaper => diaper.Time)
+            .Union(db.GetTable<Formula>().Select(formula => formula.Time))
+            .Union(db.GetTable<Growth>().Select(growth => growth.Time))
+            .Union(db.GetTable<Joy>().Select(joy => joy.Time))
+            .Union(db.GetTable<Medication>().Select(medication => medication.Time))
+            .Union(db.GetTable<Milestone>().Select(milestone => milestone.Time))
+            .Union(db.GetTable<Activity>().Select(activity => activity.Time))
+            .Union(db.GetTable<Sleep>().Select(sleep => sleep.Time))
+            .Union(db.GetTable<Temperature>().Select(temperature => temperature.Time))
+            .Union(db.GetTable<Vaccine>().Select(vaccine => vaccine.Time))
+            .OrderByDescending(entry => entry)
+            .Take(1)
+            .FirstOrDefaultAsync();
 
-        using var reader = command.ExecuteReader();
-        reader.Read();
-
-        return reader.GetDateTime(0);
+        return timestamp.ToDateTimeLocal();
     }
 
     public async Task<List<DateOnly>> GetAllEntryDates(ClaimsPrincipal user, string babyName)
     {
-        var dates = new List<DateOnly>();
+        using var db = OpenDataConnection(user);
 
-        var connection = await OpenConnection(user);
+        var timestamps = await db.GetTable<Diaper>().Select(diaper => diaper.Time)
+            .Union(db.GetTable<Formula>().Select(formula => formula.Time))
+            .Union(db.GetTable<Growth>().Select(growth => growth.Time))
+            .Union(db.GetTable<Joy>().Select(joy => joy.Time))
+            .Union(db.GetTable<Medication>().Select(medication => medication.Time))
+            .Union(db.GetTable<Milestone>().Select(milestone => milestone.Time))
+            .Union(db.GetTable<Activity>().Select(activity => activity.Time))
+            .Union(db.GetTable<Sleep>().Select(sleep => sleep.Time))
+            .Union(db.GetTable<Temperature>().Select(temperature => temperature.Time))
+            .Union(db.GetTable<Vaccine>().Select(vaccine => vaccine.Time))
+            .ToListAsync();
 
-        var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Diaper UNION 
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Formula UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Growth UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Joy UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Medicine UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Milestone UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM OtherActivity UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Sleep UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Temperature UNION
-            SELECT date(Timestamp, 'unixepoch') AS Timestamp FROM Vaccine
-            """;
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            dates.Add(DateOnly.FromDateTime(reader.GetDateTime(0)));
-        }
-
-        return dates;
+        return timestamps
+            .Select(timestamp => timestamp.ToDateOnly())
+            .Distinct()
+            .ToList();
     }
 
-    public async Task<List<PictureModel>> GetPictures(ClaimsPrincipal user, string babyName)
+    public async Task<List<Picture>> GetPictures(ClaimsPrincipal user, string babyName)
     {
-        var pictures = new List<PictureModel>();
+        using var db = OpenDataConnection(user);
 
-        var connection = await OpenConnection(user);
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Timestamp, 'unixepoch'), FileName" +
-        " FROM Picture ORDER BY Timestamp DESC";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            pictures.Add(new PictureModel
-            {
-                TimeUTC = reader.GetDateTime(0),
-                Filename = GetString(reader, 1)
-            });
-        }
+        var pictures = db.GetTable<Picture>()
+            .OrderByDescending(picture => picture.Timestamp)
+            .ToList();
 
         return pictures;
     }
 
-    private static List<EntryModel> GetSupplement(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Supplement> GetSupplement(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount, Unit, Name, Description" +
-        " FROM OtherFeed LEFT JOIN OtherFeedSelection ON TypeID == OtherFeedSelection.ID" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new SupplementModel
-            {
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Supplement = $"{GetString(reader, 4)} {GetString(reader, 2)} {GetString(reader, 3)}",
-                BabyName = babyName
-            });
-        }
+        var entries = db.GetTable<Supplement>()
+            .Where(supplement => supplement.Time >= lowerBound && supplement.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<SupplementSelection>(),
+                (supplement, supplementSelection) => supplement.TypeId == supplementSelection.Id,
+                (supplement, supplementSelection) => new Supplement
+                {
+                    Time = supplement.Time,
+                    Note = supplement.Note,
+                    Title = $"{supplement.Amount} {supplement.Unit} {supplementSelection.Name}"
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetMedication(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Medication> GetMedication(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description, Amount, AmountPerTime, Unit" +
-        " FROM Medicine LEFT JOIN MedicineSelection ON MedID == MedicineSelection.ID" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new MedicationModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                MedicationName = $"{GetString(reader, 2)}",
-                Amount = reader.GetInt32(4),
-                AmountPerTime = reader.GetInt32(5),
-                Unit = GetString(reader, 6)
-            });
-        }
+        var entries = db.GetTable<Medication>()
+            .Where(medication => medication.Time >= lowerBound && medication.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<MedicationSelection>(),
+                (medication, medicationSelection) => medication.MedicineSelectionId == medicationSelection.Id,
+                (medication, medicationSelection) => new Medication
+                {
+                    Time = medication.Time,
+                    Note = medication.Note,
+                    MedicationName = medicationSelection.Name,
+                    Amount = medication.Amount,
+                    AmountPerTime = medicationSelection.AmountPerTime,
+                    Unit = medicationSelection.Unit
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetVaccine(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Vaccine> GetVaccine(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Name, Description" +
-        " FROM Vaccine LEFT JOIN VaccineSelection ON VaccID == VaccineSelection.ID" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new VaccineModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Vaccine = $"{GetString(reader, 2)} - {GetString(reader, 3)}"
-            });
-        }
+        var entries = db.GetTable<Vaccine>()
+            .Where(vaccine => vaccine.Time >= lowerBound && vaccine.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<VaccineSelection>(),
+                (vaccine, vaccineSelection) => vaccine.VaccineId == vaccineSelection.Id,
+                (vaccine, vaccineSelection) => new Vaccine
+                {
+                    Time = vaccine.Time,
+                    BabyName = babyName,
+                    Note = vaccine.Note,
+                    Title = $"{vaccineSelection.Name} - {vaccineSelection.Description}"
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetTemperature(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Temperature> GetTemperature(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Temp" +
-        " FROM Temperature" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new TemperatureModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Temperature = reader.GetDouble(2)
-            });
-        }
+        var entries = db.GetTable<Temperature>()
+            .Where(temperature => temperature.Time >= lowerBound && temperature.Time <= upperBound)
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetSleep(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Sleep> GetSleep(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Duration" +
-        " FROM Sleep" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new SleepModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Duration = reader.GetInt32(2).ToString()
-            });
-        }
+        var entries = db.GetTable<Sleep>()
+            .Where(sleep => sleep.Time >= lowerBound && sleep.Time <= upperBound)
+            .ToList();
 
         return entries;
     }
 
-    public List<EntryModel> GetGrowth(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    public List<Growth> GetGrowth(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Weight, Length, Head" +
-        " FROM Growth" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new Growth
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Weight = reader.GetDouble(2),
-                Length = reader.GetDouble(3),
-                HeadSize = reader.GetDouble(4)
-            });
-        }
+        var entries = db.GetTable<Growth>()
+            .Where(growth => growth.Time >= lowerBound && growth.Time <= upperBound)
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetFormula(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Formula> GetFormula(long lowerBound, long upperBound,
+        DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Amount" +
-        " FROM Formula" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new Formula
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Amount = reader.GetInt32(2).ToString()
-            });
-        }
+        var entries = db.GetTable<Formula>()
+            .Where(formula => formula.Time >= lowerBound && formula.Time <= upperBound)
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetDiapers(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Diaper> GetDiapers(long lowerBound, long upperBound,
+        DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Status" +
-        " FROM Diaper" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new Diaper
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Status = GetDiaperStatus(reader.GetString(2))
-            });
-        }
+        var entries = db.GetTable<Diaper>()
+            .Where(diaper => diaper.Time >= lowerBound && diaper.Time <= upperBound)
+            .ToList();
 
         return entries;
     }
 
-    private static string GetDiaperStatus(string status)
-        => status switch
-        {
-            DiaperStatus.Wet => "Wet",
-            DiaperStatus.Dirty => "Dirty",
-            DiaperStatus.Mixed => "Mixed",
-            _ => string.Empty,
-        };
-
-    private static List<EntryModel> GetJoy(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Joy> GetJoy(long lowerBound, long upperBound,
+        DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename" +
-        " FROM Joy LEFT JOIN Picture ON Joy.Id == activityid" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new Joy
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2)
-            });
-        }
+        var entries = db.GetTable<Joy>()
+            .Where(joy => joy.Time >= lowerBound && joy.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<Picture>(),
+                (joy, picture) => joy.Id == picture.ActivityId,
+                (joy, picture) => new Joy
+                {
+                    Time = joy.Time,
+                    Note = joy.Note,
+                    FileName = picture.FileName
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetJoy(int day, int month,
-        string babyName, SqliteConnection connection)
+    private static List<Joy> GetJoy(int day, int month,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename," +
-        " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
-        " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
-        " FROM Joy LEFT JOIN Picture ON Joy.Id == activityid" +
-        $" WHERE Month = '{month}' AND Day = '{day}'";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new Joy
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2)
-            });
-        }
+        var entries = db.Query<Joy>($"""
+            SELECT
+                Time,
+                Note,
+                Filename,
+                ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month,
+                ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day
+            FROM Joy 
+            LEFT JOIN Picture ON Joy.Id == activityid 
+            WHERE Month = '{month}' and Day = '{day}'
+            """)
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetActivity(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Activity> GetActivity(long lowerBound, long upperBound,
+        DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name " +
-            "FROM OtherActivity " +
-            "LEFT JOIN Picture ON OtherActivity.Id == activityid " +
-            "LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new ActivityModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2),
-                Duration = reader.GetInt32(3).ToString(),
-                OtherActivity = GetString(reader, 4)
-            });
-        }
+        var entries = db.GetTable<Activity>()
+            .Where(activity => activity.Time >= lowerBound && activity.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<ActivityDescription>(),
+                (activity, description) => activity.DescriptionId == description.Id,
+                (activity, description) => new
+                {
+                    Activity = activity,
+                    Description = description
+                })
+            .LeftJoin(
+                db.GetTable<Picture>(),
+                (result, picture) => result.Activity.Id == picture.ActivityId,
+                (result, picture) => new Activity
+                {
+                    Time = result.Activity.Time,
+                    Note = result.Activity.Note,
+                    FileName = picture.FileName,
+                    Name = result.Description.Name
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetActivity(int day, int month,
-        string babyName, SqliteConnection connection)
+    private static List<Activity> GetActivity(int day, int month,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Duration, Name," +
-            " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
-            " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
-            " FROM OtherActivity" +
-            " LEFT JOIN Picture ON OtherActivity.Id == activityid" +
-            " LEFT JOIN OtherActivityDesc ON OtherActivityDesc.Id == DescID" +
-            $" WHERE Month = '{month}' AND Day = '{day}'";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new ActivityModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2),
-                Duration = reader.GetInt32(3).ToString(),
-                OtherActivity = GetString(reader, 4)
-            });
-        }
+        var entries = db.Query<Activity>($"""
+            SELECT
+                Time,
+                Note,
+                Filename,
+                Name,
+                ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month,
+                ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day
+            FROM OtherActivity 
+            LEFT JOIN OtherActivityDesc ON OtherActivity.DescID == OtherActivityDesc.ID 
+            LEFT JOIN Picture ON OtherActivity.Id == activityid 
+            WHERE Month = '{month}' and Day = '{day}'
+            """)
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetMilestone(long lowerBound, long upperBound,
-        string babyName, SqliteConnection connection)
+    private static List<Milestone> GetMilestone(long lowerBound, long upperBound,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name " +
-            "FROM Milestone " +
-            "LEFT JOIN Picture ON Milestone.Id == activityid " +
-            "LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
-        $" WHERE Time >= {lowerBound} AND Time <= {upperBound}";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new MilestoneModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2),
-                Milestone = GetString(reader, 3)
-            });
-        }
+        var entries = db.GetTable<Milestone>()
+            .Where(milestone => milestone.Time >= lowerBound && milestone.Time <= upperBound)
+            .LeftJoin(
+                db.GetTable<MilestoneSelection>(),
+                (milestone, milestoneSelection) => milestone.MilestoneSelectionId == milestoneSelection.Id,
+                (milestone, milestoneSelection) => new {
+                    Milestone = milestone,
+                    MilestoneSelection = milestoneSelection
+                })
+            .LeftJoin(
+                db.GetTable<Picture>(),
+                (result, picture) => result.Milestone.Id == picture.ActivityId,
+                (result, picture) => new Milestone
+                {
+                    Time = result.Milestone.Time,
+                    Note = result.Milestone.Note,
+                    Name = result.MilestoneSelection.Name,
+                    Filename = picture.FileName
+                })
+            .ToList();
 
         return entries;
     }
 
-    private static List<EntryModel> GetMilestone(int day, int month,
-        string babyName, SqliteConnection connection)
+    private static List<Milestone> GetMilestone(int day, int month,
+        string babyName, DataConnection db)
     {
-        var entries = new List<EntryModel>();
-
-        var command = connection.CreateCommand();
-        command.CommandText = "SELECT dateTime(Time, 'unixepoch'), Note, Filename, Name," +
-            " ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month," +
-            " ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day" +
-            " FROM Milestone" +
-            " LEFT JOIN Picture ON Milestone.Id == activityid" +
-            " LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid" +
-            $" WHERE Day = '{day}' AND Month = '{month}'";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            entries.Add(new MilestoneModel
-            {
-                BabyName = babyName,
-                TimeUTC = reader.GetDateTime(0),
-                Note = GetString(reader, 1),
-                Filename = GetString(reader, 2),
-                Milestone = GetString(reader, 3)
-            });
-        }
+        var entries = db.Query<Milestone>($"""
+            SELECT
+                Time,
+                Note,
+                Filename,
+                Name,
+                ltrim(strftime('%m', datetime(TIME, 'unixepoch')), 0) AS Month,
+                ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day
+            FROM Milestone 
+            LEFT JOIN Picture ON Milestone.Id == activityid 
+            LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid 
+            WHERE Month = '{month}' and Day = '{day}'
+            """)
+            .ToList();
 
         return entries;
     }
-
-    private static string GetString(SqliteDataReader reader, int column)
-        => reader.IsDBNull(column) ? string.Empty : reader.GetString(column);
-
-    private static long ToUnixTimestamp(DateTime date)
-        => new DateTimeOffset(date).ToUnixTimeSeconds();
 }

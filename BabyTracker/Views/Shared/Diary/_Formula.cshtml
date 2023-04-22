@@ -1,4 +1,6 @@
-﻿@model Formula
+﻿@using BabyTracker.Extensions;
+
+@model BabyTracker.Models.Database.Formula
 
 <tr>
     <td>
@@ -7,24 +9,24 @@
     <td>
         Formula
     </td>
-    <td>
+    <td style="width: 64px;">
         <img src="~/img/icon_review_formula.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
-        <h5 class="text-warning">Formula @Model.Amount ml</h5>
+        @Model.Time.ToDateTimeLocal().ToShortTimeString()<br />
+        <h5 class="bt-orange-title">Formula @Model.Amount ml</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note
         }
     </td>
     <td>
-        <div class="card" id="formula_@Model.Time.Ticks">
+        <div class="card" id="formula_@Model.Time.ToDateTimeLocal().Ticks">
             <img class="card-img-top" src="~/img/icon_review_formula.png">
             <div class="card-body">
                 <h5 class="card-title text-warning">Formula @Model.Amount ml</h5>
                 <p class="card-text">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+                <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
         </div>
     </td>

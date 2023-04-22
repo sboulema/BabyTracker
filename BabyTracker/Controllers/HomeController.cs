@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using BabyTracker.Models;
 using BabyTracker.Services;
 using System;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using System.Linq;
 
 namespace BabyTracker.Controllers;
 
@@ -14,70 +15,83 @@ public class HomeController : Controller
     private readonly IImportService _importService;
     private readonly ISqLiteService _sqLiteService;
     private readonly IChartService _chartService;
-    private readonly IAccountService _accountService;
 
     public HomeController(
         IImportService importService,
         ISqLiteService sqLiteService,
-        IChartService chartService,
-        IAccountService accountService)
+        IChartService chartService)
     {
         _importService = importService;
         _sqLiteService = sqLiteService;
         _chartService = chartService;
-        _accountService = accountService;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
+        // User logged in and has a data clone available
         if (User.Identity?.IsAuthenticated == true &&
             await _importService.HasDataClone())
         {
             var babiesViewModel = new BabiesViewModel
             {
-                Profile = await _accountService.GetProfile(User),
-                Babies = await _sqLiteService.GetBabiesFromDb(User)
+                Babies = await _sqLiteService.GetBabiesFromDb(User),
+                NickName = User.FindFirstValue("nickname") ?? string.Empty,
+                ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
+                UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
             };
 
             return View("Babies", babiesViewModel);
         }
-        else if (User.Identity?.IsAuthenticated == true)
+        
+        // User logged in but no data clone available
+        if (User.Identity?.IsAuthenticated == true)
         {
             var model = new BaseViewModel
             {
-                Profile = await _accountService.GetProfile(User)
+                NickName = User.FindFirstValue("nickname") ?? string.Empty,
+                ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
+                UserId = User.FindFirstValue("activeUserId") ?? string.Empty
             };
 
             return View("LoggedIn", model);
         }
 
+        // User not logged in
         return View(new BaseViewModel());
     }
 
     [Authorize]
-    [HttpGet("{babyName}/{inputDate?}")]
-    public async Task<IActionResult> Diary(string babyName, string inputDate)
+    [HttpGet("{babyName}/{date?}")]
+    public async Task<IActionResult> Diary(string babyName, DateOnly? date)
     {
-        var date = DateTime.Now;
+        var availableDates = await _sqLiteService.GetAllEntryDates(User, babyName);
 
-        if (!string.IsNullOrEmpty(inputDate))
+        if (date == null)
         {
-            date = DateTime.Parse(inputDate);
+            date = availableDates.LastOrDefault();
+
+            if (date == null)
+            {
+                date = DateOnly.FromDateTime(DateTime.Now);
+            }
         }
 
-        var entries = await _sqLiteService.GetEntriesFromDb(date, User, babyName);
-        var importResultModel = new ImportResultModel
-        {
-            Entries = entries
-        };
-        var model = DiaryService.GetDays(importResultModel);
+        var entries = await _sqLiteService.GetEntriesFromDb(date.Value, User, babyName);
+        var model = DiaryService.GetDays(entries);
 
-        model.Date = date.ToString("yyyy-MM-dd");
-        model.DateNext = date.AddDays(1).ToString("yyyy-MM-dd");
-        model.DatePrevious = date.AddDays(-1).ToString("yyyy-MM-dd");
+        var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
+        var datePrevious = availableDates.TakeWhile(availableDate => availableDate != date).LastOrDefault();
+
+        model.AvailableDates = availableDates;
+        model.Date = date.Value;
+        model.DateNextUrl = dateNext != DateOnly.MinValue ? $"/{babyName}/{dateNext:yyyy-MM-dd}" : string.Empty;
+        model.DatePreviousUrl = datePrevious != DateOnly.MinValue ? $"/{babyName}/{datePrevious:yyyy-MM-dd}" : string.Empty;
         model.BabyName = babyName;
-        model.Profile = await _accountService.GetProfile(User);
+
+        model.NickName = User.FindFirstValue("nickname") ?? string.Empty;
+        model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
+        model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
         var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
         model.MemoriesBadgeCount = memories.Count;
@@ -93,17 +107,15 @@ public class HomeController : Controller
     public async Task<IActionResult> Memories(string babyName)
     {
         var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, User, babyName);
-        var importResultModel = new ImportResultModel
-        {
-            Entries = memories
-        };
-
-        var model = DiaryService.GetDays(importResultModel);
+        var model = DiaryService.GetDays(memories);
 
         model.BabyName = babyName;
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
-        model.Profile = await _accountService.GetProfile(User);
+
+        model.NickName = User.FindFirstValue("nickname") ?? string.Empty;
+        model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
+        model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
         return View("Memories", model);
     }
@@ -118,7 +130,10 @@ public class HomeController : Controller
         model.BabyName = babyName;
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
-        model.Profile = await _accountService.GetProfile(User);
+
+        model.NickName = User.FindFirstValue("nickname") ?? string.Empty;
+        model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
+        model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
         return View("Charts", model);
     }
@@ -136,18 +151,11 @@ public class HomeController : Controller
             BabyName = babyName,
             MemoriesBadgeCount = memories.Count,
             ShowMemoriesLink = true,
-            Profile = await _accountService.GetProfile(User)
+            NickName = User.FindFirstValue("nickname") ?? string.Empty,
+            ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
+            UserId = User.FindFirstValue("activeUserId") ?? string.Empty
         };
 
         return View("Gallery", model);
-    }
-
-    [Authorize]
-    [HttpGet("{babyName}/dates")]
-    public async Task<IActionResult> Dates(string babyName)
-    {
-        var dates = await _sqLiteService.GetAllEntryDates(User, babyName);
-
-        return Ok(dates);
     }
 }

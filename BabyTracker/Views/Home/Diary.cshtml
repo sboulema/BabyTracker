@@ -1,32 +1,11 @@
-﻿@model DiaryViewModel
+﻿@using BabyTracker.Models.Database;
+@using System.Text.Json;
+
+@model BabyTracker.Models.ViewModels.DiaryViewModel
 
 @{
     ViewData["Title"] = "Diary - BabyTracker";
 }
-
-<form class="row row-cols-lg-auto g-3 align-items-center">
-    @if (Model != null)
-    {
-        <div class="col-12">
-            <a class="btn btn-primary mr-2" href="/@Model.BabyName/@Model.DatePrevious" role="button"><i class="fas fa-angle-left"></i></a>
-        </div>
-    }
-
-@*    <div class="col-12">
-        <input type="date" id="dateEntry" onblur="filterDate(event)" value="@Model?.Date" class="form-control mr-2" style="width: auto;" />
-    </div>*@
-
-    <div class="col-12">
-        <input type="text" id="datePickr" onchange="filterDate(event)" value="@Model?.Date" class="form-control mr-2" style="width: auto;" />
-    </div>
-
-    @if (Model != null)
-    {
-        <div class="col-12">
-            <a class="btn btn-primary" href="/@Model.BabyName/@Model.DateNext" role="button"><i class="fas fa-angle-right"></i></a>
-        </div>
-    }
-</form>
 
 @if (Model == null)
 {
@@ -38,12 +17,15 @@
 }
 else
 {
-    <br />
-    <br />
+    <div class="input-group mb-3" style="width: fit-content;">
+        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model.DatePreviousUrl) ? "disabled" : string.Empty)" href="@Model.DatePreviousUrl"><i class="fas fa-angle-left"></i></a>
+        <input type="text" id="datePickr" onchange="filterDate(event)" value="@Model?.Date.ToString("yyyy-MM-dd")" class="form-control">
+        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model!.DateNextUrl) ? "disabled" : string.Empty)" href="@Model.DateNextUrl"><i class="fas fa-angle-right"></i></a>
+    </div>
 
     @if (Model.Entries.Any()) 
     {
-        <div class="btn-group-toggle" data-toggle="buttons">
+        <div class="btn-group-toggle mb-3" data-toggle="buttons">
             @foreach (var entryType in Model.EntryTypes)
             {
                 <label class="btn btn-outline-info active mb-2" title="@entryType">
@@ -52,8 +34,6 @@ else
                 </label>
             }
         </div>
-
-        <br />
 
         <div class="btn-group mb-3">
             <input type="radio" class="btn-check" name="viewStyle" id="viewStyleList" onchange="toggleViewStyle()" autocomplete="off" checked>
@@ -83,31 +63,31 @@ else
                     {
                         @await Html.PartialAsync("Diary/_Growth", growth)
                     }
-                    else if (entry is MedicationModel medication)
+                    else if (entry is Medication medication)
                     {
                         @await Html.PartialAsync("Diary/_Medication", medication)
                     }
-                    else if (entry is MilestoneModel milestone)
+                    else if (entry is Milestone milestone)
                     {
                         @await Html.PartialAsync("Diary/_Milestone", milestone)
                     }
-                    else if (entry is ActivityModel activity)
+                    else if (entry is Activity activity)
                     {
                         @await Html.PartialAsync("Diary/_Activity", activity)
                     }
-                    else if (entry is SleepModel sleep)
+                    else if (entry is Sleep sleep)
                     {
                         @await Html.PartialAsync("Diary/_Sleep", sleep)
                     }
-                    else if (entry is SupplementModel supplement)
+                    else if (entry is Supplement supplement)
                     {
                         @await Html.PartialAsync("Diary/_Supplement", supplement)
                     }
-                    else if (entry is TemperatureModel temperature)
+                    else if (entry is Temperature temperature)
                     {
                         @await Html.PartialAsync("Diary/_Temperature", temperature)
                     }
-                    else if (entry is VaccineModel vaccine)
+                    else if (entry is Vaccine vaccine)
                     {
                         @await Html.PartialAsync("Diary/_Vaccine", vaccine)
                     }
@@ -219,16 +199,17 @@ else
     <script>
         var babyName = '@Html.Raw(Model.BabyName)';
 
+        var availableDates = @Html.Raw(JsonSerializer.Serialize(Model.AvailableDates));
+
         function filterDate(event) {
-            var date = new Date(event.target.value);
-            window.location.href = "/" + babyName + "/" + date.getFullYear() + "-" + ('0' + (date.getMonth() + 1)).slice(-2) + "-" + ('0' + date.getDate()).slice(-2);
+            window.location.href = "/" + babyName + "/" + event.target.value;
         }
 
         $(document).ready(function () {
-            $.getJSON(`/${babyName}/dates`, function (data) {
-                $("#datePickr").flatpickr({
-                    enable: data
-                });
+            $("#datePickr").flatpickr({
+                enable: availableDates,
+                defaultDate: $("#datePickr").text(),
+                allowInput: true
             });
         });
     </script>

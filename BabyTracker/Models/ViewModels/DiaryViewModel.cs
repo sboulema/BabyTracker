@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BabyTracker.Models.Database;
 
 namespace BabyTracker.Models.ViewModels;
 
 public class DiaryViewModel : BaseViewModel
 {
-    public IEnumerable<IGrouping<DateTime, EntryModel>> Days { get; set; } = Enumerable.Empty<IGrouping<DateTime, EntryModel>>();
+    public IEnumerable<IGrouping<DateTime, IDbEntry>> Days { get; set; } = Enumerable.Empty<IGrouping<DateTime, IDbEntry>>();
 
-    public IEnumerable<EntryModel> Entries { get; set; } = Enumerable.Empty<EntryModel>();
+    public IEnumerable<IDbEntry> Entries { get; set; } = Enumerable.Empty<IDbEntry>();
 
     public string PictureDirectory { get; set; } = string.Empty;
 
     public List<string> EntryTypes { get; set; } = new List<string> { "Diaper", "Formula", "Supplement", "Joy", "Growth", "Medication", "Milestone", "Activity", "Sleep", "Temperature", "Vaccine" };
 
-    public string Date { get; set; } = string.Empty;
+    public DateOnly Date { get; set; }
 
-    public string DateNext { get; set; } = string.Empty;
+    public List<DateOnly> AvailableDates = new();
 
-    public string DatePrevious { get; set; } = string.Empty;
+    public string DateNextUrl { get; set; } = string.Empty;
+
+    public string DatePreviousUrl { get; set; } = string.Empty;
 }

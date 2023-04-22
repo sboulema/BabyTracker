@@ -1,4 +1,7 @@
-﻿@model DiaryViewModel
+﻿@using BabyTracker.Extensions;
+@using BabyTracker.Models.Database;
+
+@model BabyTracker.Models.ViewModels.DiaryViewModel
 
 @{
     ViewData["Title"] = "Memories - BabyTracker";
@@ -12,7 +15,7 @@
     <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
 </div>
 
-@foreach (var group in Model.Entries.GroupBy(entry => entry.TimeUTC.Year))
+@foreach (var group in Model.Entries.GroupBy(entry => entry.Time.ToDateTimeUTC().Year))
 {
     @if (group.Any() == false)
     {
@@ -20,7 +23,7 @@
     }
 
     var yearsAgo = DateTime.UtcNow.Year - group.Key;
-    <h1 style="color: #bd4d85;">
+    <h1 class="bt-purple-title">
         @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
     </h1>
 
@@ -32,11 +35,11 @@
                 {
                     @await Html.PartialAsync("Diary/_Joy", joy)
                 }
-                else if (entry is MilestoneModel milestone)
+                else if (entry is Milestone milestone)
                 {
                     @await Html.PartialAsync("Diary/_Milestone", milestone)
                 }
-                else if (entry is ActivityModel activity)
+                else if (entry is Activity activity)
                 {
                     @await Html.PartialAsync("Diary/_Activity", activity)
                 }

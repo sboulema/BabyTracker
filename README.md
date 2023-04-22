@@ -59,7 +59,7 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 - Sendgrid account
 
 ## Building Dependencies
-- .NET 6.0
+- .NET 7.0
 
 ## Disclaimer
 This website is not produced, endorsed, supported, or affiliated with nighp software.

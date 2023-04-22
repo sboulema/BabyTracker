@@ -6,8 +6,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BabyTracker.Models;
+using BabyTracker.Extensions;
 using BabyTracker.Models.Charts;
+using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
 using CsvHelper;
 
@@ -39,16 +40,15 @@ public class ChartService : IChartService
     {
         var result = new ChartsViewModel();
 
-        var connection = await _sqLiteService.OpenConnection(user);
+        using var connection = _sqLiteService.OpenDataConnection(user);
+
         var entries = _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, connection);
         var babies = await _sqLiteService.GetBabiesFromDb(user);
-        var baby = babies.FirstOrDefault(baby => baby.BabyName == babyName) as BabyModel;
-
-        connection.Close();
+        var baby = babies.FirstOrDefault(baby => baby.Name == babyName);
 
         foreach (Growth entry in entries.Take(maxAge ?? int.MaxValue))
         {
-            var ageInMonths = (entry.TimeUTC - baby.DateOfBirth).Days / (double)30;
+            var ageInMonths = (entry.Time.ToDateTimeUTC() - baby.DOB.ToDateTimeUTC()).Days / (double)30;
 
             if (entry.Weight > 0)
             {

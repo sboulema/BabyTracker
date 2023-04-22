@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using BabyTracker.Models.ViewModels;
 using BabyTracker.Services;
 using BabyTracker.Models.Account;
+using System.Security.Claims;
 
 namespace BabyTracker.Controllers;
 
@@ -94,10 +95,12 @@ public class AccountController : Controller
 
         var model = new ProfileViewModel
         {
-            Profile = await _accountService.GetProfile(User),
             EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
             MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
-            ShareList = userMetaData?.ShareList ?? string.Empty
+            ShareList = userMetaData?.ShareList ?? string.Empty,
+            NickName = User.FindFirstValue("nickname") ?? string.Empty,
+            ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
+            UserId = User.FindFirstValue("userId") ?? string.Empty,
         };
 
         return View(model);

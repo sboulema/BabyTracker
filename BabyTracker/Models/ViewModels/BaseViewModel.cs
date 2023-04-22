@@ -1,5 +1,3 @@
-using BabyTracker.Models.Account;
-
 namespace BabyTracker.Models.ViewModels;
 
 public class BaseViewModel
@@ -12,5 +10,9 @@ public class BaseViewModel
 
     public string BaseUrl { get; set; } = string.Empty;
 
-    public Profile? Profile { get; set; }
+    public string ProfileImageUrl { get; set; } = string.Empty;
+
+    public string NickName { get; set; } = string.Empty;
+
+    public string UserId { get; set; } = string.Empty;
 }

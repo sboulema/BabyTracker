@@ -28,8 +28,6 @@ public interface IAccountService
 
     Task<List<User>?> SearchUsersWithEnableMemoriesEmail();
 
-    Task<Profile?> GetProfile(ClaimsPrincipal user);
-
     Task<string> ResetPassword(LoginViewModel model);
 }
 
@@ -67,6 +65,9 @@ public class AccountService : IAccountService
         }
 
         var user = await _authenticationApiClient.GetUserInfoAsync(result.AccessToken);
+        var userId = user.UserId.Replace("auth0|", string.Empty);
+
+        var shareUser = await SearchUsersWithShareList(user.FullName);
 
         var identity = new ClaimsIdentity(new[]
         {
@@ -74,7 +75,9 @@ public class AccountService : IAccountService
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim("nickname", user.NickName),
             new Claim("picture", user.Picture),
-            new Claim("userId", await GetUserId(user.UserId, user.FullName))
+            new Claim("userId", userId),
+            new Claim("shareUserId", shareUser?.UserId ?? string.Empty),
+            new Claim("activeUserId", !string.IsNullOrEmpty(shareUser?.UserId) ? shareUser.UserId : userId)
         }, CookieAuthenticationDefaults.AuthenticationScheme);
 
         var claimsPrincipal = new ClaimsPrincipal(identity);
@@ -104,22 +107,6 @@ public class AccountService : IAccountService
             Email = model.EmailAddress
         });
         return result;
-    }
-
-    public async Task<Profile?> GetProfile(ClaimsPrincipal user)
-    {
-        if (user == null)
-        {
-            return null;
-        }
-
-        return new()
-        {
-            Name = user.Identity?.Name ?? string.Empty,
-            Nickname = user.FindFirst("nickname")?.Value ?? string.Empty,
-            Image = user.FindFirst("picture")?.Value ?? string.Empty,
-            UserId = await GetUserId(user)
-        };
     }
 
     public async Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user)
@@ -202,35 +189,6 @@ public class AccountService : IAccountService
         } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
 
         return users.FirstOrDefault();
-    }
-
-    public static string GetUserId(string userIdWithIdentifier)
-        => userIdWithIdentifier.Replace("auth0|", string.Empty);
-
-    private async Task<string> GetUserId(ClaimsPrincipal user)
-    {
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        var shareUser = await SearchUsersWithShareList(user.FindFirstValue(ClaimTypes.Name));
-
-        if (shareUser != null)
-        {
-            userId = shareUser.UserId;
-        }
-
-        return GetUserId(userId);
-    }
-
-    private async Task<string> GetUserId(string userId, string userName)
-    {
-        var shareUser = await SearchUsersWithShareList(userName);
-
-        if (shareUser != null)
-        {
-            userId = shareUser.UserId;
-        }
-
-        return GetUserId(userId);
     }
 
     private async Task<string> GetAccessToken()

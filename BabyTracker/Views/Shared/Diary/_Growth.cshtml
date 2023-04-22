@@ -1,4 +1,6 @@
-﻿@model Growth
+﻿@using BabyTracker.Extensions;
+
+@model BabyTracker.Models.Database.Growth
 
 <tr>
     <td>
@@ -7,24 +9,24 @@
     <td>
         Growth
     </td>
-    <td>
+    <td style="width: 64px;">
         <img src="~/img/icon_review_growth.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()<br />
-        <h5 class="text-success">Growth Length: @Model.Length.ToString("n2") Weight: @Model.Weight.ToString("n2") Head: @Model.HeadSize.ToString("n2")</h5>
+        @Model.Time.ToDateTimeLocal().ToShortTimeString()<br />
+        <h5 class="bt-green-title">Growth Length: @Model.Length.ToString("n2") Weight: @Model.Weight.ToString("n2") Head: @Model.HeadSize.ToString("n2")</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <br />@Model.Note
         }
     </td>
     <td>
-        <div class="card" id="growth_@Model.Time.Ticks">
+        <div class="card" id="growth_@Model.Time.ToDateTimeLocal().Ticks">
             <img class="card-img-top" src="~/img/icon_review_growth.png">
             <div class="card-body">
                 <h5 class="card-title text-success">Growth Length: @Model.Length.ToString("n2") Weight: @Model.Weight.ToString("n2") Head: @Model.HeadSize.ToString("n2")</h5>
                 <p class="card-text">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToShortDateString() @Model.Time.ToShortTimeString()</small>
+                <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
         </div>
     </td>

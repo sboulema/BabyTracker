@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Auth0.ManagementApi.Models;
-using BabyTracker.Models;
-using BabyTracker.Models.Account;
+using BabyTracker.Extensions;
+using BabyTracker.Models.Database;
+using BabyTracker.Models.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Mjml.Net;
@@ -51,52 +52,44 @@ public class MemoriesService : IMemoriesService
 
         foreach (var user in users)
         {
-            var shortUserId = AccountService.GetUserId(user.UserId);
+            var userId = user.UserId.Replace("auth0|", string.Empty);
 
-            var babies = _sqLiteService.GetBabiesFromDb(shortUserId);
+            var babies = _sqLiteService.GetBabiesFromDb(userId);
 
             foreach (var baby in babies)
             {
-                var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, shortUserId, baby.BabyName);
+                var memories = _sqLiteService.GetMemoriesFromDb(DateTime.Now, userId, baby.Name);
 
-                _logger.LogInformation($"Found {memories.Count} memories for {baby.BabyName}");
+                _logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
 
                 if (memories.Count > 0)
                 {
-                    await SendEmail(memories, user, shortUserId, baby.BabyName);
+                    await SendEmail(memories, user, userId, baby.Name);
                 }
             }
         }
     }
 
-    private async Task<string> GetMJML(List<EntryModel> memories, string userId, string babyName)
+    private async Task<string> GetMJML(List<IDbEntry> memories, string userId, string babyName)
     {
-        var importResultModel = new ImportResultModel
+        var model = new MemoriesEmailViewModel
         {
+            BabyName = babyName,
+            BaseUrl = _configuration["BASE_URL"] ?? string.Empty,
+            UserId = userId,
             Entries = memories
+                .OrderByDescending(entry => entry.Time.ToDateTimeUTC().Year)
+                .ThenBy(entry => entry.Time.ToDateTimeUTC().TimeOfDay)
+                .GroupBy(entry => entry.Time.ToDateTimeUTC().Year)
+                .OrderBy(entry => entry.Key)
         };
-
-        var model = DiaryService.GetDays(importResultModel);
-
-        model.BabyName = babyName;
-        model.MemoriesBadgeCount = memories.Count;
-        model.ShowMemoriesLink = true;
-        model.BaseUrl = _configuration["BASE_URL"];
-        model.Profile = new Profile
-        {
-            UserId = userId
-        };
-
-        model.Entries = model.Entries
-            .OrderByDescending(entry => entry.TimeUTC.Year)
-            .OrderBy(entry => entry.TimeUTC.TimeOfDay);
 
         var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
 
         return mjml;
     }
 
-    private string GetHTML(string mjml)
+    private static string GetHTML(string mjml)
     {
         var result = new MjmlRenderer().Render(mjml, new() {
             Beautify = false
@@ -105,7 +98,7 @@ public class MemoriesService : IMemoriesService
         return result.Html;
     }
 
-    private async Task<Response?> SendEmail(List<EntryModel> memories, User user, string userId, string babyName)
+    private async Task<Response?> SendEmail(List<IDbEntry> memories, User user, string userId, string babyName)
     {
         var msg = new SendGridMessage()
         {
