@@ -16,14 +16,14 @@ public class PictureService : IPictureService
 {
     public async Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName)
     {
-        var userId = user.FindFirstValue("userId");
+        var activeUserId = user.FindFirstValue("activeUserId");
 
-        if (string.IsNullOrEmpty(userId))
+        if (string.IsNullOrEmpty(activeUserId))
         {
             return null;
         }
 
-        return await GetPicture(hostEnvironment, userId, fileName);
+        return await GetPicture(hostEnvironment, activeUserId, fileName);
     }
 
     public async Task<byte[]> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName)
