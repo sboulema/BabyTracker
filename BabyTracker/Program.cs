@@ -19,6 +19,7 @@ using System.IO;
 using System.Threading.Tasks;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
+using Auth0.ManagementApi;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(kestrel =>
@@ -84,14 +85,23 @@ builder.Services
         };
     });
 
-builder.Services.AddSingleton(x => new AuthenticationApiClient(new Uri($"https://{builder.Configuration["AUTH0_DOMAIN"]}/")));
+builder.Services.AddAuth0AuthenticationClient(config =>
+{
+    config.Domain = builder.Configuration["AUTH0_DOMAIN"] ?? string.Empty;
+    config.ClientId = builder.Configuration["AUTH0_MACHINE_CLIENTID"];
+    config.ClientSecret = builder.Configuration["AUTH0_MACHINE_CLIENTSECRET"];
+});
 
-builder.Services.AddSingleton<IAccountService, AccountService>();
-builder.Services.AddSingleton<ISqLiteService, SqLiteService>();
-builder.Services.AddSingleton<IMemoriesService, MemoriesService>();
-builder.Services.AddSingleton<IChartService, ChartService>();
-builder.Services.AddSingleton<IImportService, ImportService>();
-builder.Services.AddSingleton<IPictureService, PictureService>();
+builder.Services
+    .AddAuth0ManagementClient()
+    .AddManagementAccessToken();
+
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ISqLiteService, SqLiteService>();
+builder.Services.AddScoped<IMemoriesService, MemoriesService>();
+builder.Services.AddScoped<IChartService, ChartService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<IPictureService, PictureService>();
 
 builder.Services.AddSendGrid(options =>
 {

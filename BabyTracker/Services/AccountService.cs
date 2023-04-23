@@ -34,13 +34,16 @@ public interface IAccountService
 public class AccountService : IAccountService
 {
     private readonly IConfiguration _configuration;
-    private readonly AuthenticationApiClient _authenticationApiClient;
+    private readonly IAuthenticationApiClient _authenticationApiClient;
+    private readonly IManagementApiClient _managementApiClient;
 
     public AccountService(IConfiguration configuration,
-        AuthenticationApiClient authenticationApiClient)
+        IAuthenticationApiClient authenticationApiClient,
+        IManagementApiClient managementApiClient)
     {
         _configuration = configuration;
         _authenticationApiClient = authenticationApiClient;
+        _managementApiClient = managementApiClient;
     }
 
     public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
@@ -114,8 +117,7 @@ public class AccountService : IAccountService
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var client = new ManagementApiClient(await GetAccessToken(), _configuration["AUTH0_DOMAIN"]);
-        var clientUser = await client.Users.GetAsync(userId);
+        var clientUser = await _managementApiClient.Users.GetAsync(userId);
 
         return GetUserMetaData(clientUser);
     }
@@ -134,9 +136,7 @@ public class AccountService : IAccountService
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var client = new ManagementApiClient(await GetAccessToken(), _configuration["AUTH0_DOMAIN"]);
-
-        await client.Users.UpdateAsync(userId, new()
+        await _managementApiClient.Users.UpdateAsync(userId, new()
         {
             UserMetadata = userMetaData
         });
@@ -144,8 +144,6 @@ public class AccountService : IAccountService
 
     public async Task<List<User>?> SearchUsersWithEnableMemoriesEmail()
     {
-        var client = new ManagementApiClient(await GetAccessToken(), _configuration["AUTH0_DOMAIN"]);
-
         var users = new List<User>();
 
         var pageNo = 0;
@@ -154,7 +152,7 @@ public class AccountService : IAccountService
 
         do
         {
-            page = await client.Users.GetAllAsync(
+            page = await _managementApiClient.Users.GetAllAsync(
                 new() { Query = "user_metadata.EnableMemoriesEmail:true" },
                 new(pageNo)
             );
@@ -169,8 +167,6 @@ public class AccountService : IAccountService
 
     private async Task<User?> SearchUsersWithShareList(string emailAddress)
     {
-        var client = new ManagementApiClient(await GetAccessToken(), _configuration["AUTH0_DOMAIN"]);
-
         var users = new List<User>();
 
         var pageNo = 0;
@@ -179,7 +175,7 @@ public class AccountService : IAccountService
 
         do
         {
-            page = await client.Users.GetAllAsync(
+            page = await _managementApiClient.Users.GetAllAsync(
                 new() { Query = $"user_metadata.ShareList:{emailAddress}" },
                 new(pageNo)
             );
@@ -190,17 +186,5 @@ public class AccountService : IAccountService
         } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
 
         return users.FirstOrDefault();
-    }
-
-    private async Task<string> GetAccessToken()
-    {
-        var token = await _authenticationApiClient.GetTokenAsync(new ClientCredentialsTokenRequest
-        {
-            ClientId = _configuration["AUTH0_MACHINE_CLIENTID"],
-            ClientSecret = _configuration["AUTH0_MACHINE_CLIENTSECRET"],
-            Audience = $"https://{_configuration["AUTH0_DOMAIN"]}/api/v2/"
-        });
-
-        return token?.AccessToken ?? string.Empty;
     }
 }

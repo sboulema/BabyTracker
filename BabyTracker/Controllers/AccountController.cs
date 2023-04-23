@@ -23,9 +23,7 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult Login()
-    {
-        return View(new LoginViewModel());
-    }
+        => View(new LoginViewModel());
 
     [HttpPost("[action]")]
     public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = "")
@@ -47,9 +45,7 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult Register()
-    {
-        return View(new LoginViewModel());
-    }
+        => View(new LoginViewModel());
 
     [HttpPost("[action]")]
     public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
@@ -61,9 +57,7 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult ResetPassword()
-    {
-        return View(new LoginViewModel());
-    }
+        => View(new LoginViewModel());
 
     [HttpPost("[action]")]
     public async Task<IActionResult> ResetPassword(LoginViewModel model)
