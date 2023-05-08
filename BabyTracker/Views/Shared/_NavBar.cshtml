@@ -48,20 +48,6 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                        <i class="fas fa-text-size"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" onclick="changeFontSize(1);">XXX-Large</a></li>
-                        <li><a class="dropdown-item" onclick="changeFontSize(2);">XX-Large</a></li>
-                        <li><a class="dropdown-item" onclick="changeFontSize(3);">X-Large</a></li>
-                        <li><a class="dropdown-item" onclick="changeFontSize(4);">Large</a></li>
-                        <li><a class="dropdown-item" onclick="changeFontSize(5);">Medium</a></li>
-                        <li><a class="dropdown-item" onclick="changeFontSize(6);">Small</a></li>
-                    </ul>
-                </li>
-
                 @if (Model != null &&
                      User.Identity?.IsAuthenticated == true)
                 {
@@ -91,12 +77,3 @@
         </div>
     </div>
 </nav>
-
-<script>
-    function changeFontSize(size) {
-        $(".bt-entry-note")
-            .removeClass("fs-1 fs-2 fs-3 fs-4 fs-5 fs-6");
-        $(".bt-entry-note")
-            .addClass(`fs-${size}`)
-    }
-</script>

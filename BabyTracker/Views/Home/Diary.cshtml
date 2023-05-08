@@ -43,7 +43,7 @@ else
             <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
         </div>
 
-        <table id="diaryTable" class="table">
+        <table id="diaryTable" class="table fs-@Model.FontSize">
             <tbody>
                 @foreach (var entry in Model.Entries.ToList())
                 {

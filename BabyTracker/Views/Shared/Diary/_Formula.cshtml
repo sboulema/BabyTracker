@@ -4,7 +4,7 @@
 
 <tr>
     <td>
-        @Model.Time.ToString("dd-MM-yyyy")
+        @Model.Time
     </td>
     <td>
         Formula
@@ -13,7 +13,7 @@
         <img src="~/img/icon_review_formula.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToDateTimeLocal().ToShortTimeString()<br />
+        <small class="fs-6">@Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
         <h5 class="bt-orange-title">Formula @Model.Amount ml</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
@@ -26,7 +26,7 @@
             <div class="card-body">
                 <h5 class="card-title text-warning">Formula @Model.Amount ml</h5>
                 <p class="card-text bt-entry-note">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
+                <small class="text-muted float-right fs-6">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
         </div>
     </td>

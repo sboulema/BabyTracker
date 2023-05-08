@@ -11,11 +11,13 @@
 @if (Model != null)
 {
     <form asp-action="ProfileSave" asp-controller="Account">
+      <h2>Data clone sharing</h2>
       <div class="mb-3">
         <label for="memoriesEmailAddresses" class="form-label">Share with other users</label>
         <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.ShareList" value="@Model.ShareList"></textarea>
       </div>
 
+      <h2>Memories</h2>
       <div class="mb-3 form-check">
         <input asp-for="EnableMemoriesEmail" class="form-check-input" />
         <label class="form-check-label" for="enableMemoriesEmail">Enable memories email</label>
@@ -25,6 +27,20 @@
         <label for="memoriesEmailAddresses" class="form-label">Memories email addresses</label>
         <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.MemoriesAddresses" value="@Model.MemoriesAddresses"></textarea>
         <div id="memoriesEmailAddressesHelp" class="form-text">You can specify multiple valid email addresses by comma-separating them.</div>
+      </div>
+
+      <h2>Fonts</h2>
+
+      <div class="mb-3">
+        <label for="fontSize" class="form-label">Font size</label>
+        <select class="form-select" id="fontSize" asp-for="@Model.FontSize" value="@Model.FontSize">
+          <option value="1">XXX-Large</option>
+          <option value="2">XX-Large</option>
+          <option value="3">X-Large</option>
+          <option value="4">Large</option>
+          <option value="5">Medium</option>
+          <option value="6">Small</option>
+        </select>
       </div>
 
       <button type="submit" class="btn btn-primary">Save</button>

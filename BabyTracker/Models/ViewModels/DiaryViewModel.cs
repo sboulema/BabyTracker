@@ -22,4 +22,6 @@ public class DiaryViewModel : BaseViewModel
     public string DateNextUrl { get; set; } = string.Empty;
 
     public string DatePreviousUrl { get; set; } = string.Empty;
+
+    public int FontSize { get; set; } = 6;
 }

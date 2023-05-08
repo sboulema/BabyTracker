@@ -92,6 +92,7 @@ public class AccountController : Controller
             EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
             MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
             ShareList = userMetaData?.ShareList ?? string.Empty,
+            FontSize = userMetaData?.FontSize ?? 6,
             NickName = User.FindFirstValue("nickname") ?? string.Empty,
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
             UserId = User.FindFirstValue("userId") ?? string.Empty,
@@ -108,7 +109,8 @@ public class AccountController : Controller
         {
             EnableMemoriesEmail = viewModel.EnableMemoriesEmail,
             MemoriesAddresses = viewModel.MemoriesAddresses,
-            ShareList = viewModel.ShareList
+            ShareList = viewModel.ShareList,
+            FontSize = viewModel.FontSize
         };
 
         await _accountService.SaveUserMetaData(User, userMetaDate);

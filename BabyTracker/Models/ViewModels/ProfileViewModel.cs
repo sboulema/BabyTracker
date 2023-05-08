@@ -7,4 +7,6 @@ public class ProfileViewModel : BaseViewModel
     public string MemoriesAddresses { get; set; } = string.Empty;
 
     public string ShareList { get; set; } = string.Empty;
+
+    public int FontSize { get; set; } = 6;
 }

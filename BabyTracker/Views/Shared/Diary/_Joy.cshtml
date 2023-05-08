@@ -4,7 +4,7 @@
 
 <tr>
     <td>
-        @Model.Time.ToString("dd-MM-yyyy")
+        @Model.Time
     </td>
     <td>
         Joy
@@ -13,7 +13,7 @@
         <img src="~/img/icon_review_joy.png" width="64" />
     </td>
     <td>
-        @Model.Time.ToDateTimeLocal().ToShortTimeString()<br />
+        <small class="fs-6">@Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
         <h5 class="bt-green-title">Joy</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
@@ -33,7 +33,7 @@
             <div class="card-body">
                 <h5 class="card-title text-success">Joy</h5>
                 <p class="card-text bt-entry-note">@Model.Note</p>
-                <small class="text-muted float-right">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
+                <small class="text-muted float-right fs-6">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>
             <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('joy_@Model.Time.ToDateTimeLocal().Ticks');return false;"><i class="fas fa-camera"></i> Screenshot</a>
         </div>

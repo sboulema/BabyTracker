@@ -15,15 +15,18 @@ public class HomeController : Controller
     private readonly IImportService _importService;
     private readonly ISqLiteService _sqLiteService;
     private readonly IChartService _chartService;
+    private readonly IAccountService _accountService;
 
     public HomeController(
         IImportService importService,
         ISqLiteService sqLiteService,
-        IChartService chartService)
+        IChartService chartService,
+        IAccountService accountService)
     {
         _importService = importService;
         _sqLiteService = sqLiteService;
         _chartService = chartService;
+        _accountService = accountService;
     }
 
     [HttpGet]
@@ -112,6 +115,9 @@ public class HomeController : Controller
         model.ShowMemoriesLink = true;
 
         ViewData["LastEntry"] = await SqLiteService.GetLastEntryDateTime(babyName, db);
+
+        var userMetaData = await _accountService.GetUserMetaData(User);
+        model.FontSize = userMetaData?.FontSize ?? 6;
 
         return View("Diary", model);
     }
