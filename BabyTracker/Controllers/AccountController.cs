@@ -113,7 +113,10 @@ public class AccountController : Controller
             FontSize = viewModel.FontSize
         };
 
-        await _accountService.SaveUserMetaData(User, userMetaDate);
+        var success = await _accountService.SaveUserMetaData(User, userMetaDate);
+
+        TempData["notificationMessage"] = "Profile settings saved.";
+        TempData["notificationSuccess"] = success;
 
         return RedirectToAction("Profile");
     }

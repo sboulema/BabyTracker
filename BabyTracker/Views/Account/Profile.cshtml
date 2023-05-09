@@ -8,6 +8,8 @@
 
 <br />
 
+@await Html.PartialAsync("_Notification")
+
 @if (Model != null)
 {
     <form asp-action="ProfileSave" asp-controller="Account">

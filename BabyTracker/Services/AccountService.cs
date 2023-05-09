@@ -24,7 +24,7 @@ public interface IAccountService
 
     Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user);
 
-    Task SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
+    Task<bool> SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
 
     Task<List<User>?> SearchUsersWithEnableMemoriesEmail();
 
@@ -132,7 +132,7 @@ public class AccountService : IAccountService
         return userMetaDataObject.ToObject<UserMetaData>();
     }
 
-    public async Task SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData)
+    public async Task<bool> SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData)
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -140,6 +140,8 @@ public class AccountService : IAccountService
         {
             UserMetadata = userMetaData
         });
+
+        return true;
     }
 
     public async Task<List<User>?> SearchUsersWithEnableMemoriesEmail()
