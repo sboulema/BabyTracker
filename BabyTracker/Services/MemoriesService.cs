@@ -72,7 +72,7 @@ public class MemoriesService : IMemoriesService
         }
     }
 
-    private async Task<string> GetMJML(List<IDbEntry> memories, string userId, string babyName)
+    private async Task<string> GetMJML(List<IMemoryEntry> memories, string userId, string babyName)
     {
         var model = new MemoriesEmailViewModel
         {
@@ -100,7 +100,7 @@ public class MemoriesService : IMemoriesService
         return result.Html;
     }
 
-    private async Task<Response?> SendEmail(List<IDbEntry> memories, User user, string userId, string babyName)
+    private async Task<Response?> SendEmail(List<IMemoryEntry> memories, User user, string userId, string babyName)
     {
         var msg = new SendGridMessage()
         {

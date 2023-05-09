@@ -80,11 +80,11 @@
             else if (memory is Milestone milestone)
             {
                 <mj-wrapper padding="0" border="1px solid #000000">
-                    @if (!string.IsNullOrEmpty(milestone.Filename))
+                    @if (!string.IsNullOrEmpty(milestone.FileName))
                     {
                         <mj-section padding="0">
                             <mj-column padding="0">
-                                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.UserId/@milestone.Filename" />
+                                <mj-image padding="0" src="@Model.BaseUrl/picture/@Model.UserId/@milestone.FileName" />
                             </mj-column>
                         </mj-section>
                     }

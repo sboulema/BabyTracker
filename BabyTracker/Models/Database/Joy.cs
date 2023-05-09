@@ -4,7 +4,7 @@ using LinqToDB.Mapping;
 namespace BabyTracker.Models.Database;
 
 [Table("Joy")]
-public class Joy : IDbEntry
+public class Joy : IDbEntry, IMemoryEntry
 {
     [Column]
     public Guid Id { get; set; }

@@ -4,7 +4,7 @@ using LinqToDB.Mapping;
 namespace BabyTracker.Models.Database;
 
 [Table("Milestone")]
-public class Milestone : IDbEntry
+public class Milestone : IDbEntry, IMemoryEntry
 {
     [Column]
     public Guid Id { get; set; }
@@ -24,5 +24,5 @@ public class Milestone : IDbEntry
     [Column]
     public string Name { get; set; } = string.Empty;
 
-    public string Filename { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
 }

@@ -12,5 +12,5 @@ public class MemoriesEmailViewModel
 
     public string UserId { get; set; } = string.Empty;
 
-    public IEnumerable<IGrouping<int, IDbEntry>> Entries { get; set; } = Enumerable.Empty<IGrouping<int, IDbEntry>>();
+    public IEnumerable<IGrouping<int, IMemoryEntry>> Entries { get; set; } = Enumerable.Empty<IGrouping<int, IMemoryEntry>>();
 }

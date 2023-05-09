@@ -85,13 +85,16 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
-    public static async Task<List<IDbEntry>> GetMemoriesFromDb(DateTime date, string babyName, DataConnection db)
+    public static async Task<List<IMemoryEntry>> GetMemoriesFromDb(DateTime date, string babyName, DataConnection db)
     {
-        var entries = new List<IDbEntry>();
+        var entries = new List<IMemoryEntry>();
 
         entries.AddRange(await GetActivity(date.Day, date.Month, babyName, db));
         entries.AddRange(await GetJoy(date.Day, date.Month, babyName, db));
         entries.AddRange(await GetMilestone(date.Day, date.Month, babyName, db));
+
+        entries.RemoveAll(entry => string.IsNullOrEmpty(entry.Note) &&
+                                   string.IsNullOrEmpty(entry.FileName));
 
         return entries;
     }
@@ -368,7 +371,7 @@ public class SqLiteService : ISqLiteService
                     Time = result.Milestone.Time,
                     Note = result.Milestone.Note,
                     Name = result.MilestoneSelection.Name,
-                    Filename = picture.FileName
+                    FileName = picture.FileName
                 })
             .ToListAsync();
 

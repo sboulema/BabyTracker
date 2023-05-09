@@ -14,4 +14,7 @@ public static class DiaryService
             Days = entries.OrderByDescending(entry => entry.Time).GroupBy(e => e.Time.ToDateTimeUTC().Date),
             Entries = entries.OrderByDescending(e => e.Time)
         };
+
+    public static DiaryViewModel GetDays(List<IMemoryEntry> entries)
+        => GetDays(entries.Cast<IDbEntry>().ToList());
 }
