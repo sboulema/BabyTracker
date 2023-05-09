@@ -1,10 +1,10 @@
 /.vs
-/BabyTracker/*.eml
-/BabyTracker/*.user
-/BabyTracker/.vs
-/BabyTracker/bin
-/BabyTracker/obj
-/BabyTracker/data
+/src/*.eml
+/src/*.user
+/src/.vs
+/src/bin
+/src/obj
+/src/data
 .vscode/launch.json
 .vscode/tasks.json
-/BabyTracker/appsettings.development.json
+/src/appsettings.development.json

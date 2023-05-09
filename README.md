@@ -54,6 +54,12 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 | MEMORIES_FROM_NAME		 | Email sender name to use when sending memories email |
 | SENDGRID_API_KEY			 | SendGrid API key used to send the memories email |
 
+## Volumes / Bind mounts
+
+| Path on container | Description                         |
+|-------------------|-------------------------------------|
+| /data             | Data clones are stored at this path |
+
 ## Requirements
 - Auth0 account
 - Sendgrid account

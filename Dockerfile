@@ -1,22 +1,9 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS sdk
 WORKDIR /app
-
-# copy csproj and restore as distinct layers
-COPY *.sln .
-COPY BabyTracker/*.csproj ./BabyTracker/
-RUN dotnet restore
-
-# copy everything else and build app
-COPY BabyTracker/. ./BabyTracker/
-WORKDIR /app/BabyTracker
+COPY . .
 RUN dotnet publish -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS runtime
-
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /app
-
-COPY --from=build /app/BabyTracker/out ./
-
-VOLUME /data
-
+COPY --from=sdk /app/out .
 ENTRYPOINT ["dotnet", "BabyTracker.dll"]
