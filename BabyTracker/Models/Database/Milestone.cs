@@ -21,6 +21,7 @@ public class Milestone : IDbEntry
     [Column]
     public Guid MilestoneSelectionId { get; set; }
 
+    [Column]
     public string Name { get; set; } = string.Empty;
 
     public string Filename { get; set; } = string.Empty;

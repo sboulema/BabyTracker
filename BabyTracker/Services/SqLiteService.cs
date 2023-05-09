@@ -388,7 +388,7 @@ public class SqLiteService : ISqLiteService
                 ltrim(strftime('%d', datetime(TIME, 'unixepoch')), 0) AS Day
             FROM Milestone 
             LEFT JOIN Picture ON Milestone.Id == activityid 
-            LEFT JOIN MilestoneSelection ON MilestoneSelection.Id == Milestoneselectionid 
+            LEFT JOIN MilestoneSelection ON Milestone.MilestoneSelectionID == MilestoneSelection.ID 
             WHERE Month = '{month}' and Day = '{day}'
             """);
 
