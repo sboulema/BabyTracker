@@ -14,7 +14,7 @@
     </td>
     <td>
         <small class="fs-6">@Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
-        <h5 class="text-warning">@Model.Title @Model.Amount</h5>
+        <h5 class="text-warning">@Model.Title</h5>
         @if (!string.IsNullOrEmpty(Model.Note))
         {
             <div class="pb-1 my-1 bt-entry-note">@Model.Note</div>
@@ -24,7 +24,7 @@
         <div class="card" id="supplement_@Model.Time.ToDateTimeLocal().Ticks">
             <img class="card-img-top" src="~/img/icon_review_supplement.png">
             <div class="card-body">
-                <h5 class="card-title text-success">@Model.Title @Model.Amount</h5>
+                <h5 class="card-title text-success">@Model.Title</h5>
                 <p class="card-text bt-entry-note">@Model.Note</p>
                 <small class="text-muted float-right fs-6">@Model.Time.ToDateTimeLocal().ToShortDateString() @Model.Time.ToDateTimeLocal().ToShortTimeString()</small>
             </div>

@@ -167,7 +167,7 @@ public class SqLiteService : ISqLiteService
                 {
                     Time = supplement.Time,
                     Note = supplement.Note,
-                    Title = $"{supplement.Amount} {supplement.Unit} {supplementSelection.Name}"
+                    Title = $"{supplementSelection.Name} {supplement.Amount} {supplement.Unit}"
                 })
             .ToListAsync();
 
