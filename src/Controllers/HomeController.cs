@@ -114,10 +114,25 @@ public class HomeController : Controller
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
 
-        ViewData["LastEntry"] = await SqLiteService.GetLastEntryDateTime(babyName, db);
+        var lastEntryDateTime = await SqLiteService.GetLastEntryDateTime(babyName, db);
+        ViewData["LastEntry"] = lastEntryDateTime;
 
         var userMetaData = await _accountService.GetUserMetaData(User);
         model.FontSize = userMetaData?.FontSize ?? 6;
+
+        if ((date == null || date.Value == DateOnly.FromDateTime(lastEntryDateTime)) &&
+            userMetaData?.LastViewedDate != date)
+        {
+            TempData["notificationMessage"] = "Do you want to continue where you left off? " + 
+                $"<a href=\"{babyName}/{userMetaData!.LastViewedDate!.Value.ToString("yyyy-MM-dd")}\" class=\"alert-link\">{userMetaData!.LastViewedDate!.Value.ToString("yyyy-MM-dd")}</a>";
+            TempData["notificationType"] = "info";
+        }
+
+        if (date != null && date.Value != DateOnly.FromDateTime(lastEntryDateTime))
+        {
+            userMetaData!.LastViewedDate = date;
+            await _accountService.SaveUserMetaData(User, userMetaData);
+        }
 
         return View("Diary", model);
     }

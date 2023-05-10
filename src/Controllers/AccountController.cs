@@ -33,7 +33,7 @@ public class AccountController : Controller
         if (claimsPrincipal == null)
         {
             TempData["notificationMessage"] = "Username and/or password are incorrect.";
-            TempData["notificationSuccess"] = "false";
+            TempData["notificationType"] = "danger";
 
             return RedirectToAction("Login");
         }
@@ -65,7 +65,7 @@ public class AccountController : Controller
         var result = await _accountService.ResetPassword(model);
 
         TempData["notificationMessage"] = result;
-        TempData["notificationSuccess"] = "true";
+        TempData["notificationType"] = "success";
 
         return RedirectToAction("Login");
     }
@@ -116,7 +116,7 @@ public class AccountController : Controller
         var success = await _accountService.SaveUserMetaData(User, userMetaDate);
 
         TempData["notificationMessage"] = "Profile settings saved.";
-        TempData["notificationSuccess"] = success;
+        TempData["notificationType"] = success ? "success" : "danger";
 
         return RedirectToAction("Profile");
     }

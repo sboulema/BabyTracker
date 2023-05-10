@@ -1,4 +1,6 @@
-﻿namespace BabyTracker.Models.Account;
+﻿using System;
+
+namespace BabyTracker.Models.Account;
 
 public class UserMetaData
 {
@@ -9,4 +11,6 @@ public class UserMetaData
     public string ShareList { get; set; } = string.Empty;
 
     public int FontSize { get; set; } = 6;
+
+    public DateOnly? LastViewedDate { get; set; }
 }

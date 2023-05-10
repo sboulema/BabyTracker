@@ -7,6 +7,8 @@
     ViewData["Title"] = "Diary - BabyTracker";
 }
 
+@await Html.PartialAsync("_Notification")
+
 @if (Model == null)
 {
     <div class="card col-6 offset-3">
