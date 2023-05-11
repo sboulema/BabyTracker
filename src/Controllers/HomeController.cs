@@ -121,6 +121,7 @@ public class HomeController : Controller
         model.FontSize = userMetaData?.FontSize ?? 6;
 
         if ((date == null || date.Value == DateOnly.FromDateTime(lastEntryDateTime)) &&
+            userMetaData?.LastViewedDate != null &&
             userMetaData?.LastViewedDate != date)
         {
             TempData["notificationMessage"] = "Do you want to continue where you left off? " + 
