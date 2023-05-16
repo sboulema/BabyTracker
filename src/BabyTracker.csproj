@@ -24,10 +24,6 @@
   </ItemGroup>
 
   <ItemGroup> 
-    <TrimmerRootAssembly Include="System.Data.SQLite" />
-  </ItemGroup>
-
-  <ItemGroup> 
     <Content Include="Charts\**"> 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> 
     </Content> 
