@@ -21,30 +21,30 @@
 <canvas id="bmiChart"></canvas>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <script>
         function GetChartOptions(xAxesLabel, yAxesLabel) {
             return {
                 scales: {
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: xAxesLabel
+                    x: {
+                        title: {
+                            text: xAxesLabel,
+                            display: true
                         }
-                    }],
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: yAxesLabel
+                    },
+                    y: {
+                        title: {
+                            text: yAxesLabel,
+                            display: true
                         }
-                    }]
-                },
-                legend: {
-                    display: false
+                    }
                 },
                 plugins: {
+                    legend: {
+                        display: false
+                    },
                     datalabels: {
                         formatter: function(value, context) {
                             if (context.dataIndex === context.dataset.data.length - 1)
@@ -98,7 +98,8 @@
                 }
                 ]
             },
-            options: GetChartOptions('age (month)', 'weight (kg)') 
+            options: GetChartOptions('age (month)', 'weight (kg)'),
+            plugins: [ChartDataLabels]
         });
     </script>
 
@@ -134,7 +135,8 @@
                     data: @Html.Raw(Model.LengthPointsSD2neg) 
                 }]
             },
-            options: GetChartOptions('age (month)', 'length (cm)')
+            options: GetChartOptions('age (month)', 'length (cm)'),
+            plugins: [ChartDataLabels]
         });
     </script>
 
@@ -170,7 +172,8 @@
                     data: @Html.Raw(Model.HeadSizePointsSD2neg) 
                 }]
             },
-            options: GetChartOptions('age (month)', 'head size (cm)') 
+            options: GetChartOptions('age (month)', 'head size (cm)'),
+            plugins: [ChartDataLabels]
         });
     </script>
 
@@ -206,7 +209,8 @@
                     data: @Html.Raw(Model.BMIPointsSD2neg) 
                 }]
             },
-            options: GetChartOptions('age (month)', 'BMI') 
+            options: GetChartOptions('age (month)', 'BMI'),
+            plugins: [ChartDataLabels]
         });
     </script>
 }

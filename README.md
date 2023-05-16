@@ -25,13 +25,24 @@ Importing a Data clone is handled by [Tus](https://tus.io/) so even if your clon
 [![Diary](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Diary_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Diary.png)
 [![DiaryCards](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/DiaryCards_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/DiaryCards.png)
 [![Memories](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Memories_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Memories.png)
-[![Charts](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Charts_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Charts.png)
 [![Gallery](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Gallery_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Gallery.png)
 
 View all events logged with the BabyTracker app on the big screen!<br>
 See your memories, what happened a year ago? what happened 2 years ago?<br>
-See a gallery of all the baby photo's<br>
-Have a detailed look at the different growth charts.
+See a gallery of all the baby photo's
+
+### Charts
+
+[![Charts](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Charts_thumb.png)](https://raw.githubusercontent.com/sboulema/BabyTracker/main/art/Charts.png)
+
+BabyTracker shows you a number of different growth charts for your baby:
+- Length/height
+- Weight
+- Head circumference
+- BMI
+
+Your babies data is plotted against the 3%, 50% and 97% percentile taken for the [WHO Child growth standards](https://www.who.int/tools/child-growth-standards/standards)
+
 
 ## Running
 ```

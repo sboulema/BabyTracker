@@ -33,4 +33,12 @@ public class Baby
                             PeriodUnits.Months | PeriodUnits.Days);
         return $"{period.Months} months {period.Days} days";
     }
+
+    public int AgeInMonths()
+    {
+        var birthday = Instant.FromUnixTimeSeconds(DOB).InUtc().Date;
+        var today = LocalDate.FromDateTime(DateTime.UtcNow);
+        var period = Period.Between(birthday, today, PeriodUnits.Months);
+        return period.Months;
+    }
 }

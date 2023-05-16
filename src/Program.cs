@@ -8,7 +8,6 @@ using tusdotnet;
 using tusdotnet.Stores;
 using tusdotnet.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Auth0.AuthenticationApi;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -19,9 +18,9 @@ using System.IO;
 using System.Threading.Tasks;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
-using Auth0.ManagementApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.WebHost.ConfigureKestrel(kestrel =>
 {
     kestrel.Limits.MaxRequestBodySize = null;
@@ -40,12 +39,7 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllersWithViews();
 
 builder.Services
-    .AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    })
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options => options.LoginPath = "/account/login")
     .AddOpenIdConnect("Auth0", options =>
     {

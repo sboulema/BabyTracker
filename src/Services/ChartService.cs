@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
@@ -10,7 +9,7 @@ using BabyTracker.Extensions;
 using BabyTracker.Models.Charts;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
-using CsvHelper;
+using ClosedXML.Excel;
 
 namespace BabyTracker.Services;
 
@@ -22,116 +21,165 @@ public interface IChartService
 public class ChartService : IChartService
 {
     private readonly ISqLiteService _sqLiteService;
-    private readonly IEnumerable<CsvRow> _weightForAgeData;
-    private readonly IEnumerable<CsvRow> _lengthForAgeData;
-    private readonly IEnumerable<CsvRow> _headSizeForAgeData;
-    private readonly IEnumerable<CsvRow> _bmiForAgeData;
 
     public ChartService(ISqLiteService sqLiteService)
     {
         _sqLiteService = sqLiteService;
-        _weightForAgeData = ReadCsv("wfa-g-z");
-        _lengthForAgeData = ReadCsv("lfa-g-z");
-        _headSizeForAgeData = ReadCsv("hfa-g-z");
-        _bmiForAgeData = ReadCsv("bfa-g-z");
     }
 
     public async Task<ChartsViewModel> GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null)
     {
-        var result = new ChartsViewModel();
+        var viewModel = new ChartsViewModel();
 
         using var db = _sqLiteService.OpenDataConnection(user);
 
         if (db == null)
         {
-            return result;
+            return viewModel;
         }
 
         var entries = await SqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, db);
+
         var babies = await SqLiteService.GetBabiesFromDb(db);
         var baby = babies.FirstOrDefault(baby => baby.Name == babyName);
 
         if (baby == null)
         {
-            return result;
+            return viewModel;
         }
 
         foreach (var entry in entries.Take(maxAge ?? int.MaxValue))
         {
-            var ageInMonths = (entry.Time.ToDateTimeUTC() - baby.DOB.ToDateTimeUTC()).Days / (double)30;
+            var entryAgeInMonths = (entry.Time.ToDateTimeUTC() - baby.DOB.ToDateTimeUTC()).Days / (double)30;
 
             if (entry.Weight > 0)
             {
-                result.WeightPoints.Add(new Point(ageInMonths, entry.Weight));
+                viewModel.WeightPoints.Add(new Point(entryAgeInMonths, entry.Weight));
             }
 
-            if (entry.Length > 0)
+            if (entry.Length > 0 && 
+               (baby.AgeInMonths() >= 24 && entryAgeInMonths >= 24 ||
+                baby.AgeInMonths() < 24 && entryAgeInMonths < 24))
             {
-                result.LengthPoints.Add(new Point(ageInMonths, entry.Length));
+                viewModel.LengthPoints.Add(new Point(entryAgeInMonths, entry.Length));
             }
 
             if (entry.HeadSize > 0)
             {
-                result.HeadSizePoints.Add(new Point(ageInMonths, entry.HeadSize));
+                viewModel.HeadSizePoints.Add(new Point(entryAgeInMonths, entry.HeadSize));
             }
 
-            if (entry.Length > 0 && entry.Weight > 0)
+            if (entry.Length > 0 && entry.Weight > 0 && 
+               (baby.AgeInMonths() >= 24 && entryAgeInMonths >= 24 ||
+                baby.AgeInMonths() < 24 && entryAgeInMonths < 24))
             {
                 var lengthInMeters = entry.Length / 100;
                 var bmi = entry.Weight / (lengthInMeters * lengthInMeters);
-                result.BMIPoints.Add(new Point(ageInMonths, bmi));
+                viewModel.BMIPoints.Add(new Point(entryAgeInMonths, bmi));
             }
         }
 
-        SetWeightCsvPoints(result, maxAge);
-        SetLengthCsvPoints(result, maxAge);
-        SetHeadSizeCsvPoints(result, maxAge);
-        SetBMICsvPoints(result, maxAge);
+        SetWeightPoints(viewModel, baby, maxAge);
+        SetLengthPoints(viewModel, baby, maxAge);
+        SetHeadSizePoints(viewModel, baby, maxAge);
+        SetBMIPoints(viewModel, baby, maxAge);
 
-        return result;
+        return viewModel;
     }
 
-    private void SetWeightCsvPoints(ChartsViewModel model, int? maxAge)
+    private void SetWeightPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.WeightPoints.Max(p => p.X)) + 1;
-        var data = _weightForAgeData.Take(maxAgeInMonthsCeiling);
-        model.WeightPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
-        model.WeightPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
-        model.WeightPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+
+        var age = baby.AgeInMonths() switch
+        {
+            <= 3 => "0_13",
+            > 3 and <= 60 => "0_5",
+            _ => "0_5"
+        };
+
+        var weightForAgeData = ReadExcel($"wfa_{(baby.Gender == 0 ? "girls" : "boys")}_p_{age}");
+        var data = weightForAgeData.Take(maxAgeInMonthsCeiling);
+
+        model.WeightPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P50)).ToList());
+        model.WeightPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P97)).ToList());
+        model.WeightPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetLengthCsvPoints(ChartsViewModel model, int? maxAge)
+    private void SetLengthPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.LengthPoints.Max(p => p.X)) + 1;
-        var data = _lengthForAgeData.Take(maxAgeInMonthsCeiling);
-        model.LengthPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
-        model.LengthPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
-        model.LengthPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+
+        var age = baby.AgeInMonths() switch
+        {
+            <= 3 => "0_13",
+            > 3 and <= 24 => "0_2",
+            > 24 and <= 60 => "2_5",
+            _ => "0_2"
+        };
+
+        var lengthForAgeData = ReadExcel($"lhfa_{(baby.Gender == 0 ? "girls" : "boys")}_p_{age}");
+        var data = lengthForAgeData.Where(entry => entry.Month <= maxAgeInMonthsCeiling);
+
+        model.LengthPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P50)).ToList());
+        model.LengthPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P97)).ToList());
+        model.LengthPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetHeadSizeCsvPoints(ChartsViewModel model, int? maxAge)
+    private void SetHeadSizePoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.HeadSizePoints.Max(p => p.X)) + 1;
-        var data = _headSizeForAgeData.Take(maxAgeInMonthsCeiling);
-        model.HeadSizePointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
-        model.HeadSizePointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
-        model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+
+        var age = baby.AgeInMonths() switch
+        {
+            <= 3 => "0_13",
+            > 3 and <= 60 => "0_5",
+            _ => "0_5"
+        };
+
+        var headSizeForAgeData = ReadExcel($"hcfa_{(baby.Gender == 0 ? "girls" : "boys")}_p_{age}");
+        var data = headSizeForAgeData.Take(maxAgeInMonthsCeiling);
+
+        model.HeadSizePointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P50)).ToList());
+        model.HeadSizePointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P97)).ToList());
+        model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetBMICsvPoints(ChartsViewModel model, int? maxAge)
+    private void SetBMIPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.BMIPoints.Max(p => p.X)) + 1;
-        var data = _bmiForAgeData.Take(maxAgeInMonthsCeiling);
-        model.BMIPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD0)).ToList());
-        model.BMIPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2)).ToList());
-        model.BMIPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.SD2neg)).ToList());
+
+        var age = baby.AgeInMonths() switch
+        {
+            <= 3 => "0_13",
+            > 3 and <= 24 => "0_2",
+            > 24 and <= 60 => "2_5",
+            _ => "0_2"
+        };
+
+        var bmiForAgeData = ReadExcel($"bmi_{(baby.Gender == 0 ? "girls" : "boys")}_p_{age}");
+        var data = bmiForAgeData.Where(entry => entry.Month <= maxAgeInMonthsCeiling);
+
+        model.BMIPointsSD0 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P50)).ToList());
+        model.BMIPointsSD2 = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P97)).ToList());
+        model.BMIPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private static IEnumerable<CsvRow> ReadCsv(string fileName)
-    {
-        using var reader = new StreamReader(Path.Combine("Charts", $"{fileName}.csv"));
-        using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-        var records = csv.GetRecords<CsvRow>().ToList();
-        return records;
+    private static List<ExcelRow> ReadExcel(string fileName) {
+        var rows = new XLWorkbook(Path.Combine("Charts", $"tab_{fileName}.xlsx")).Worksheet(1).RangeUsed().RowsUsed().Skip(1); // Skip header row
+
+        var results = new List<ExcelRow>();
+
+        foreach (var row in rows)
+        {
+            results.Add(new() {
+                Month = row.Cell(1).GetValue<int>(),
+                P3 = row.Cell(8).GetDouble(),
+                P50 = row.Cell(13).GetDouble(),
+                P97 = row.Cell(18).GetDouble()
+            }); 
+        }
+
+        return results;
     }
 }

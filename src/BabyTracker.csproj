@@ -9,7 +9,6 @@
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.19.1" />
     <PackageReference Include="Auth0.ManagementApi" Version="7.19.1" />
     <PackageReference Include="Auth0Net.DependencyInjection" Version="2.0.0" />
-    <PackageReference Include="CsvHelper" Version="30.0.1" />
     <PackageReference Include="IdentityModel.AspNetCore" Version="4.3.0" />
     <PackageReference Include="linq2db" Version="5.2.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
@@ -21,6 +20,7 @@
     <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="1.0.1" />
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
     <PackageReference Include="tusdotnet" Version="2.7.1" />
+    <PackageReference Include="ClosedXML" Version="0.101.0" />
   </ItemGroup>
 
   <ItemGroup> 
