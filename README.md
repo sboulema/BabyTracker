@@ -41,7 +41,7 @@ BabyTracker shows you a number of different growth charts for your baby:
 - Head circumference
 - BMI
 
-Your babies data is plotted against the 3%, 50% and 97% percentile taken for the [WHO Child growth standards](https://www.who.int/tools/child-growth-standards/standards)
+Your babies data is plotted against the 3%, 50% and 97% percentile taken from the [WHO Child growth standards](https://www.who.int/tools/child-growth-standards/standards)
 
 
 ## Running
