@@ -4,7 +4,6 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>cdd039dd-6e1f-42ee-95de-d149916af726</UserSecretsId>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
-    <ContainerImageName>sboulema/babytracker</ContainerImageName>
     <PublishProfile>DefaultContainer</PublishProfile>
     <ContainerImageTags>latest</ContainerImageTags>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine</ContainerBaseImage>
