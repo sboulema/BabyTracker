@@ -17,14 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 7
-          
-      - name: Build
-        run: dotnet publish -p:ContainerImageName=${{ secrets.DOCKERHUB_USERNAME }}/babytracker;ghcr.io/${{ github.actor }}/babytracker
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -38,11 +30,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push Image to DockerHub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/babytracker --all-tags
-
-      - name: Push Image to GitHub Container Registry
-        run: docker push ghcr.io/${{ github.actor }}/babytracker --all-tags  
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/babytracker:latest
+            ghcr.io/${{ github.actor }}/babytracker:latest 
             
   deploy:
     name: Deploy
@@ -56,4 +50,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
-          script: /home/sboulema/deployDockerContainer BabyTracker babytracker
+          script: /home/${{ secrets.USERNAME }}/deployDockerContainer BabyTracker babytracker

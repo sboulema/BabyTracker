@@ -3,10 +3,6 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UserSecretsId>cdd039dd-6e1f-42ee-95de-d149916af726</UserSecretsId>
-    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
-    <PublishProfile>DefaultContainer</PublishProfile>
-    <ContainerImageTags>latest</ContainerImageTags>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime-deps:7.0-alpine</ContainerBaseImage>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
