@@ -1,4 +1,6 @@
-﻿namespace BabyTracker.Models.ViewModels;
+﻿using BabyTracker.Constants;
+
+namespace BabyTracker.Models.ViewModels;
 
 public class ProfileViewModel : BaseViewModel
 {
@@ -9,4 +11,6 @@ public class ProfileViewModel : BaseViewModel
     public string ShareList { get; set; } = string.Empty;
 
     public int FontSize { get; set; } = 6;
+
+    public ThemesEnum Theme { get; set; }
 }

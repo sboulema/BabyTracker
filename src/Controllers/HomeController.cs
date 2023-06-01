@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using System.Linq;
+using BabyTracker.Constants;
 
 namespace BabyTracker.Controllers;
 
@@ -51,6 +52,9 @@ public class HomeController : Controller
                 UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
             };
 
+            var userMetaData = await _accountService.GetUserMetaData(User);
+            ViewBag.Theme = userMetaData?.Theme;
+
             return View("Babies", babiesViewModel);
         }
         
@@ -64,10 +68,15 @@ public class HomeController : Controller
                 UserId = User.FindFirstValue("activeUserId") ?? string.Empty
             };
 
+            var userMetaData = await _accountService.GetUserMetaData(User);
+            ViewBag.Theme = userMetaData?.Theme;
+
             return View("LoggedIn", model);
         }
 
         // User not logged in
+        ViewBag.Theme = ThemesEnum.Auto;
+
         return View(new BaseViewModel());
     }
 
@@ -119,6 +128,7 @@ public class HomeController : Controller
 
         var userMetaData = await _accountService.GetUserMetaData(User);
         model.FontSize = userMetaData?.FontSize ?? 6;
+        ViewBag.Theme = userMetaData?.Theme;
 
         if ((date == null || date.Value == DateOnly.FromDateTime(lastEntryDateTime)) &&
             userMetaData?.LastViewedDate != null &&
@@ -160,6 +170,9 @@ public class HomeController : Controller
         model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
         model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
+        var userMetaData = await _accountService.GetUserMetaData(User);
+        ViewBag.Theme = userMetaData?.Theme;
+
         return View("Memories", model);
     }
 
@@ -184,6 +197,9 @@ public class HomeController : Controller
         model.NickName = User.FindFirstValue("nickname") ?? string.Empty;
         model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
         model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
+
+        var userMetaData = await _accountService.GetUserMetaData(User);
+        ViewBag.Theme = userMetaData?.Theme;
 
         return View("Charts", model);
     }
@@ -212,6 +228,9 @@ public class HomeController : Controller
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
             UserId = User.FindFirstValue("activeUserId") ?? string.Empty
         };
+
+        var userMetaData = await _accountService.GetUserMetaData(User);
+        ViewBag.Theme = userMetaData?.Theme;
 
         return View("Gallery", model);
     }

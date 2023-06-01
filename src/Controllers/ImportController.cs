@@ -2,15 +2,24 @@
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using BabyTracker.Services;
+using System.Threading.Tasks;
 
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
 public class ImportController : Controller
 {
+    private readonly IAccountService _accountService;
+
+    public ImportController(IAccountService accountService)
+    {
+        _accountService = accountService;
+    }
+
     [Authorize]
     [HttpGet]
-    public IActionResult Import()
+    public async Task<IActionResult> Import()
     {
         var model = new BaseViewModel
         {
@@ -19,6 +28,9 @@ public class ImportController : Controller
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
             UserId = User.FindFirstValue("userId") ?? string.Empty,
         };
+
+        var userMetaData = await _accountService.GetUserMetaData(User);
+        ViewBag.Theme = userMetaData?.Theme;
 
         return View(model);
     }

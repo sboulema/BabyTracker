@@ -8,6 +8,7 @@ using BabyTracker.Models.ViewModels;
 using BabyTracker.Services;
 using BabyTracker.Models.Account;
 using System.Security.Claims;
+using BabyTracker.Constants;
 
 namespace BabyTracker.Controllers;
 
@@ -23,7 +24,11 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult Login()
-        => View(new LoginViewModel());
+    {
+        ViewBag.Theme = ThemesEnum.Auto;
+
+        return View(new LoginViewModel());
+    }
 
     [HttpPost("[action]")]
     public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = "")
@@ -45,7 +50,11 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult Register()
-        => View(new LoginViewModel());
+    {
+        ViewBag.Theme = ThemesEnum.Auto;
+
+        return View(new LoginViewModel());
+    }
 
     [HttpPost("[action]")]
     public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
@@ -57,7 +66,11 @@ public class AccountController : Controller
 
     [HttpGet("[action]")]
     public IActionResult ResetPassword()
-        => View(new LoginViewModel());
+    {
+        ViewBag.Theme = ThemesEnum.Auto;
+
+        return View(new LoginViewModel());
+    }
 
     [HttpPost("[action]")]
     public async Task<IActionResult> ResetPassword(LoginViewModel model)
@@ -96,7 +109,10 @@ public class AccountController : Controller
             NickName = User.FindFirstValue("nickname") ?? string.Empty,
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
             UserId = User.FindFirstValue("userId") ?? string.Empty,
+            Theme = userMetaData?.Theme ?? ThemesEnum.Auto
         };
+
+        ViewBag.Theme = userMetaData?.Theme;
 
         return View(model);
     }
@@ -110,7 +126,8 @@ public class AccountController : Controller
             EnableMemoriesEmail = viewModel.EnableMemoriesEmail,
             MemoriesAddresses = viewModel.MemoriesAddresses,
             ShareList = viewModel.ShareList,
-            FontSize = viewModel.FontSize
+            FontSize = viewModel.FontSize,
+            Theme = viewModel.Theme
         };
 
         var success = await _accountService.SaveUserMetaData(User, userMetaDate);

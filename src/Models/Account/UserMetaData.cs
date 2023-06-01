@@ -1,4 +1,5 @@
 ﻿using System;
+using BabyTracker.Constants;
 
 namespace BabyTracker.Models.Account;
 
@@ -13,4 +14,6 @@ public class UserMetaData
     public int FontSize { get; set; } = 6;
 
     public DateOnly? LastViewedDate { get; set; }
+
+    public ThemesEnum Theme { get; set; }
 }
