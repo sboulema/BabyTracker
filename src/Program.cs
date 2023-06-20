@@ -18,6 +18,7 @@ using System.IO;
 using System.Threading.Tasks;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
+using Auth0Net.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
