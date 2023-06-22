@@ -52,6 +52,11 @@ public class PictureController : Controller
     {
         var picture = await _pictureService.GetPicture(_hostEnvironment, userId, fileName);
 
+        if (picture == null)
+        {
+            return NotFound();
+        }
+
         return File(picture, "image/jpg");
     }
 
@@ -59,6 +64,11 @@ public class PictureController : Controller
     public async Task<IActionResult> GetThumbnail(string userId, string fileName)
     {
         var thumbnail = await _pictureService.GetPicture(_hostEnvironment, userId, $"{fileName}__thumbnail");
+
+        if (thumbnail == null)
+        {
+            return NotFound();
+        }
 
         return File(thumbnail, "image/jpg");
     }

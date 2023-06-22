@@ -54,13 +54,13 @@ public class MemoriesService : IMemoriesService
         {
             var userId = user.UserId.Replace("auth0|", string.Empty);
 
-            var db = _sqLiteService.OpenDataConnection(userId);
+            _sqLiteService.OpenDataConnection(userId);
 
-            var babies = await SqLiteService.GetBabiesFromDb(db);
+            var babies = await _sqLiteService.GetBabiesFromDb();
 
             foreach (var baby in babies)
             {
-                var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name, db);
+                var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name);
 
                 _logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
 
@@ -69,6 +69,8 @@ public class MemoriesService : IMemoriesService
                     await SendEmail(memories, user, userId, baby.Name);
                 }
             }
+
+            await _sqLiteService.CloseDataConnection();
         }
     }
 

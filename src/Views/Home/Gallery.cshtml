@@ -6,6 +6,11 @@
 
 @if (Model != null)
 {
+    @if (Model.PicturesMissingCount != 0)
+    {
+        <p class="text-danger">@Model.PicturesMissingCount pictures are missing!</p>
+    }
+
    <div class="row">
     @foreach (var picture in Model.Pictures)
     {

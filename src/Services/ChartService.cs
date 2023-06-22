@@ -31,17 +31,14 @@ public class ChartService : IChartService
     {
         var viewModel = new ChartsViewModel();
 
-        using var db = _sqLiteService.OpenDataConnection(user);
+        _sqLiteService.OpenDataConnection(user);
 
-        if (db == null)
-        {
-            return viewModel;
-        }
+        var entries = await _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName);
 
-        var entries = await SqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName, db);
-
-        var babies = await SqLiteService.GetBabiesFromDb(db);
+        var babies = await _sqLiteService.GetBabiesFromDb();
         var baby = babies.FirstOrDefault(baby => baby.Name == babyName);
+
+        await _sqLiteService.CloseDataConnection();
 
         if (baby == null)
         {
@@ -87,7 +84,7 @@ public class ChartService : IChartService
         return viewModel;
     }
 
-    private void SetWeightPoints(ChartsViewModel model, Baby baby, int? maxAge)
+    private static void SetWeightPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.WeightPoints.Max(p => p.X)) + 1;
 
@@ -106,7 +103,7 @@ public class ChartService : IChartService
         model.WeightPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetLengthPoints(ChartsViewModel model, Baby baby, int? maxAge)
+    private static void SetLengthPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.LengthPoints.Max(p => p.X)) + 1;
 
@@ -126,7 +123,7 @@ public class ChartService : IChartService
         model.LengthPointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetHeadSizePoints(ChartsViewModel model, Baby baby, int? maxAge)
+    private static void SetHeadSizePoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.HeadSizePoints.Max(p => p.X)) + 1;
 
@@ -145,7 +142,7 @@ public class ChartService : IChartService
         model.HeadSizePointsSD2neg = JsonSerializer.Serialize(data.Select(row => new Point(row.Month, row.P3)).ToList());
     }
 
-    private void SetBMIPoints(ChartsViewModel model, Baby baby, int? maxAge)
+    private static void SetBMIPoints(ChartsViewModel model, Baby baby, int? maxAge)
     {
         var maxAgeInMonthsCeiling = maxAge ?? (int)Math.Ceiling(model.BMIPoints.Max(p => p.X)) + 1;
 

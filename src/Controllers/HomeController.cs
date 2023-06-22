@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Security.Claims;
 using System.Linq;
 using BabyTracker.Constants;
+using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Controllers;
 
@@ -17,17 +18,23 @@ public class HomeController : Controller
     private readonly ISqLiteService _sqLiteService;
     private readonly IChartService _chartService;
     private readonly IAccountService _accountService;
+    private readonly IPictureService _pictureService;
+    private readonly IHostEnvironment _hostEnvironment;
 
     public HomeController(
         IImportService importService,
         ISqLiteService sqLiteService,
         IChartService chartService,
-        IAccountService accountService)
+        IAccountService accountService,
+        IPictureService pictureService,
+        IHostEnvironment hostEnvironment)
     {
         _importService = importService;
         _sqLiteService = sqLiteService;
         _chartService = chartService;
         _accountService = accountService;
+        _pictureService = pictureService;
+        _hostEnvironment = hostEnvironment;
     }
 
     [HttpGet]
@@ -37,20 +44,17 @@ public class HomeController : Controller
         if (User.Identity?.IsAuthenticated == true &&
             _importService.HasDataClone(User))
         {
-            using var db = _sqLiteService.OpenDataConnection(User);
-
-            if (db == null)
-            {
-                return View(new BaseViewModel());
-            }
+            _sqLiteService.OpenDataConnection(User);
 
             var babiesViewModel = new BabiesViewModel
             {
-                Babies = await SqLiteService.GetBabiesFromDb(db),
+                Babies = await _sqLiteService.GetBabiesFromDb(),
                 NickName = User.FindFirstValue("nickname") ?? string.Empty,
                 ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
                 UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
             };
+
+            await _sqLiteService.CloseDataConnection();
 
             var userMetaData = await _accountService.GetUserMetaData(User);
             ViewBag.Theme = userMetaData?.Theme;
@@ -84,14 +88,9 @@ public class HomeController : Controller
     [HttpGet("{babyName}/{date?}")]
     public async Task<IActionResult> Diary(string babyName, DateOnly? date)
     {
-        using var db = _sqLiteService.OpenDataConnection(User);
+        _sqLiteService.OpenDataConnection(User);
 
-        if (db == null)
-        {
-            return View(new DiaryViewModel());
-        }
-
-        var availableDates = await SqLiteService.GetAllEntryDates(babyName, db);
+        var availableDates = await _sqLiteService.GetAllEntryDates(babyName);
 
         if (date == null)
         {
@@ -103,7 +102,7 @@ public class HomeController : Controller
             }
         }
 
-        var entries = await SqLiteService.GetEntriesFromDb(date.Value, babyName, db);
+        var entries = await _sqLiteService.GetEntriesFromDb(date.Value, babyName);
         var model = DiaryService.GetDays(entries);
 
         var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
@@ -119,11 +118,11 @@ public class HomeController : Controller
         model.ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty;
         model.UserId = User.FindFirstValue("activeUserId") ?? string.Empty;
 
-        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
         model.MemoriesBadgeCount = memories.Count;
         model.ShowMemoriesLink = true;
 
-        var lastEntryDateTime = await SqLiteService.GetLastEntryDateTime(babyName, db);
+        var lastEntryDateTime = await _sqLiteService.GetLastEntryDateTime(babyName);
         ViewData["LastEntry"] = lastEntryDateTime;
 
         var userMetaData = await _accountService.GetUserMetaData(User);
@@ -135,7 +134,7 @@ public class HomeController : Controller
             userMetaData?.LastViewedDate != date)
         {
             TempData["notificationMessage"] = "Do you want to continue where you left off? " + 
-                $"<a href=\"{babyName}/{userMetaData!.LastViewedDate!.Value.ToString("yyyy-MM-dd")}\" class=\"alert-link\">{userMetaData!.LastViewedDate!.Value.ToString("yyyy-MM-dd")}</a>";
+                $"<a href=\"{babyName}/{userMetaData!.LastViewedDate!.Value:yyyy-MM-dd}\" class=\"alert-link\">{userMetaData!.LastViewedDate!.Value:yyyy-MM-dd}</a>";
             TempData["notificationType"] = "info";
         }
 
@@ -145,6 +144,8 @@ public class HomeController : Controller
             await _accountService.SaveUserMetaData(User, userMetaData);
         }
 
+        await _sqLiteService.CloseDataConnection();
+
         return View("Diary", model);
     }
 
@@ -152,14 +153,12 @@ public class HomeController : Controller
     [HttpGet("{babyName}/memories")]
     public async Task<IActionResult> Memories(string babyName)
     {
-        using var db = _sqLiteService.OpenDataConnection(User);
+        _sqLiteService.OpenDataConnection(User);
 
-        if (db == null)
-        {
-            return View(new DiaryViewModel());
-        }
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
 
-        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
+        await _sqLiteService.CloseDataConnection();
+
         var model = DiaryService.GetDays(memories);
 
         model.BabyName = babyName;
@@ -180,14 +179,12 @@ public class HomeController : Controller
     [HttpGet("{babyName}/charts/{months?}")]
     public async Task<IActionResult> Charts(string babyName, int? months = null)
     {
-        using var db = _sqLiteService.OpenDataConnection(User);
+        _sqLiteService.OpenDataConnection(User);
 
-        if (db == null)
-        {
-            return View(new ChartsViewModel());
-        }
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
 
-        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
+        await _sqLiteService.CloseDataConnection();
+
         var model = await _chartService.GetViewModel(User, babyName, months + 1);
 
         model.BabyName = babyName;
@@ -208,15 +205,14 @@ public class HomeController : Controller
     [HttpGet("{babyName}/gallery")]
     public async Task<IActionResult> Gallery(string babyName)
     {
-        using var db = _sqLiteService.OpenDataConnection(User);
+        _sqLiteService.OpenDataConnection(User);
 
-        if (db == null)
-        {
-            return View(new GalleryViewModel());
-        }
+        var pictures = await _sqLiteService.GetPictures(babyName);
+        var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
 
-        var pictures = await SqLiteService.GetPictures(babyName, db);
-        var memories = await SqLiteService.GetMemoriesFromDb(DateTime.Now, babyName, db);
+        await _sqLiteService.CloseDataConnection();
+
+        var errors = _pictureService.CheckPictures(_hostEnvironment, User.FindFirstValue("activeUserId") ?? string.Empty, pictures);
 
         var model = new GalleryViewModel
         {
@@ -226,7 +222,8 @@ public class HomeController : Controller
             ShowMemoriesLink = true,
             NickName = User.FindFirstValue("nickname") ?? string.Empty,
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
-            UserId = User.FindFirstValue("activeUserId") ?? string.Empty
+            UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
+            PicturesMissingCount = errors.Count
         };
 
         var userMetaData = await _accountService.GetUserMetaData(User);
