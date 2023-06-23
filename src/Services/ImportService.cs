@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace BabyTracker.Services;
 
@@ -16,24 +18,40 @@ public interface IImportService
 public class ImportService : IImportService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ILogger<ImportService> _logger;
 
-    public ImportService(IWebHostEnvironment webHostEnvironment)
+    public ImportService(IWebHostEnvironment webHostEnvironment,
+        ILogger<ImportService> logger)
     {
         _webHostEnvironment = webHostEnvironment;
+        _logger = logger;
     }
 
     public string Unzip(ClaimsPrincipal user, Stream stream)
     {
         var extractPath = GetDataClonePath(user);
 
-        if (Directory.Exists(extractPath))
+        try
         {
-            Directory.Delete(extractPath, true);
+            if (Directory.Exists(extractPath))
+            {
+                Directory.Delete(extractPath, true);
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error removing data clone path '{extractPath}'. {e.Message}");
         }
 
-        using var archive = new ZipArchive(stream);
-        archive.ExtractToDirectory(extractPath, true);
-        archive.Dispose();
+        try
+        {
+            using var archive = new ZipArchive(stream);
+            archive.ExtractToDirectory(extractPath, true);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error extracting data into clone path '{extractPath}'. {e.Message}");
+        }
 
         return extractPath;
     }

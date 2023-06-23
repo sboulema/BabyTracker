@@ -73,6 +73,11 @@ public class SqLiteService : ISqLiteService
             path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
         }
 
+        if (!Path.Exists(path))
+        {
+            return;
+        }
+
         _db = new DataConnection(
             new DataOptions()
             .UseSQLite($"Data Source={path}"));
@@ -126,6 +131,11 @@ public class SqLiteService : ISqLiteService
 
     public async Task<List<Baby>> GetBabiesFromDb()
     {
+        if (_db == null)
+        {
+            return new();
+        }
+
         var babies = await _db.GetTable<Baby>()
             .ToListAsync();
 
