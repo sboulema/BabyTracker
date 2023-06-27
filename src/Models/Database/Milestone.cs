@@ -24,5 +24,6 @@ public class Milestone : IDbEntry, IMemoryEntry
     [Column]
     public string Name { get; set; } = string.Empty;
 
+    [Column]
     public string FileName { get; set; } = string.Empty;
 }
