@@ -11,7 +11,7 @@
     <PackageReference Include="Auth0Net.DependencyInjection" Version="3.0.0" />
     <PackageReference Include="IdentityModel.AspNetCore" Version="4.3.0" />
     <PackageReference Include="linq2db" Version="5.2.2" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.8" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.9" />
     <PackageReference Include="Mjml.Net" Version="1.24.0" />
     <PackageReference Include="NodaTime" Version="3.1.9" />
     <PackageReference Include="Razor.Templating.Core" Version="1.8.0" />
