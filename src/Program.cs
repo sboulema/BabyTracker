@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
+using Quartz.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,14 +30,17 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
 builder.Services.AddQuartz(q =>
 {
-    q.UseMicrosoftDependencyInjectionJobFactory();
-
-    q.AddJobAndTrigger<MemoriesJob>(builder);
+    q.ScheduleJob<MemoriesJob>(trigger => trigger
+        .WithIdentity("MemoriesJob Trigger")
+        .StartNow()
+        .WithCronSchedule(builder.Configuration["MEMORIES_CRON"] ?? "0 0 6 ? * * *")
+    );
 });
 
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
+
 builder.Services.AddControllersWithViews();
 
 builder.Services

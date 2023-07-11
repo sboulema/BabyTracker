@@ -14,13 +14,13 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.8" />
     <PackageReference Include="Mjml.Net" Version="1.24.0" />
     <PackageReference Include="NodaTime" Version="3.1.9" />
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.6.3" />
     <PackageReference Include="Razor.Templating.Core" Version="1.8.0" />
     <PackageReference Include="SendGrid" Version="9.28.1" />
     <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="1.0.1" />
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
     <PackageReference Include="tusdotnet" Version="2.7.1" />
     <PackageReference Include="ClosedXML" Version="0.102.0" />
+    <PackageReference Include="Quartz.AspNetCore" Version="3.6.3" />
   </ItemGroup>
 
   <ItemGroup> 

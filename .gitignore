@@ -5,6 +5,5 @@
 /src/bin
 /src/obj
 /src/data
-.vscode/launch.json
-.vscode/tasks.json
+/.vscode
 /src/appsettings.development.json
