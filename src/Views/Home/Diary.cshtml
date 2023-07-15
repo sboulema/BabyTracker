@@ -19,10 +19,20 @@
 }
 else
 {
-    <div class="input-group mb-3" style="width: fit-content;">
-        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model.DatePreviousUrl) ? "disabled" : string.Empty)" href="@Model.DatePreviousUrl"><i class="fas fa-angle-left"></i></a>
-        <input type="text" id="datePickr" onchange="filterDate(event)" value="@Model?.Date.ToString("yyyy-MM-dd")" class="form-control">
-        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model!.DateNextUrl) ? "disabled" : string.Empty)" href="@Model.DateNextUrl"><i class="fas fa-angle-right"></i></a>
+    <div class="row">
+        <div class="col">
+            <div class="input-group mb-3" style="width: fit-content;">
+                <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model.DatePreviousUrl) ? "disabled" : string.Empty)" href="@Model.DatePreviousUrl"><i class="fas fa-angle-left"></i></a>
+                <input type="text" id="datePickr" onchange="filterDate(event)" value="@Model?.Date.ToString("yyyy-MM-dd")" class="form-control">
+                <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model!.DateNextUrl) ? "disabled" : string.Empty)" href="@Model.DateNextUrl"><i class="fas fa-angle-right"></i></a>
+            </div>
+        </div>
+        <div class="col">
+            <div class="input-group mb-3 float-end" style="width: fit-content;">
+                <input type="text" class="form-control" id="search-input" placeholder="Search">
+                <button class="btn btn-outline-secondary" type="button" id="search-button"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
     </div>
 
     @if (Model.Entries.Any()) 
@@ -213,6 +223,24 @@ else
                 defaultDate: $("#datePickr").text(),
                 allowInput: true
             });
+
+            document
+                .getElementById("search-button")
+                .addEventListener("click", function()
+                {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("q", document.getElementById('search-input').value);
+                    window.location.href = url.href;
+                });
+
+            document
+                .getElementById("search-input")
+                .addEventListener("keypress", function (event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        document.getElementById("search-button").click();
+                    }
+                });
         });
     </script>
 }

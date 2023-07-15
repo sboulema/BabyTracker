@@ -2,6 +2,7 @@
 using BabyTracker.Models.Database;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.DataProvider.SQLite;
 using LinqToDB.SqlQuery;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -35,6 +36,8 @@ public interface ISqLiteService
     Task<List<IMemoryEntry>> GetMemoriesFromDb(DateTime date, string babyName);
 
     Task<List<Picture>> GetPictures(string babyName);
+
+    Task<List<IDbEntry>> Search(string match, string babyName);
 }
 
 public class SqLiteService : ISqLiteService
@@ -190,6 +193,17 @@ public class SqLiteService : ISqLiteService
         return pictures;
     }
 
+    public async Task<List<IDbEntry>> Search(string match, string babyName)
+    {
+        var entries = new List<IDbEntry>();
+
+        entries.AddRange(await SearchJoy(match));
+        entries.AddRange(await SearchMilestone(match, babyName));
+        entries.AddRange(await SearchActivity(match));
+
+        return entries;
+    }
+
     private async Task<List<Supplement>> GetSupplement(long lowerBound, long upperBound,
         string babyName)
     {
@@ -317,6 +331,24 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
+    private async Task<List<Joy>> SearchJoy(string match)
+    {
+        var entries = await _db.GetTable<Joy>()
+            .Where(joy => joy.Note.Contains(match))
+            .LeftJoin(
+                _db.GetTable<Picture>(),
+                (joy, picture) => joy.Id == picture.ActivityId,
+                (joy, picture) => new Joy
+                {
+                    Time = joy.Time,
+                    Note = joy.Note,
+                    FileName = picture.FileName
+                })
+            .ToListAsync();
+
+        return entries;
+    }
+
     private async Task<List<Joy>> GetJoy(int day, int month,
         string babyName)
     {
@@ -362,6 +394,32 @@ public class SqLiteService : ISqLiteService
         return entries;
     }
 
+    private async Task<List<Activity>> SearchActivity(string match)
+    {
+        var entries = await _db.GetTable<Activity>()
+            .Where(activity => activity.Note.Contains(match))
+            .LeftJoin(
+                _db.GetTable<ActivityDescription>(),
+                (activity, description) => activity.DescriptionId == description.Id,
+                (activity, description) => new {
+                    Activity = activity,
+                    Description = description
+                })
+            .LeftJoin(
+                _db.GetTable<Picture>(),
+                (result, picture) => result.Activity.Id == picture.ActivityId,
+                (result, picture) => new Activity
+                {
+                    Time = result.Activity.Time,
+                    Note = result.Activity.Note,
+                    FileName = picture.FileName,
+                    Name = result.Description.Name
+                })
+            .ToListAsync();
+
+        return entries;
+    }
+
     private async Task<List<Activity>> GetActivity(int day, int month,
         string babyName)
     {
@@ -387,6 +445,33 @@ public class SqLiteService : ISqLiteService
     {
         var entries = await _db.GetTable<Milestone>()
             .Where(milestone => milestone.Time >= lowerBound && milestone.Time <= upperBound)
+            .LeftJoin(
+                _db.GetTable<MilestoneSelection>(),
+                (milestone, milestoneSelection) => milestone.MilestoneSelectionId == milestoneSelection.Id,
+                (milestone, milestoneSelection) => new {
+                    Milestone = milestone,
+                    MilestoneSelection = milestoneSelection
+                })
+            .LeftJoin(
+                _db.GetTable<Picture>(),
+                (result, picture) => result.Milestone.Id == picture.ActivityId,
+                (result, picture) => new Milestone
+                {
+                    Time = result.Milestone.Time,
+                    Note = result.Milestone.Note,
+                    Name = result.MilestoneSelection.Name,
+                    FileName = picture.FileName
+                })
+            .ToListAsync();
+
+        return entries;
+    }
+
+    private async Task<List<Milestone>> SearchMilestone(string match,
+        string babyName)
+    {
+        var entries = await _db.GetTable<Milestone>()
+            .Where(milestone => milestone.Note.Contains(match))
             .LeftJoin(
                 _db.GetTable<MilestoneSelection>(),
                 (milestone, milestoneSelection) => milestone.MilestoneSelectionId == milestoneSelection.Id,

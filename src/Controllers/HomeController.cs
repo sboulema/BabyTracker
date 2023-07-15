@@ -8,6 +8,8 @@ using System.Security.Claims;
 using System.Linq;
 using BabyTracker.Constants;
 using Microsoft.Extensions.Hosting;
+using BabyTracker.Models.Database;
+using System.Collections.Generic;
 
 namespace BabyTracker.Controllers;
 
@@ -86,7 +88,7 @@ public class HomeController : Controller
 
     [Authorize]
     [HttpGet("{babyName}/{date?}")]
-    public async Task<IActionResult> Diary(string babyName, DateOnly? date)
+    public async Task<IActionResult> Diary(string babyName, DateOnly? date, string? q)
     {
         _sqLiteService.OpenDataConnection(User);
 
@@ -102,7 +104,19 @@ public class HomeController : Controller
             }
         }
 
-        var entries = await _sqLiteService.GetEntriesFromDb(date.Value, babyName);
+        var entries = new List<IDbEntry>();
+
+        // Do we need to show entries from a specific day
+        // or do we have a search query?
+        if (!string.IsNullOrEmpty(q))
+        {
+            entries = await _sqLiteService.Search(q, babyName);
+        }
+        else
+        {
+            entries = await _sqLiteService.GetEntriesFromDb(date.Value, babyName);
+        }
+
         var model = DiaryService.GetDays(entries);
 
         var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
