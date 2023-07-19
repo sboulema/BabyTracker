@@ -7,7 +7,7 @@
   
   <ItemGroup>
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.22.0" />
-    <PackageReference Include="Auth0.ManagementApi" Version="7.21.1" />
+    <PackageReference Include="Auth0.ManagementApi" Version="7.22.0" />
     <PackageReference Include="Auth0Net.DependencyInjection" Version="3.0.0" />
     <PackageReference Include="IdentityModel.AspNetCore" Version="4.3.0" />
     <PackageReference Include="linq2db" Version="5.2.2" />
