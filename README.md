@@ -77,6 +77,7 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 
 ## Building Dependencies
 - .NET 7.0
+- NPM
 
 ### Debugging
 Cron to easily test the `MemoriesJob` by running it every minute:

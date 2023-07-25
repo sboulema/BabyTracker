@@ -6,6 +6,13 @@ updates:
     interval: daily
   assignees:
     - "sboulema"
+
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+  assignees:
+    - "sboulema"
   
 - package-ecosystem: github-actions
   directory: "/"
