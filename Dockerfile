@@ -1,4 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS sdk
+RUN apk add --no-cache npm
 WORKDIR /app
 COPY . .
 RUN dotnet publish --runtime linux-musl-x64 --self-contained -c Release -o out -p:PublishTrimmed=true
