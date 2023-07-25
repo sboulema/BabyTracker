@@ -226,8 +226,6 @@ public class HomeController : Controller
 
         await _sqLiteService.CloseDataConnection();
 
-        var errors = _pictureService.CheckPictures(_hostEnvironment, User.FindFirstValue("activeUserId") ?? string.Empty, pictures);
-
         var model = new GalleryViewModel
         {
             Pictures = pictures,
@@ -236,8 +234,7 @@ public class HomeController : Controller
             ShowMemoriesLink = true,
             NickName = User.FindFirstValue("nickname") ?? string.Empty,
             ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
-            UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
-            PicturesMissingCount = errors.Count
+            UserId = User.FindFirstValue("activeUserId") ?? string.Empty
         };
 
         var userMetaData = await _accountService.GetUserMetaData(User);
