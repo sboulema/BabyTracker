@@ -8,7 +8,7 @@ updates:
     - "sboulema"
 
 - package-ecosystem: npm
-  directory: "/"
+  directory: "/src"
   schedule:
     interval: daily
   assignees:
