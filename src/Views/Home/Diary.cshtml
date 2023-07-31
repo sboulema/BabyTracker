@@ -59,50 +59,7 @@ else
             <tbody>
                 @foreach (var entry in Model.Entries.ToList())
                 {
-                    if (entry is Diaper diaper)
-                    {
-                        @await Html.PartialAsync("Diary/_Diaper", diaper)
-                    }
-                    else if (entry is Formula formula)
-                    {
-                        @await Html.PartialAsync("Diary/_Formula", formula)
-                    }
-                    else if (entry is Joy joy)
-                    {
-                        @await Html.PartialAsync("Diary/_Joy", joy)
-                    }
-                    else if (entry is Growth growth)
-                    {
-                        @await Html.PartialAsync("Diary/_Growth", growth)
-                    }
-                    else if (entry is Medication medication)
-                    {
-                        @await Html.PartialAsync("Diary/_Medication", medication)
-                    }
-                    else if (entry is Milestone milestone)
-                    {
-                        @await Html.PartialAsync("Diary/_Milestone", milestone)
-                    }
-                    else if (entry is Activity activity)
-                    {
-                        @await Html.PartialAsync("Diary/_Activity", activity)
-                    }
-                    else if (entry is Sleep sleep)
-                    {
-                        @await Html.PartialAsync("Diary/_Sleep", sleep)
-                    }
-                    else if (entry is Supplement supplement)
-                    {
-                        @await Html.PartialAsync("Diary/_Supplement", supplement)
-                    }
-                    else if (entry is Temperature temperature)
-                    {
-                        @await Html.PartialAsync("Diary/_Temperature", temperature)
-                    }
-                    else if (entry is Vaccine vaccine)
-                    {
-                        @await Html.PartialAsync("Diary/_Vaccine", vaccine)
-                    }
+                    @await Html.PartialAsync("_DiaryEntry", entry)
                 }
             </tbody>
         </table>

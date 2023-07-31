@@ -7,13 +7,22 @@ namespace BabyTracker.Models.ViewModels;
 
 public class DiaryViewModel : BaseViewModel
 {
-    public IEnumerable<IGrouping<DateTime, IDbEntry>> Days { get; set; } = Enumerable.Empty<IGrouping<DateTime, IDbEntry>>();
+    public IEnumerable<DiaryEntryViewModel> Entries { get; set; } = Enumerable.Empty<DiaryEntryViewModel>();
 
-    public IEnumerable<IDbEntry> Entries { get; set; } = Enumerable.Empty<IDbEntry>();
-
-    public string PictureDirectory { get; set; } = string.Empty;
-
-    public List<string> EntryTypes { get; set; } = new List<string> { "Diaper", "Formula", "Supplement", "Joy", "Growth", "Medication", "Milestone", "Activity", "Sleep", "Temperature", "Vaccine" };
+    public List<string> EntryTypes { get; set; } = new()
+    { 
+        "Diaper", 
+        "Formula", 
+        "Supplement", 
+        "Joy", 
+        "Growth", 
+        "Medication", 
+        "Milestone", 
+        "Activity", 
+        "Sleep", 
+        "Temperature",
+        "Vaccine"
+    };
 
     public DateOnly Date { get; set; }
 

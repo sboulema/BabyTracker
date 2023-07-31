@@ -15,7 +15,7 @@
     <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
 </div>
 
-@foreach (var group in Model.Entries.GroupBy(entry => entry.Time.ToDateTimeUTC().Year))
+@foreach (var group in Model.Entries.GroupBy(entry => entry.TimeStamp.ToDateTimeUTC().Year))
 {
     @if (group.Any() == false)
     {
@@ -31,18 +31,7 @@
         <tbody>
             @foreach (var entry in group)
             {
-                if (entry is Joy joy)
-                {
-                    @await Html.PartialAsync("Diary/_Joy", joy)
-                }
-                else if (entry is Milestone milestone)
-                {
-                    @await Html.PartialAsync("Diary/_Milestone", milestone)
-                }
-                else if (entry is Activity activity)
-                {
-                    @await Html.PartialAsync("Diary/_Activity", activity)
-                }
+                @await Html.PartialAsync("_DiaryEntry", entry)
             }
         </tbody>
     </table>
