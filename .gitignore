@@ -9,10 +9,7 @@
 /src/appsettings.development.json
 /src/node_modules
 /src/wwwroot/js
-/src/wwwroot/tablefilter
 /src/wwwroot/css/colsVisibility.css
 /src/wwwroot/css/flatpickr.min.css
 /src/wwwroot/css/magnific-popup.css
-/src/wwwroot/css/tablefilter.css
-/src/wwwroot/css/transparent.css
 /src/wwwroot/css/bootstrap.min.css

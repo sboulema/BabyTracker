@@ -1,0 +1,14 @@
+﻿@model BabyTracker.Models.ViewModels.DiaryEntryViewModel
+
+<div class="card mb-3 @Model.CssClass" id="activity_@Model.TimeStamp">
+    @if (!string.IsNullOrEmpty(Model.PictureFileName))
+    {
+        <img class="card-img-top" src="~/picture/@Model.PictureFileName/thumbnail">
+    }
+    <div class="card-body">
+        <h5 class="card-title bt-@Model.CssColor-title">@Model.Title</h5>
+        <p class="card-text bt-entry-note">@Model.Note</p>
+        <small class="text-muted float-right fs-6">@Model.Date @Model.Time</small>
+    </div>
+    <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;"><i class="fas fa-camera"></i> Screenshot</a>
+</div>

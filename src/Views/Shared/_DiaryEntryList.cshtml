@@ -1,0 +1,25 @@
+﻿@model BabyTracker.Models.ViewModels.DiaryEntryViewModel
+
+<div class="card mb-3 border-0 border-top @Model.CssClass">
+    <div class="row g-0">
+        <div class="col" style="flex: 0 0 64px">
+            <img src="@Model.IconURL" class="img-fluid rounded-start" width="64" />
+        </div>
+        <div class="col">
+            <div class="card-body pb-0">                
+                <h5 class="card-title bt-@Model.CssColor-title">@Model.Title</h5>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <p class="card-text bt-@Model.CssColor-background bt-entry-note">@Model.Note</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.PictureFileName))
+                {
+                    <a href="~/picture/@Model.PictureFileName" target="_blank"><img src="~/picture/@Model.PictureFileName/thumbnail" class="img-thumbnail" width="200" /></a>
+                }
+            </div>
+            <div class="card-footer text-body-secondary bg-transparent border-0 text-end py-0">
+                @Model.Date @Model.Time
+            </div>
+        </div>
+    </div>
+</div>

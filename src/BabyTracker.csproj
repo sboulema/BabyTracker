@@ -57,14 +57,9 @@
 	<Copy SourceFiles="node_modules/file-saver/dist/FileSaver.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/html2canvas/dist/html2canvas.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/tus-js-client/dist/tus.min.js" DestinationFolder="wwwroot/js" />
-	<Copy SourceFiles="node_modules/tablefilter/dist/tablefilter/tablefilter.js" DestinationFolder="wwwroot/js" />
-	<Copy SourceFiles="node_modules/tablefilter/dist/tablefilter/tf-1-2aa33b10e0e549020c12.js" DestinationFolder="wwwroot/js" />
 	<Message Text="Copying CSS files" />
 	<Copy SourceFiles="node_modules/bootstrap/dist/css/bootstrap.min.css" DestinationFolder="wwwroot/css" />
 	<Copy SourceFiles="node_modules/flatpickr/dist/flatpickr.min.css" DestinationFolder="wwwroot/css" />
 	<Copy SourceFiles="node_modules/magnific-popup/dist/magnific-popup.css" DestinationFolder="wwwroot/css" />
-	<Copy SourceFiles="node_modules/tablefilter/dist/tablefilter/style/tablefilter.css" DestinationFolder="wwwroot/tablefilter/style" />
-	<Copy SourceFiles="node_modules/tablefilter/dist/tablefilter/style/colsVisibility.css" DestinationFolder="wwwroot/tablefilter/style" />
-	<Copy SourceFiles="node_modules/tablefilter/dist/tablefilter/style/themes/transparent/transparent.css" DestinationFolder="wwwroot/tablefilter/style/themes/transparent" />
   </Target>
 </Project>

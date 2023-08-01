@@ -1,5 +1,4 @@
 ﻿@using BabyTracker.Extensions;
-@using BabyTracker.Models.Database;
 
 @model BabyTracker.Models.ViewModels.DiaryViewModel
 
@@ -7,84 +6,60 @@
     ViewData["Title"] = "Memories - BabyTracker";
 }
 
-<div class="btn-group mb-3">
-    <input type="radio" class="btn-check" name="viewStyle" id="viewStyleList" onchange="toggleViewStyle()" autocomplete="off" checked>
-    <label class="btn btn-outline-primary" for="viewStyleList"><i class="fas fa-list"></i> List</label>
+<ul class="nav nav-pills mb-3" id="pills-tab">
+    <li class="nav-item">
+        <button class="nav-link active" id="pills-list-tab" data-bs-toggle="pill" data-bs-target="#pills-list" type="button">
+            <i class="fas fa-list"></i> List</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="pills-card-tab" data-bs-toggle="pill" data-bs-target="#pills-card" type="button">
+            <i class="fas fa-image"></i> Card</button>
+    </li>
+</ul>
+<div class="tab-content fs-@Model.FontSize" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-list">
+        @foreach (var group in Model.Entries.GroupBy(entry => entry.TimeStamp.ToDateTimeUTC().Year))
+        {
+            @if (group.Any() == false)
+            {
+                continue;
+            }
 
-    <input type="radio" class="btn-check" name="viewStyle" id="viewStyleCard" onchange="toggleViewStyle()" autocomplete="off">
-    <label class="btn btn-outline-primary" for="viewStyleCard"><i class="fas fa-image"></i> Card</label>
-</div>
+            var yearsAgo = DateTime.UtcNow.Year - group.Key;
+            <h1 class="bt-purple-title">
+                @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
+            </h1>
 
-@foreach (var group in Model.Entries.GroupBy(entry => entry.TimeStamp.ToDateTimeUTC().Year))
-{
-    @if (group.Any() == false)
-    {
-        continue;
-    }
-
-    var yearsAgo = DateTime.UtcNow.Year - group.Key;
-    <h1 class="bt-purple-title">
-        @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
-    </h1>
-
-    <table id="diaryTable-@yearsAgo" class="table">
-        <tbody>
             @foreach (var entry in group)
             {
-                @await Html.PartialAsync("_DiaryEntry", entry)
+                @await Html.PartialAsync("_DiaryEntryList", entry)
             }
-        </tbody>
-    </table>
+        }
+    </div>
+    <div class="tab-pane fade" id="pills-card">
+        @foreach (var group in Model.Entries.GroupBy(entry => entry.TimeStamp.ToDateTimeUTC().Year))
+        {
+            @if (group.Any() == false)
+            {
+                continue;
+            }
 
-    <script>
-        $(document).ready(function() {
-            var filtersConfig = {
-                col_0: 'none',
-                col_1: 'checklist',
-                col_2: 'none',
-                col_3: 'none',
-                col_4: 'none',
-                toolbar: false,
-                themes: [{
-                    name: 'transparent'
-                }],
-                extensions: [{
-                    name: 'colsVisibility',
-                    at_start: [0, 1, 4]
-                }]
-            };
+            var yearsAgo = DateTime.UtcNow.Year - group.Key;
+            <h1 class="bt-purple-title">
+                @yearsAgo @(yearsAgo == 1 ? "year" : "years") ago
+            </h1>
 
-            var tf = new TableFilter('diaryTable-@yearsAgo', 0, filtersConfig);
-            tf.init();
-            tableFilters.push(tf);
-        });
-    </script>
-}
-
-@section Stylesheets
-{
-    <link rel="stylesheet" href="/css/tablefilter.css">
-    <link rel="stylesheet" href="/css/colsVisibility.css">
-    <link rel="stylesheet" href="/css/transparent.css">
-}
+            @foreach (var entry in group)
+            {
+                @await Html.PartialAsync("_DiaryEntryCard", entry)
+            }
+        }
+    </div>
+</div>
 
 @section Scripts
 {
-    <script src="/js/tablefilter.js"></script>
-    <script src="/js/tf-1-2aa33b10e0e549020c12.js"></script>
-
     <script>
-        var tableFilters = [];
-
-        function toggleViewStyle() {
-            tableFilters.forEach(tf => {
-                var tfColsVisibility = tf.extension('colsVisibility');
-                tfColsVisibility.toggleCol(2);
-                tfColsVisibility.toggleCol(3);
-                tfColsVisibility.toggleCol(4);
-            })
-        }
-
         function saveCard(selector) {
             $(".btn-screenshot").toggle();
 
