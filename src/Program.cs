@@ -30,7 +30,6 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
 builder.Services.AddQuartz(q =>
 {
-    q.UseMicrosoftDependencyInjectionJobFactory();
     q.ScheduleJob<MemoriesJob>(trigger => trigger
         .WithIdentity("MemoriesJob Trigger")
         .StartNow()
