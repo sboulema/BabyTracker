@@ -23,9 +23,10 @@ public class AccountController : Controller
     }
 
     [HttpGet("[action]")]
-    public IActionResult Login()
+    public IActionResult Login(string returnUrl = "")
     {
         ViewBag.Theme = ThemesEnum.Auto;
+        ViewBag.ReturnUrl = returnUrl;
 
         return View(new LoginViewModel());
     }
