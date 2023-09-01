@@ -44,45 +44,8 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllersWithViews();
 
 builder.Services
-    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options => options.LoginPath = "/account/login")
-    .AddOpenIdConnect("Auth0", options =>
-    {
-        options.Authority = $"https://{builder.Configuration["AUTH0_DOMAIN"]}";
-        options.ClientId = builder.Configuration["AUTH0_CLIENTID"];
-        options.ClientSecret = builder.Configuration["AUTH0_CLIENTSECRET"];
-        options.ResponseType = OpenIdConnectResponseType.Code;
-        options.Scope.Clear();
-        options.Scope.Add("openid");
-        options.Scope.Add("profile");
-        options.CallbackPath = new PathString("/callback");
-        options.ClaimsIssuer = "Auth0";
-        options.Events = new OpenIdConnectEvents
-        {
-            OnRedirectToIdentityProviderForSignOut = (context) =>
-            {
-                var logoutUri = $"https://{builder.Configuration["AUTH0_DOMAIN"]}/v2/logout?client_id={builder.Configuration["AUTH0_CLIENTID"]}";
-
-                var postLogoutUri = context.Properties.RedirectUri;
-                if (!string.IsNullOrEmpty(postLogoutUri))
-                {
-                    if (postLogoutUri.StartsWith("/"))
-                    {
-                        // transform to absolute
-                        var request = context.Request;
-                        postLogoutUri = request.Scheme + "://" + request.Host + request.PathBase + postLogoutUri;
-                    }
-
-                    logoutUri += $"&returnTo={Uri.EscapeDataString(postLogoutUri)}";
-                }
-
-                context.Response.Redirect(logoutUri);
-                context.HandleResponse();
-
-                return Task.CompletedTask;
-            }
-        };
-    });
+    .AddAuthentication()
+    .AddCookie(options => options.LoginPath = "/account/login");
 
 builder.Services.AddAuth0AuthenticationClient(config =>
 {
