@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Quartz;
-using BabyTracker.Extensions;
 using BabyTracker.Jobs;
 using Microsoft.AspNetCore.Builder;
 using tusdotnet;
@@ -9,17 +8,14 @@ using tusdotnet.Stores;
 using tusdotnet.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using BabyTracker.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
 using Quartz.AspNetCore;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -121,6 +117,10 @@ Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpContext)
                 {
                     return;
                 }
+
+                // Clear Sqlite connection pool, so the database file is not locked
+                // and can be overwritten with a newer version
+                SqliteConnection.ClearAllPools();
 
                 importService.Unzip(httpContext.User, stream);
 
