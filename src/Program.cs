@@ -16,6 +16,8 @@ using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
 using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
+using System;
+using BabyTracker.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +38,8 @@ builder.Services.AddQuartz(q =>
 builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
+
+builder.Services.AddOutputCache(options => options.AddPolicy("AuthenticatedOutputCache", new AuthenticatedOutputCachePolicy()));
 
 builder.Services.AddControllersWithViews();
 
@@ -82,6 +86,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseOutputCache();
 
 app.UseAuthentication();
 
