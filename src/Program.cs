@@ -128,7 +128,7 @@ Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpContext)
                 // and can be overwritten with a newer version
                 SqliteConnection.ClearAllPools();
 
-                importService.Unzip(httpContext.User, stream);
+                await importService.Unzip(httpContext.User, stream);
 
                 await stream.DisposeAsync();
                 var terminationStore = (ITusTerminationStore)eventContext.Store;

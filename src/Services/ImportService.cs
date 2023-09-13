@@ -2,7 +2,9 @@
 using System.IO;
 using System.IO.Compression;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +12,7 @@ namespace BabyTracker.Services;
 
 public interface IImportService
 {
-    string Unzip(ClaimsPrincipal user, Stream stream);
+    Task<string> Unzip(ClaimsPrincipal user, Stream stream);
 
     bool HasDataClone(ClaimsPrincipal user);
 }
@@ -18,16 +20,19 @@ public interface IImportService
 public class ImportService : IImportService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly IOutputCacheStore _outputCacheStore;
     private readonly ILogger<ImportService> _logger;
 
     public ImportService(IWebHostEnvironment webHostEnvironment,
+        IOutputCacheStore outputCacheStore,
         ILogger<ImportService> logger)
     {
         _webHostEnvironment = webHostEnvironment;
+        _outputCacheStore = outputCacheStore;
         _logger = logger;
     }
 
-    public string Unzip(ClaimsPrincipal user, Stream stream)
+    public async Task<string> Unzip(ClaimsPrincipal user, Stream stream)
     {
         var extractPath = GetDataClonePath(user);
 
@@ -52,6 +57,8 @@ public class ImportService : IImportService
         {
             _logger.LogError($"Error extracting data into clone path '{extractPath}'. {e.Message}");
         }
+
+        await _outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
 
         return extractPath;
     }
