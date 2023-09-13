@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace BabyTracker.Controllers;
 
@@ -19,6 +20,7 @@ public class PictureController : Controller
         _hostEnvironment = hostEnvironment;
     }
 
+    [OutputCache(PolicyName = "AuthenticatedOutputCache")]
     [Authorize]
     [HttpGet("{fileName}")]
     public async Task<IActionResult> GetPicture(string fileName)
@@ -33,6 +35,7 @@ public class PictureController : Controller
         return File(picture, "image/jpg");
     }
 
+    [OutputCache(PolicyName = "AuthenticatedOutputCache")]
     [Authorize]
     [HttpGet("{filename}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string fileName)

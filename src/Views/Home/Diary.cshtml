@@ -163,13 +163,16 @@ else
                     }
                 });
 
+            // Restore previously selected type filters
             var filter = JSON.parse(localStorage.getItem("entryTypeFilter"));
-            $(".entryTypeCheckbox")
-                .forEach(element => {
-                    if (!filter.includes(element.dataset.entrytype)) {
-                        setTimeout(function() { element.click(); document.activeElement.blur(); }, 300);
-                    }
-                });
+            if (filter.length > 0) {
+                $(".entryTypeCheckbox")
+                    .each(function() {
+                        if (!filter.includes($(this).data("entrytype"))) {
+                            setTimeout(function() { element.click(); document.activeElement.blur(); }, 300);
+                        }
+                    });
+            }
         });
     </script>
 }

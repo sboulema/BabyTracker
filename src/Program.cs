@@ -16,6 +16,8 @@ using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
 using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
+using System;
+using BabyTracker.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +38,8 @@ builder.Services.AddQuartz(q =>
 builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
+
+builder.Services.AddOutputCache(options => options.AddPolicy("AuthenticatedOutputCache", new AuthenticatedOutputCachePolicy()));
 
 builder.Services.AddControllersWithViews();
 
@@ -83,6 +87,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseOutputCache();
+
 app.UseAuthentication();
 
 app.UseAuthorization();
@@ -122,7 +128,7 @@ Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpContext)
                 // and can be overwritten with a newer version
                 SqliteConnection.ClearAllPools();
 
-                importService.Unzip(httpContext.User, stream);
+                await importService.Unzip(httpContext.User, stream);
 
                 await stream.DisposeAsync();
                 var terminationStore = (ITusTerminationStore)eventContext.Store;

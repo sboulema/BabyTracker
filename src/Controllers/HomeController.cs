@@ -10,6 +10,7 @@ using BabyTracker.Constants;
 using Microsoft.Extensions.Hosting;
 using BabyTracker.Models.Database;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace BabyTracker.Controllers;
 
@@ -86,6 +87,7 @@ public class HomeController : Controller
         return View(new BaseViewModel());
     }
 
+    [OutputCache(PolicyName = "AuthenticatedOutputCache")]
     [Authorize]
     [HttpGet("{babyName}/{date?}")]
     public async Task<IActionResult> Diary(string babyName, DateOnly? date, string? q)
