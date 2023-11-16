@@ -16,23 +16,27 @@ using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
 using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
-using System;
 using BabyTracker.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(kestrel =>
 {
-    kestrel.Limits.MaxRequestBodySize = null;
+	kestrel.Limits.MaxRequestBodySize = null;
 });
 
 builder.Services.AddQuartz(q =>
 {
-    q.ScheduleJob<MemoriesJob>(trigger => trigger
-        .WithIdentity("MemoriesJob Trigger")
-        .StartNow()
-        .WithCronSchedule(builder.Configuration["MEMORIES_CRON"] ?? "0 0 6 ? * * *")
-    );
+	q.ScheduleJob<MemoriesJob>(trigger => trigger
+		.WithIdentity("MemoriesJob Trigger")
+		.StartNow()
+		.WithCronSchedule(builder.Configuration["MEMORIES_CRON"] ?? "0 0 6 ? * * *")
+	);
+});
+
+builder.Services.AddQuartzServer(options =>
+{
+	options.WaitForJobsToComplete = true;
 });
 
 builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
@@ -44,19 +48,19 @@ builder.Services.AddOutputCache(options => options.AddPolicy("AuthenticatedOutpu
 builder.Services.AddControllersWithViews();
 
 builder.Services
-    .AddAuthentication()
-    .AddCookie(options => options.LoginPath = "/account/login");
+	.AddAuthentication()
+	.AddCookie(options => options.LoginPath = "/account/login");
 
 builder.Services.AddAuth0AuthenticationClient(config =>
 {
-    config.Domain = builder.Configuration["AUTH0_DOMAIN"] ?? string.Empty;
-    config.ClientId = builder.Configuration["AUTH0_MACHINE_CLIENTID"];
-    config.ClientSecret = builder.Configuration["AUTH0_MACHINE_CLIENTSECRET"];
+	config.Domain = builder.Configuration["AUTH0_DOMAIN"] ?? string.Empty;
+	config.ClientId = builder.Configuration["AUTH0_MACHINE_CLIENTID"];
+	config.ClientSecret = builder.Configuration["AUTH0_MACHINE_CLIENTSECRET"];
 });
 
 builder.Services
-    .AddAuth0ManagementClient()
-    .AddManagementAccessToken();
+	.AddAuth0ManagementClient()
+	.AddManagementAccessToken();
 
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ISqLiteService, SqLiteService>();
@@ -67,18 +71,18 @@ builder.Services.AddScoped<IPictureService, PictureService>();
 
 builder.Services.AddSendGrid(options =>
 {
-    options.ApiKey = builder.Configuration["SENDGRID_API_KEY"];
+	options.ApiKey = builder.Configuration["SENDGRID_API_KEY"];
 });
 
 var app = builder.Build();
 
 if (builder.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+	app.UseDeveloperExceptionPage();
 }
 else
 {
-    app.UseExceptionHandler("/Error");
+	app.UseExceptionHandler("/Error");
 }
 
 app.UseHttpsRedirection();
@@ -94,9 +98,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 if (builder.Environment.IsDevelopment() &&
-    !Directory.Exists($"{builder.Environment.ContentRootPath}/Data"))
+	!Directory.Exists($"{builder.Environment.ContentRootPath}/Data"))
 {
-    Directory.CreateDirectory($"{builder.Environment.ContentRootPath}/Data");
+	Directory.CreateDirectory($"{builder.Environment.ContentRootPath}/Data");
 }
 
 app.MapTus("/import", TusConfigurationFactory);
@@ -107,35 +111,35 @@ app.Run();
 
 Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpContext)
 {
-    var config = new DefaultTusConfiguration
-    {
-        Store = new TusDiskStore(builder.Environment.IsProduction() ? "/data/Data" : $"{builder.Environment.ContentRootPath}/Data"),
-        Events = new()
-        {
-            OnFileCompleteAsync = async eventContext =>
-            {
-                var file = await eventContext.GetFileAsync();
-                var stream = await file.GetContentAsync(eventContext.CancellationToken);
+	var config = new DefaultTusConfiguration
+	{
+		Store = new TusDiskStore(builder.Environment.IsProduction() ? "/data/Data" : $"{builder.Environment.ContentRootPath}/Data"),
+		Events = new()
+		{
+			OnFileCompleteAsync = async eventContext =>
+			{
+				var file = await eventContext.GetFileAsync();
+				var stream = await file.GetContentAsync(eventContext.CancellationToken);
 
-                var importService = httpContext.RequestServices.GetRequiredService<IImportService>();
+				var importService = httpContext.RequestServices.GetRequiredService<IImportService>();
 
-                if (importService == null)
-                {
-                    return;
-                }
+				if (importService == null)
+				{
+					return;
+				}
 
-                // Clear Sqlite connection pool, so the database file is not locked
-                // and can be overwritten with a newer version
-                SqliteConnection.ClearAllPools();
+				// Clear Sqlite connection pool, so the database file is not locked
+				// and can be overwritten with a newer version
+				SqliteConnection.ClearAllPools();
 
-                await importService.Unzip(httpContext.User, stream);
+				await importService.Unzip(httpContext.User, stream);
 
-                await stream.DisposeAsync();
-                var terminationStore = (ITusTerminationStore)eventContext.Store;
-                await terminationStore.DeleteFileAsync(file.Id, eventContext.CancellationToken);
-            }
-        }
-    };
+				await stream.DisposeAsync();
+				var terminationStore = (ITusTerminationStore)eventContext.Store;
+				await terminationStore.DeleteFileAsync(file.Id, eventContext.CancellationToken);
+			}
+		}
+	};
 
-    return Task.FromResult(config);
+	return Task.FromResult(config);
 }
