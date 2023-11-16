@@ -34,11 +34,6 @@ builder.Services.AddQuartz(q =>
 	);
 });
 
-builder.Services.AddQuartzServer(options =>
-{
-	options.WaitForJobsToComplete = true;
-});
-
 builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
