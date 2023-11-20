@@ -13,15 +13,8 @@ using BabyTracker.Constants;
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
-public class AccountController : Controller
+public class AccountController(IAccountService accountService) : Controller
 {
-    private readonly IAccountService _accountService;
-
-    public AccountController(IAccountService accountService)
-    {
-        _accountService = accountService;
-    }
-
     [HttpGet("[action]")]
     public IActionResult Login(string returnUrl = "")
     {
@@ -34,7 +27,7 @@ public class AccountController : Controller
     [HttpPost("[action]")]
     public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = "")
     {
-        var claimsPrincipal = await _accountService.Login(model);
+        var claimsPrincipal = await accountService.Login(model);
 
         if (claimsPrincipal == null)
         {
@@ -60,7 +53,7 @@ public class AccountController : Controller
     [HttpPost("[action]")]
     public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
     {
-        await _accountService.Register(model);
+        await accountService.Register(model);
 
         return await Login(model, returnUrl);
     }
@@ -76,7 +69,7 @@ public class AccountController : Controller
     [HttpPost("[action]")]
     public async Task<IActionResult> ResetPassword(LoginViewModel model)
     {
-        var result = await _accountService.ResetPassword(model);
+        var result = await accountService.ResetPassword(model);
 
         TempData["notificationMessage"] = result;
         TempData["notificationType"] = "success";
@@ -99,7 +92,7 @@ public class AccountController : Controller
     [HttpGet("[action]")]
     public async Task<IActionResult> Profile()
     {
-        var userMetaData = await _accountService.GetUserMetaData(User);
+        var userMetaData = await accountService.GetUserMetaData(User);
 
         var model = new ProfileViewModel
         {
@@ -131,7 +124,7 @@ public class AccountController : Controller
             Theme = viewModel.Theme
         };
 
-        var success = await _accountService.SaveUserMetaData(User, userMetaDate);
+        var success = await accountService.SaveUserMetaData(User, userMetaDate);
 
         TempData["notificationMessage"] = "Profile settings saved.";
         TempData["notificationType"] = success ? "success" : "danger";

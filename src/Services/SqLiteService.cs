@@ -40,15 +40,9 @@ public interface ISqLiteService
     Task<List<IDbEntry>> Search(string match, string babyName);
 }
 
-public class SqLiteService : ISqLiteService
+public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteService
 {
-    private readonly IWebHostEnvironment _webHostEnvironment;
     private DataConnection? _db;
-
-    public SqLiteService(IWebHostEnvironment webHostEnvironment)
-    {
-        _webHostEnvironment = webHostEnvironment;
-    }
 
     public void OpenDataConnection(ClaimsPrincipal user)
     {
@@ -63,7 +57,7 @@ public class SqLiteService : ISqLiteService
     }
 
     /// <summary>
-    /// Open a connection with the sqlite db file
+    /// Open a connection with the SQLite db file
     /// </summary>
     /// <param name="userId">userId without prefix</param>
     /// <returns></returns>
@@ -71,9 +65,9 @@ public class SqLiteService : ISqLiteService
     {
         var path = $"/data/Data/{userId}/EasyLog.db";
 
-        if (!_webHostEnvironment.IsProduction())
+        if (!webHostEnvironment.IsProduction())
         {
-            path = Path.Combine(_webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
+            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
         }
 
         if (!Path.Exists(path))
@@ -136,7 +130,7 @@ public class SqLiteService : ISqLiteService
     {
         if (_db == null)
         {
-            return new();
+            return [];
         }
 
         var babies = await _db.GetTable<Baby>()

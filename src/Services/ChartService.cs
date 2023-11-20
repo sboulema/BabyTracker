@@ -18,27 +18,20 @@ public interface IChartService
     Task<ChartsViewModel> GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null);
 }
 
-public class ChartService : IChartService
+public class ChartService(ISqLiteService sqLiteService) : IChartService
 {
-    private readonly ISqLiteService _sqLiteService;
-
-    public ChartService(ISqLiteService sqLiteService)
-    {
-        _sqLiteService = sqLiteService;
-    }
-
     public async Task<ChartsViewModel> GetViewModel(ClaimsPrincipal user, string babyName, int? maxAge = null)
     {
         var viewModel = new ChartsViewModel();
 
-        _sqLiteService.OpenDataConnection(user);
+        sqLiteService.OpenDataConnection(user);
 
-        var entries = await _sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName);
+        var entries = await sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName);
 
-        var babies = await _sqLiteService.GetBabiesFromDb();
+        var babies = await sqLiteService.GetBabiesFromDb();
         var baby = babies.FirstOrDefault(baby => baby.Name == babyName);
 
-        await _sqLiteService.CloseDataConnection();
+        await sqLiteService.CloseDataConnection();
 
         if (baby == null)
         {

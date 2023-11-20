@@ -20,32 +20,17 @@ public interface IMemoriesService
     Task SendMemoriesEmail();
 }
 
-public class MemoriesService : IMemoriesService
+public class MemoriesService(IConfiguration configuration,
+    IAccountService accountService,
+    ISqLiteService sqLiteService,
+    ISendGridClient sendGridClient,
+    ILogger<MemoriesService> logger) : IMemoriesService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IAccountService _accountService;
-    private readonly ISqLiteService _sqLiteService;
-    private readonly ISendGridClient _sendGridClient;
-    private readonly ILogger<MemoriesService> _logger;
-
-    public MemoriesService(IConfiguration configuration,
-        IAccountService accountService,
-        ISqLiteService sqLiteService,
-        ISendGridClient sendGridClient,
-        ILogger<MemoriesService> logger)
-    {
-        _configuration = configuration;
-        _accountService = accountService;
-        _sqLiteService = sqLiteService;
-        _sendGridClient = sendGridClient;
-        _logger = logger;
-    }
-
     public async Task SendMemoriesEmail()
     {
-        var users = await _accountService.SearchUsersWithEnableMemoriesEmail();
+        var users = await accountService.SearchUsersWithEnableMemoriesEmail();
 
-        if (users?.Any() != true)
+        if (users?.Count == 0)
         {
             return;
         }
@@ -54,15 +39,15 @@ public class MemoriesService : IMemoriesService
         {
             var userId = user.UserId.Replace("auth0|", string.Empty);
 
-            _sqLiteService.OpenDataConnection(userId);
+            sqLiteService.OpenDataConnection(userId);
 
-            var babies = await _sqLiteService.GetBabiesFromDb();
+            var babies = await sqLiteService.GetBabiesFromDb();
 
             foreach (var baby in babies)
             {
-                var memories = await _sqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name);
+                var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name);
 
-                _logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
+                logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
 
                 if (memories.Count > 0)
                 {
@@ -70,7 +55,7 @@ public class MemoriesService : IMemoriesService
                 }
             }
 
-            await _sqLiteService.CloseDataConnection();
+            await sqLiteService.CloseDataConnection();
         }
     }
 
@@ -79,7 +64,7 @@ public class MemoriesService : IMemoriesService
         var model = new MemoriesEmailViewModel
         {
             BabyName = babyName,
-            BaseUrl = _configuration["BASE_URL"] ?? string.Empty,
+            BaseUrl = configuration["BASE_URL"] ?? string.Empty,
             UserId = userId,
             Entries = memories
                 .OrderByDescending(entry => entry.Time.ToDateTimeUTC().Year)
@@ -106,7 +91,7 @@ public class MemoriesService : IMemoriesService
     {
         var msg = new SendGridMessage()
         {
-            From = new EmailAddress(_configuration["MEMORIES_FROM_EMAIL"], _configuration["MEMORIES_FROM_NAME"]),
+            From = new EmailAddress(configuration["MEMORIES_FROM_EMAIL"], configuration["MEMORIES_FROM_NAME"]),
             Subject = $"BabyTracker - Memories {DateTime.Now.ToShortDateString()}"
         };
 
@@ -129,7 +114,7 @@ public class MemoriesService : IMemoriesService
             msg.AddTo(new EmailAddress(recipient));
         }
 
-        var response = await _sendGridClient.SendEmailAsync(msg);
+        var response = await sendGridClient.SendEmailAsync(msg);
 
         return response;
     }

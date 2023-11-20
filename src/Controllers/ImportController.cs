@@ -8,15 +8,8 @@ using System.Threading.Tasks;
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
-public class ImportController : Controller
+public class ImportController(IAccountService accountService) : Controller
 {
-    private readonly IAccountService _accountService;
-
-    public ImportController(IAccountService accountService)
-    {
-        _accountService = accountService;
-    }
-
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> Import()
@@ -29,7 +22,7 @@ public class ImportController : Controller
             UserId = User.FindFirstValue("userId") ?? string.Empty,
         };
 
-        var userMetaData = await _accountService.GetUserMetaData(User);
+        var userMetaData = await accountService.GetUserMetaData(User);
         ViewBag.Theme = userMetaData?.Theme;
 
         return View(model);

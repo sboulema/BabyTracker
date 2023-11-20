@@ -8,24 +8,15 @@ using Microsoft.AspNetCore.OutputCaching;
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
-public class PictureController : Controller
+public class PictureController(IPictureService pictureService,
+    IHostEnvironment hostEnvironment) : Controller
 {
-    private readonly IPictureService _pictureService;
-    private readonly IHostEnvironment _hostEnvironment;
-
-    public PictureController(IPictureService pictureService,
-        IHostEnvironment hostEnvironment)
-    {
-        _pictureService = pictureService;
-        _hostEnvironment = hostEnvironment;
-    }
-
     [OutputCache(PolicyName = "AuthenticatedOutputCache")]
     [Authorize]
     [HttpGet("{fileName}")]
     public async Task<IActionResult> GetPicture(string fileName)
     {
-        var picture = await _pictureService.GetPicture(_hostEnvironment, User, fileName);
+        var picture = await pictureService.GetPicture(hostEnvironment, User, fileName);
 
         if (picture == null)
         {
@@ -40,7 +31,7 @@ public class PictureController : Controller
     [HttpGet("{filename}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string fileName)
     {
-        var thumbnail = await _pictureService.GetPicture(_hostEnvironment, User, $"{fileName}__thumbnail");
+        var thumbnail = await pictureService.GetPicture(hostEnvironment, User, $"{fileName}__thumbnail");
 
         if (thumbnail == null)
         {
@@ -53,7 +44,7 @@ public class PictureController : Controller
     [HttpGet("{userId}/{fileName}")]
     public async Task<IActionResult> GetPicture(string userId, string fileName)
     {
-        var picture = await _pictureService.GetPicture(_hostEnvironment, userId, fileName);
+        var picture = await pictureService.GetPicture(hostEnvironment, userId, fileName);
 
         if (picture == null)
         {
@@ -66,7 +57,7 @@ public class PictureController : Controller
     [HttpGet("{userId}/{filename}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string userId, string fileName)
     {
-        var thumbnail = await _pictureService.GetPicture(_hostEnvironment, userId, $"{fileName}__thumbnail");
+        var thumbnail = await pictureService.GetPicture(hostEnvironment, userId, $"{fileName}__thumbnail");
 
         if (thumbnail == null)
         {

@@ -31,31 +31,20 @@ public interface IAccountService
     Task<string> ResetPassword(LoginViewModel model);
 }
 
-public class AccountService : IAccountService
+public class AccountService(IConfiguration configuration,
+    IAuthenticationApiClient authenticationApiClient,
+    IManagementApiClient managementApiClient) : IAccountService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IAuthenticationApiClient _authenticationApiClient;
-    private readonly IManagementApiClient _managementApiClient;
-
-    public AccountService(IConfiguration configuration,
-        IAuthenticationApiClient authenticationApiClient,
-        IManagementApiClient managementApiClient)
-    {
-        _configuration = configuration;
-        _authenticationApiClient = authenticationApiClient;
-        _managementApiClient = managementApiClient;
-    }
-
     public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
     {
         AccessTokenResponse? result;
 
         try
         {
-            result = await _authenticationApiClient.GetTokenAsync(new ResourceOwnerTokenRequest
+            result = await authenticationApiClient.GetTokenAsync(new ResourceOwnerTokenRequest
             {
-                ClientId = _configuration["AUTH0_CLIENTID"],
-                ClientSecret = _configuration["AUTH0_CLIENTSECRET"],
+                ClientId = configuration["AUTH0_CLIENTID"],
+                ClientSecret = configuration["AUTH0_CLIENTSECRET"],
                 Scope = "openid profile",
                 Realm = "Username-Password-Authentication",
                 Username = model.EmailAddress,
@@ -67,7 +56,7 @@ public class AccountService : IAccountService
             return null;
         }
 
-        var user = await _authenticationApiClient.GetUserInfoAsync(result.AccessToken);
+        var user = await authenticationApiClient.GetUserInfoAsync(result.AccessToken);
         var userId = user.UserId.Replace("auth0|", string.Empty);
 
         var shareUser = await SearchUsersWithShareList(user.FullName);
@@ -91,9 +80,9 @@ public class AccountService : IAccountService
 
     public async Task<SignupUserResponse?> Register(LoginViewModel model)
     {
-        var result = await _authenticationApiClient.SignupUserAsync(new SignupUserRequest
+        var result = await authenticationApiClient.SignupUserAsync(new SignupUserRequest
         {
-            ClientId = _configuration["AUTH0_CLIENTID"],
+            ClientId = configuration["AUTH0_CLIENTID"],
             Email = model.EmailAddress,
             Password = model.Password,
             Connection = "Username-Password-Authentication",
@@ -104,9 +93,9 @@ public class AccountService : IAccountService
 
     public async Task<string> ResetPassword(LoginViewModel model)
     {
-        var result = await _authenticationApiClient.ChangePasswordAsync(new()
+        var result = await authenticationApiClient.ChangePasswordAsync(new()
         {
-            ClientId = _configuration["AUTH0_CLIENTID"],
+            ClientId = configuration["AUTH0_CLIENTID"],
             Connection = "Username-Password-Authentication",
             Email = model.EmailAddress
         });
@@ -117,7 +106,7 @@ public class AccountService : IAccountService
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var clientUser = await _managementApiClient.Users.GetAsync(userId);
+        var clientUser = await managementApiClient.Users.GetAsync(userId);
 
         return GetUserMetaData(clientUser);
     }
@@ -136,7 +125,7 @@ public class AccountService : IAccountService
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        await _managementApiClient.Users.UpdateAsync(userId, new()
+        await managementApiClient.Users.UpdateAsync(userId, new()
         {
             UserMetadata = userMetaData
         });
@@ -154,7 +143,7 @@ public class AccountService : IAccountService
 
         do
         {
-            page = await _managementApiClient.Users.GetAllAsync(
+            page = await managementApiClient.Users.GetAllAsync(
                 new() { Query = "user_metadata.EnableMemoriesEmail:true" },
                 new(pageNo)
             );
@@ -177,7 +166,7 @@ public class AccountService : IAccountService
 
         do
         {
-            page = await _managementApiClient.Users.GetAllAsync(
+            page = await managementApiClient.Users.GetAllAsync(
                 new() { Query = $"user_metadata.ShareList:{emailAddress}" },
                 new(pageNo)
             );

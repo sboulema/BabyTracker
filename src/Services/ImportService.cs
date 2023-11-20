@@ -17,21 +17,10 @@ public interface IImportService
     bool HasDataClone(ClaimsPrincipal user);
 }
 
-public class ImportService : IImportService
+public class ImportService(IWebHostEnvironment webHostEnvironment,
+    IOutputCacheStore outputCacheStore,
+    ILogger<ImportService> logger) : IImportService
 {
-    private readonly IWebHostEnvironment _webHostEnvironment;
-    private readonly IOutputCacheStore _outputCacheStore;
-    private readonly ILogger<ImportService> _logger;
-
-    public ImportService(IWebHostEnvironment webHostEnvironment,
-        IOutputCacheStore outputCacheStore,
-        ILogger<ImportService> logger)
-    {
-        _webHostEnvironment = webHostEnvironment;
-        _outputCacheStore = outputCacheStore;
-        _logger = logger;
-    }
-
     public async Task<string> Unzip(ClaimsPrincipal user, Stream stream)
     {
         var extractPath = GetDataClonePath(user);
@@ -45,7 +34,7 @@ public class ImportService : IImportService
         }
         catch (Exception e)
         {
-            _logger.LogError($"Error removing data clone path '{extractPath}'. {e.Message}");
+            logger.LogError($"Error removing data clone path '{extractPath}'. {e.Message}");
         }
 
         try
@@ -55,10 +44,10 @@ public class ImportService : IImportService
         }
         catch (Exception e)
         {
-            _logger.LogError($"Error extracting data into clone path '{extractPath}'. {e.Message}");
+            logger.LogError($"Error extracting data into clone path '{extractPath}'. {e.Message}");
         }
 
-        await _outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
+        await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
 
         return extractPath;
     }
@@ -72,9 +61,9 @@ public class ImportService : IImportService
 
         var path = $"/data/Data/{activeUserId}";
 
-        if (!_webHostEnvironment.IsProduction())
+        if (!webHostEnvironment.IsProduction())
         {
-            path = $"{_webHostEnvironment.ContentRootPath}/Data/{activeUserId}";
+            path = $"{webHostEnvironment.ContentRootPath}/Data/{activeUserId}";
         }
 
         return path;
