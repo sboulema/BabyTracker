@@ -19,7 +19,7 @@
     <PackageReference Include="SendGrid" Version="9.29.1" />
     <PackageReference Include="SendGrid.Extensions.DependencyInjection" Version="1.0.1" />
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
-    <PackageReference Include="tusdotnet" Version="2.7.2" />
+    <PackageReference Include="tusdotnet" Version="2.8.0" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.8.0" />
   </ItemGroup>
