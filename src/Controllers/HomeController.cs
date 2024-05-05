@@ -123,6 +123,7 @@ public class HomeController(
 
 		var userMetaData = await accountService.GetUserMetaData(User);
 		model.FontSize = userMetaData?.FontSize ?? 6;
+		model.UseCards = userMetaData?.UseCards ?? false;
 		ViewBag.Theme = userMetaData?.Theme;
 		ViewBag.UseFullCardImages = userMetaData?.UseFullCardImages;
 

@@ -105,6 +105,7 @@ public class AccountController(IAccountService accountService) : Controller
 			UserId = User.FindFirstValue("userId") ?? string.Empty,
 			Theme = userMetaData?.Theme ?? ThemesEnum.Auto,
 			UseFullCardImages = userMetaData?.UseFullCardImages ?? false,
+			UseCards = userMetaData?.UseCards ?? false,
 		};
 
 		ViewBag.Theme = userMetaData?.Theme;
@@ -124,6 +125,7 @@ public class AccountController(IAccountService accountService) : Controller
 			FontSize = viewModel.FontSize,
 			Theme = viewModel.Theme,
 			UseFullCardImages = viewModel.UseFullCardImages,
+			UseCards = viewModel.UseCards,
 		};
 
 		var success = await accountService.SaveUserMetaData(User, userMetaDate);

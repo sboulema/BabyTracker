@@ -173,6 +173,11 @@ else
                         }
                     });
             }
+
+            if (@Model.UseCards.ToString().ToLower()) {
+                const cardTrigger = document.querySelector('#pills-tab li:last-child button');
+                new bootstrap.Tab(cardTrigger).show();
+            }
         });
     </script>
 }

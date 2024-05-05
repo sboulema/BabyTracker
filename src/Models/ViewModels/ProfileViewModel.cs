@@ -15,4 +15,6 @@ public class ProfileViewModel : BaseViewModel
 	public ThemesEnum Theme { get; set; }
 	
 	public bool UseFullCardImages { get; set; }
+	
+	public bool UseCards { get; set; }
 }

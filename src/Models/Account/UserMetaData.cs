@@ -18,4 +18,6 @@ public class UserMetaData
 	public ThemesEnum Theme { get; set; }
 	
 	public bool UseFullCardImages { get; set; }
+	
+	public bool UseCards { get; set; }
 }

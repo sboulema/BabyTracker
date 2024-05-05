@@ -31,7 +31,7 @@
         <div id="memoriesEmailAddressesHelp" class="form-text">You can specify multiple valid email addresses by comma-separating them.</div>
       </div>
 
-      <h2>Fonts</h2>
+      <h2>Diary</h2>
 
       <div class="mb-3">
         <label for="fontSize" class="form-label">Font size</label>
@@ -45,10 +45,14 @@
         </select>
       </div>
 
-      <h2>Images</h2>
+      <div class="mb-3 form-check">
+        <input asp-for="@Model.UseCards" class="form-check-input" />
+        <label class="form-check-label" for="UseCards">Use cards for diary</label>
+        <div class="form-text">Instead of showing diary entries as list items use cards.</div>
+      </div>
 
       <div class="mb-3 form-check">
-        <input asp-for="UseFullCardImages" class="form-check-input" />
+        <input asp-for="@Model.UseFullCardImages" class="form-check-input" />
         <label class="form-check-label" for="UseFullCardImages">Use full card images</label>
         <div class="form-text">Instead of thumbnails use full images for diary cards.</div>
       </div>
