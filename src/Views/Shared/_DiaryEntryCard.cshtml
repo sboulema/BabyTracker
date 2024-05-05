@@ -10,5 +10,9 @@
         <p class="card-text bt-entry-note">@Model.Note</p>
         <small class="text-muted float-right fs-6">@Model.Date @Model.Time</small>
     </div>
-    <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;"><i class="fas fa-camera"></i> Screenshot</a>
+
+    <div class="btn-group card-buttons" role="group">
+        <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;"><i class="fas fa-camera"></i> Screenshot</a>
+        <a href="#" class="btn btn-info" onclick="useFullImageCard('activity_@Model.TimeStamp');return false;"><i class="fas fa-expand"></i> Expand</a>
+    </div>
 </div>
