@@ -3,7 +3,7 @@
 <div class="card mb-3 @Model.CssClass" id="activity_@Model.TimeStamp">
     @if (!string.IsNullOrEmpty(Model.PictureFileName))
     {
-        <img class="card-img-top" src="~/picture/@Model.PictureFileName/thumbnail">
+        <img class="card-img-top" src="~/picture/@Model.PictureFileName@(!ViewBag.UseFullCardImages ? "/thumbnail" : string.Empty)">
     }
     <div class="card-body">
         <h5 class="card-title bt-@Model.CssColor-title">@Model.Title</h5>
