@@ -123,6 +123,11 @@ else
         function useFullImageCard(selector) {
             var imageSrc = $(`#${selector} img`)[0].src;
             $(`#${selector} img`)[0].src = imageSrc.endsWith("/thumbnail")? imageSrc.replace("/thumbnail", "") : `${imageSrc}/thumbnail`;
+
+            $(`#${selector} .btn-full-image-card i`).toggleClass('fa-expand fa-compress');
+            $(`#${selector} .btn-full-image-card span`).text($(`#${selector} .btn-full-image-card span`).text() == "Expand" ? "Collapse" : "Expand");
+
+            $(`#${selector}`)[0].scrollIntoView();
         }
 
         function filterType(event) {
