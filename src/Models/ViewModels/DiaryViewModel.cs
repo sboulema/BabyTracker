@@ -7,11 +7,11 @@ namespace BabyTracker.Models.ViewModels;
 
 public class DiaryViewModel : BaseViewModel
 {
-	public IEnumerable<DiaryEntryViewModel> Entries { get; set; } = Enumerable.Empty<DiaryEntryViewModel>();
+	public IEnumerable<DiaryEntryViewModel> Entries { get; set; } = [];
 
-	public List<string> EntryTypes { get; set; } = new()
-	{ 
-		"Diaper", 
+	public List<string> EntryTypes { get; set; } =
+    [
+        "Diaper", 
 		"Formula", 
 		"Supplement", 
 		"Joy", 
@@ -22,11 +22,11 @@ public class DiaryViewModel : BaseViewModel
 		"Sleep", 
 		"Temperature",
 		"Vaccine"
-	};
+	];
 
 	public DateOnly Date { get; set; }
 
-	public List<DateOnly> AvailableDates = new();
+	public List<DateOnly> AvailableDates = [];
 
 	public string DateNextUrl { get; set; } = string.Empty;
 

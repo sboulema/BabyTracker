@@ -92,7 +92,7 @@ public class MemoriesService(IConfiguration configuration,
         var msg = new SendGridMessage()
         {
             From = new EmailAddress(configuration["MEMORIES_FROM_EMAIL"], configuration["MEMORIES_FROM_NAME"]),
-            Subject = $"BabyTracker - Memories {DateTime.Now.ToShortDateString()}"
+            Subject = $"BabyTracker - Memories {DateTime.Now:dd-MM-yyyy}"
         };
 
         var mjml = await GetMJML(memories, userId, babyName);

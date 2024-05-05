@@ -8,7 +8,7 @@ public class DiaryEntryViewModel
 
     public string Time => TimeStamp.ToDateTimeLocal().ToShortTimeString();
 
-    public string Date => TimeStamp.ToDateTimeLocal().ToShortDateString();
+    public string Date => TimeStamp.ToDateTimeLocal().ToString("dd-MM-yyyy");
 
     public long TimeStamp { get; set; }
 
