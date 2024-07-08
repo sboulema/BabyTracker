@@ -21,7 +21,7 @@
     <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
     <PackageReference Include="tusdotnet" Version="2.8.0" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
-    <PackageReference Include="Quartz.AspNetCore" Version="3.10.0" />
+    <PackageReference Include="Quartz.AspNetCore" Version="3.11.0" />
   </ItemGroup>
 
   <ItemGroup> 
