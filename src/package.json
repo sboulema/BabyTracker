@@ -5,7 +5,7 @@
   "dependencies": {
     "bootstrap": "5.3.3",
     "jquery": "3.7.1",
-    "chart.js": "4.4.5",
+    "chart.js": "4.4.6",
     "chartjs-plugin-datalabels": "2.2.0",
     "flatpickr": "4.6.13",
     "magnific-popup": "1.2.0",
