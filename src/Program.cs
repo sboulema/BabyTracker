@@ -82,11 +82,9 @@ else
 
 app.UseHttpsRedirection();
 
-// app.UseStaticFiles();
+app.UseStaticFiles();
 
 app.UseRouting();
-
-app.MapStaticAssets();
 
 app.UseOutputCache();
 
