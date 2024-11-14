@@ -82,8 +82,6 @@ else
 
 app.UseHttpsRedirection();
 
-app.MapStaticAssets();
-
 app.UseRouting();
 
 app.UseOutputCache();
@@ -97,6 +95,8 @@ if (builder.Environment.IsDevelopment() &&
 {
 	Directory.CreateDirectory($"{builder.Environment.ContentRootPath}/Data");
 }
+
+app.MapStaticAssets();
 
 app.MapTus("/import", TusConfigurationFactory);
 
