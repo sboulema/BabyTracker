@@ -11,6 +11,6 @@
     "magnific-popup": "1.2.0",
     "html2canvas": "1.4.1",
     "file-saver": "2.0.5",
-    "tus-js-client": "4.2.3"
+    "tus-js-client": "4.3.0"
   }
 }
