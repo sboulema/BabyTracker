@@ -44,7 +44,7 @@ public class HomeController(
 
 			return View("Babies", babiesViewModel);
 		}
-		
+
 		// User logged in but no data clone available
 		if (User.Identity?.IsAuthenticated == true)
 		{
@@ -169,6 +169,7 @@ public class HomeController(
 
 		var userMetaData = await accountService.GetUserMetaData(User);
 		ViewBag.Theme = userMetaData?.Theme;
+		ViewBag.UseFullCardImages = userMetaData?.UseFullCardImages;
 
 		return View("Memories", model);
 	}
