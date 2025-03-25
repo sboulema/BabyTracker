@@ -123,9 +123,6 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
         entries.RemoveAll(entry => string.IsNullOrEmpty(entry.Note) &&
                                    string.IsNullOrEmpty(entry.FileName));
 
-        // Prevent automatic hyperlinks (in the memories email)
-        entries.ForEach(entry => entry.Note = entry.Note.Replace(".", "&zwnj;."));
-
         return entries;
     }
 

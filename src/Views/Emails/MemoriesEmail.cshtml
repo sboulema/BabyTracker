@@ -31,7 +31,7 @@
         </mj-navbar>
       </mj-column>
     </mj-section>
-    
+
     <mj-section>
       <mj-column>
         <mj-text font-size="20px" color="#bd4d85">
@@ -71,7 +71,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">Joy</mj-text>
-                            <mj-text line-height="1.3">@joy.Note</mj-text>
+                            <mj-text line-height="1.3">@joy.Note?.Replace(".", "&zwnj;.")</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
@@ -90,7 +90,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">@milestone.Name</mj-text>
-                            <mj-text line-height="1.3">@milestone.Note</mj-text>
+                            <mj-text line-height="1.3">@milestone.Note?.Replace(".", "&zwnj;.")</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
@@ -109,7 +109,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">@activity.Name</mj-text>
-                            <mj-text line-height="1.3">@activity.Note</mj-text>
+                            <mj-text line-height="1.3">@activity.Note?.Replace(".", "&zwnj;.")</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
@@ -123,10 +123,10 @@
       <mj-column>
          <mj-button href="@Model.BaseUrl/@Model.BabyName/memories" font-family="Helvetica" background-color="#bd4d85" color="white">
           View memories
-         </mj-button>    
+         </mj-button>
       </mj-column>
     </mj-section>
-    
+
   </mj-body>
-</mjml> 
+</mjml>
 }
