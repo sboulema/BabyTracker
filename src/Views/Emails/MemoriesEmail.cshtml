@@ -71,7 +71,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">Joy</mj-text>
-                            <mj-text line-height="1.3">@joy.Note?.Replace(".", "&zwnj;.")</mj-text>
+                            <mj-text line-height="1.3">@Html.Raw(joy.Note?.Replace(".", "&zwnj;."))</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
@@ -90,7 +90,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">@milestone.Name</mj-text>
-                            <mj-text line-height="1.3">@milestone.Note?.Replace(".", "&zwnj;.")</mj-text>
+                            <mj-text line-height="1.3">@Html.Raw(milestone.Note?.Replace(".", "&zwnj;."))</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
@@ -109,7 +109,7 @@
                     <mj-section>
                         <mj-column>
                             <mj-text color="#28a745">@activity.Name</mj-text>
-                            <mj-text line-height="1.3">@activity.Note?.Replace(".", "&zwnj;.")</mj-text>
+                            <mj-text line-height="1.3">@Html.Raw(activity.Note?.Replace(".", "&zwnj;."))</mj-text>
                         </mj-column>
                     </mj-section>
                 </mj-wrapper>
