@@ -11,12 +11,12 @@ using BabyTracker.Services;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Threading.Tasks;
-using SendGrid.Extensions.DependencyInjection;
 using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
 using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
 using BabyTracker.Policies;
+using BabyTracker.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,11 +63,7 @@ builder.Services.AddScoped<IMemoriesService, MemoriesService>();
 builder.Services.AddScoped<IChartService, ChartService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<IPictureService, PictureService>();
-
-builder.Services.AddSendGrid(options =>
-{
-	options.ApiKey = builder.Configuration["SENDGRID_API_KEY"];
-});
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 var app = builder.Build();
 

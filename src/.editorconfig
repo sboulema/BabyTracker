@@ -113,3 +113,6 @@ csharp_style_namespace_declarations=file_scoped:suggestion
 
 # CA2254: Template should be a static expression
 dotnet_diagnostic.CA2254.severity = none
+
+# CA1860: Avoid using 'Enumerable.Any()' extension method
+dotnet_diagnostic.CA1860.severity = none

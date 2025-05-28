@@ -2,16 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Auth0.ManagementApi.Models;
 using BabyTracker.Extensions;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
+using BabyTracker.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Mjml.Net;
 using Razor.Templating.Core;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 
 namespace BabyTracker.Services;
 
@@ -23,14 +20,14 @@ public interface IMemoriesService
 public class MemoriesService(IConfiguration configuration,
     IAccountService accountService,
     ISqLiteService sqLiteService,
-    ISendGridClient sendGridClient,
+    IEmailRepository emailRepository,
     ILogger<MemoriesService> logger) : IMemoriesService
 {
     public async Task SendMemoriesEmail()
     {
         var users = await accountService.SearchUsersWithEnableMemoriesEmail();
 
-        if (users?.Count == 0)
+        if (users?.Any() != true)
         {
             return;
         }
@@ -49,9 +46,10 @@ public class MemoriesService(IConfiguration configuration,
 
                 logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
 
-                if (memories.Count > 0)
+                if (memories.Any())
                 {
-                    await SendEmail(memories, user, userId, baby.Name);
+                    var mjml = await GetMJML(memories, userId, baby.Name);
+                    await emailRepository.SendEmail(mjml, user, userId, baby.Name);
                 }
             }
 
@@ -76,46 +74,5 @@ public class MemoriesService(IConfiguration configuration,
         var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
 
         return mjml;
-    }
-
-    private static string GetHTML(string mjml)
-    {
-        var result = new MjmlRenderer().Render(mjml, new() {
-            Beautify = false
-        });
-
-        return result.Html;
-    }
-
-    private async Task<Response?> SendEmail(List<IMemoryEntry> memories, User user, string userId, string babyName)
-    {
-        var msg = new SendGridMessage()
-        {
-            From = new EmailAddress(configuration["MEMORIES_FROM_EMAIL"], configuration["MEMORIES_FROM_NAME"]),
-            Subject = $"BabyTracker - Memories {DateTime.Now:dd-MM-yyyy}"
-        };
-
-        var mjml = await GetMJML(memories, userId, babyName);
-        var html = GetHTML(mjml);
-
-        msg.AddContent(MimeType.Html, html);
-
-        var userMetaData = AccountService.GetUserMetaData(user);
-
-        var recipients = userMetaData?.MemoriesAddresses.Split(",");
-
-        if (recipients?.Any() != true)
-        {
-            return null;
-        }
-
-        foreach (var recipient in recipients)
-        {
-            msg.AddTo(new EmailAddress(recipient));
-        }
-
-        var response = await sendGridClient.SendEmailAsync(msg);
-
-        return response;
     }
 }

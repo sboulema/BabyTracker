@@ -54,16 +54,16 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 | Variable					 | Description								|
 |----------------------------|------------------------------------------|
 | ASPNETCORE_ENVIRONMENT	 | .NET environment should be set to "Production" when using Docker, in order to used mapped volumes |
-| AUTH0_CLIENTID			 | Auth0 clientid used for authentication |
+| AUTH0_CLIENTID			 | Auth0 client id used for authentication |
 | AUTH0_CLIENTSECRET		 | Auth0 client secret used for authentication |
 | AUTH0_DOMAIN				 | Auth0 domain to use for authentication |
-| AUTH0_MACHINE_CLIENTID	 | Auth0 machine to machine clientid used for user profile management |
+| AUTH0_MACHINE_CLIENTID	 | Auth0 machine to machine client id used for user profile management |
 | AUTH0_MACHINE_CLIENTSECRET | Auth0 machine to machine client secret used for user profile management |
 | BASE_URL					 | Base url for links and images in the memories email |
 | MEMORIES_CRON				 | Cron schedule on which to send the memories email |
 | MEMORIES_FROM_EMAIL		 | Email address to use when sending memories email |
 | MEMORIES_FROM_NAME		 | Email sender name to use when sending memories email |
-| SENDGRID_API_KEY			 | SendGrid API key used to send the memories email |
+| POSTMARK_API_TOKEN		 | Postmark API token used to send the memories email |
 
 ## Volumes / Bind mounts
 
@@ -73,7 +73,7 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 
 ## Requirements
 - Auth0 account
-- Sendgrid account
+- Postmark account
 
 ## Building Dependencies
 - .NET 9.0
