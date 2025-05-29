@@ -43,7 +43,7 @@
     </Content>
   </ItemGroup>
 
-  <Target Name="CopyJS" BeforeTargets="BeforeBuild">
+  <Target Name="CopyJS" BeforeTargets="PrepareForBuild">
 	<Message Text="Running NPM install" />  
 	<Exec Command="npm install" /> 
 	<Message Text="Copying JS files" />
