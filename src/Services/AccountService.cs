@@ -62,8 +62,8 @@ public class AccountService(IConfiguration configuration,
         var shareUser = await SearchUsersWithShareList(user.FullName);
         var shareUserId = shareUser?.UserId.Replace("auth0|", string.Empty);
 
-        var identity = new ClaimsIdentity(new[]
-        {
+        var identity = new ClaimsIdentity(
+        [
             new Claim(ClaimTypes.NameIdentifier, user.UserId),
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim("nickname", user.NickName),
@@ -71,7 +71,7 @@ public class AccountService(IConfiguration configuration,
             new Claim("userId", userId),
             new Claim("shareUserId", shareUserId ?? string.Empty),
             new Claim("activeUserId", !string.IsNullOrEmpty(shareUserId) ? shareUserId : userId)
-        }, CookieAuthenticationDefaults.AuthenticationScheme);
+        ], CookieAuthenticationDefaults.AuthenticationScheme);
 
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
