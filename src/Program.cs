@@ -78,7 +78,7 @@ else
 
 app.UseHttpsRedirection();
 
-app.MapStaticAssets();
+app.MapStaticAssets().ShortCircuit();
 
 app.UseRouting();
 
