@@ -11,7 +11,7 @@ namespace BabyTracker.Policies;
 public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
 {
     ValueTask IOutputCachePolicy.CacheRequestAsync(
-        OutputCacheContext context, 
+        OutputCacheContext context,
         CancellationToken cancellationToken)
     {
         var attemptOutputCaching = AttemptOutputCaching(context);
@@ -61,7 +61,7 @@ public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
         var request = context.HttpContext.Request;
 
         // Verify the method
-        if (!HttpMethods.IsGet(request.Method) && 
+        if (!HttpMethods.IsGet(request.Method) &&
             !HttpMethods.IsHead(request.Method))
         {
             return false;

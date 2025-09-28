@@ -79,8 +79,7 @@ else
 
 app.UseHttpsRedirection();
 
-app.MapStaticAssets()
-    .Add(endpointBuilder => endpointBuilder.Metadata.Add(new AllowAnonymousAttribute()));
+app.UseStaticFiles();
 
 app.UseRouting();
 

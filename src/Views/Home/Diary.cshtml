@@ -34,7 +34,7 @@ else
         </div>
     </div>
 
-    @if (Model.Entries.Any()) 
+    @if (Model.Entries.Any())
     {
         <div class="btn-group-toggle mb-3" data-toggle="buttons">
             @foreach (var entryType in Model.EntryTypes)
@@ -71,7 +71,7 @@ else
             </div>
         </div>
     }
-    else 
+    else
     {
         <div class="card col-12 col-lg-6 offset-lg-3">
             <div class="card-body">
