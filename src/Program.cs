@@ -17,6 +17,7 @@ using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,7 +79,8 @@ else
 
 app.UseHttpsRedirection();
 
-app.MapStaticAssets().ShortCircuit();
+app.MapStaticAssets()
+    .Add(endpointBuilder => endpointBuilder.Metadata.Add(new AllowAnonymousAttribute()));
 
 app.UseRouting();
 

@@ -16,7 +16,7 @@ public class CacheController(
 	public async Task<IActionResult> Clear(CancellationToken cancellationToken)
 	{
 		await outputCacheStore.EvictByTagAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), cancellationToken);
-		
+
 		return RedirectToAction("Index", "Home");
 	}
 }
