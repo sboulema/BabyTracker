@@ -1,4 +1,4 @@
-name: BabyTracker
+﻿name: BabyTracker
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: 🛠️ Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,7 +41,7 @@ jobs:
             
   deploy:
     if: github.ref_name == 'main'
-    name: Deploy
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
     needs: build
     steps:
