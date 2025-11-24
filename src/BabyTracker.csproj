@@ -17,7 +17,7 @@
     <PackageReference Include="Postmark" Version="5.2.0" />
     <PackageReference Include="Razor.Templating.Core" Version="2.1.0" />
     <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
-    <PackageReference Include="tusdotnet" Version="2.10.0" />
+    <PackageReference Include="tusdotnet" Version="2.11.0" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.15.1" />
   </ItemGroup>
