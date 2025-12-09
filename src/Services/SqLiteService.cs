@@ -1,9 +1,8 @@
 ﻿using BabyTracker.Extensions;
 using BabyTracker.Models.Database;
 using LinqToDB;
+using LinqToDB.Async;
 using LinqToDB.Data;
-using LinqToDB.DataProvider.SQLite;
-using LinqToDB.SqlQuery;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
