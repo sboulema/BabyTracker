@@ -9,7 +9,7 @@
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.43.0" />
     <PackageReference Include="Auth0.ManagementApi" Version="7.43.0" />
     <PackageReference Include="Auth0Net.DependencyInjection" Version="5.2.0" />
-    <PackageReference Include="linq2db" Version="6.0.0" />
+    <PackageReference Include="linq2db" Version="6.1.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     <PackageReference Include="Mjml.Net" Version="4.11.0" />
     <PackageReference Include="NodaTime" Version="3.2.3" />
