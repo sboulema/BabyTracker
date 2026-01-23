@@ -61,7 +61,8 @@
 {
     <script>
         function saveCard(selector) {
-            $(".card-buttons").toggle();
+            const cardButtons = document.querySelectorAll('.card-buttons');
+            cardButtons.forEach(el => el.style.display = el.style.display === 'none' ? '' : 'none');
 
             var scrollTop = document.documentElement.scrollTop;
 
@@ -75,17 +76,22 @@
 
             window.scrollTo(0, scrollTop);
 
-            $(".card-buttons").toggle();
+            cardButtons.forEach(el => el.style.display = el.style.display === 'none' ? '' : 'none');
         }
 
         function useFullImageCard(selector) {
-            var imageSrc = $(`#${selector} img`)[0].src;
-            $(`#${selector} img`)[0].src = imageSrc.endsWith("/thumbnail")? imageSrc.replace("/thumbnail", "") : `${imageSrc}/thumbnail`;
+            const img = document.querySelector(`#${selector} img`);
+            const imageSrc = img.src;
+            img.src = imageSrc.endsWith("/thumbnail") ? imageSrc.replace("/thumbnail", "") : `${imageSrc}/thumbnail`;
 
-            $(`#${selector} .btn-full-image-card i`).toggleClass('fa-expand fa-compress');
-            $(`#${selector} .btn-full-image-card span`).text($(`#${selector} .btn-full-image-card span`).text() == "Expand" ? "Collapse" : "Expand");
+            const icon = document.querySelector(`#${selector} .btn-full-image-card i`);
+            icon.classList.toggle('fa-expand');
+            icon.classList.toggle('fa-compress');
 
-            $(`#${selector}`)[0].scrollIntoView();
+            const span = document.querySelector(`#${selector} .btn-full-image-card span`);
+            span.textContent = span.textContent === "Expand" ? "Collapse" : "Expand";
+
+            document.getElementById(selector).scrollIntoView();
         }
     </script>
 }
