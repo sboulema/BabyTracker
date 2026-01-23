@@ -17,7 +17,6 @@ using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
-using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,13 +57,14 @@ builder.Services
 	.AddAuth0ManagementClient()
 	.AddManagementAccessToken();
 
-builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<ISqLiteService, SqLiteService>();
-builder.Services.AddScoped<IMemoriesService, MemoriesService>();
-builder.Services.AddScoped<IChartService, ChartService>();
-builder.Services.AddScoped<IImportService, ImportService>();
-builder.Services.AddScoped<IPictureService, PictureService>();
-builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+builder.Services
+	.AddScoped<IAccountService, AccountService>()
+	.AddScoped<ISqLiteService, SqLiteService>()
+	.AddScoped<IMemoriesService, MemoriesService>()
+	.AddScoped<IChartService, ChartService>()
+	.AddScoped<IImportService, ImportService>()
+	.AddScoped<IPictureService, PictureService>()
+	.AddScoped<IEmailRepository, EmailRepository>();
 
 var app = builder.Build();
 
