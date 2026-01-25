@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <UserSecretsId>cdd039dd-6e1f-42ee-95de-d149916af726</UserSecretsId>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Auth0.AuthenticationApi" Version="7.43.1" />
     <PackageReference Include="Auth0.ManagementApi" Version="7.43.1" />
@@ -22,10 +22,10 @@
     <PackageReference Include="Quartz.AspNetCore" Version="3.15.1" />
   </ItemGroup>
 
-  <ItemGroup> 
-    <Content Include="Charts\**"> 
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> 
-    </Content> 
+  <ItemGroup>
+    <Content Include="Charts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -47,17 +47,21 @@
 	<Exec Command="npm install" />
 	<Message Text="Copying JS files" />
 	<Copy SourceFiles="node_modules/bootstrap/dist/js/bootstrap.bundle.min.js" DestinationFolder="wwwroot/js" />
-	<Copy SourceFiles="node_modules/jquery/dist/jquery.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/chart.js/dist/chart.umd.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/chartjs-plugin-datalabels/dist/chartjs-plugin-datalabels.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/flatpickr/dist/flatpickr.min.js" DestinationFolder="wwwroot/js" />
-	<Copy SourceFiles="node_modules/magnific-popup/dist/jquery.magnific-popup.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/file-saver/dist/FileSaver.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/html2canvas/dist/html2canvas.min.js" DestinationFolder="wwwroot/js" />
 	<Copy SourceFiles="node_modules/tus-js-client/dist/tus.min.js" DestinationFolder="wwwroot/js" />
+	<Copy SourceFiles="node_modules/lightgallery/lightgallery.umd.js" DestinationFolder="wwwroot/js" />
 	<Message Text="Copying CSS files" />
 	<Copy SourceFiles="node_modules/bootstrap/dist/css/bootstrap.min.css" DestinationFolder="wwwroot/css" />
 	<Copy SourceFiles="node_modules/flatpickr/dist/flatpickr.min.css" DestinationFolder="wwwroot/css" />
-	<Copy SourceFiles="node_modules/magnific-popup/dist/magnific-popup.css" DestinationFolder="wwwroot/css" />
+	<Copy SourceFiles="node_modules/lightgallery/css/lightgallery.css" DestinationFolder="wwwroot/css" />
+  <Message Text="Copying Font files" />
+	<Copy SourceFiles="node_modules/lightgallery/fonts/lg.svg" DestinationFolder="wwwroot/fonts" />
+	<Copy SourceFiles="node_modules/lightgallery/fonts/lg.ttf" DestinationFolder="wwwroot/fonts" />
+	<Copy SourceFiles="node_modules/lightgallery/fonts/lg.woff" DestinationFolder="wwwroot/fonts" />
+	<Copy SourceFiles="node_modules/lightgallery/fonts/lg.woff2" DestinationFolder="wwwroot/fonts" />
   </Target>
 </Project>

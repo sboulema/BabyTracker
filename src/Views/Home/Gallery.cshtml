@@ -7,32 +7,57 @@
 @if (Model != null)
 {
     <div class="row">
-        @foreach (var picture in Model.Pictures)
+        @foreach (var picture in Model.Pictures.Take(3))
         {
-            <div class="col-lg-6 col-md-6 col-xs-6 mb-3">
-                <a href="~/picture/@picture.FileName" class="gallery-item">
-                    <img src="~/picture/@picture.FileName/thumbnail" loading="lazy" class="img-thumbnail" />
-                </a>
+            <div class="col-lg-6 col-md-6 col-xs-6 mb-3" role="button">
+                <img src="~/picture/@picture.FileName/thumbnail" class="img-thumbnail" data-index="@Model.Pictures.IndexOf(picture)" />
             </div>
         }
+        <div id="viewAllBtn" class="col-lg-6 col-md-6 col-xs-6 mb-3" role="button">
+            <div class="card">
+                <img src="~/picture/@Model.Pictures[3].FileName/thumbnail" class="card-img img-thumbnail" />
+                <div class="card-img-overlay align-content-center">
+                    <h1 class="card-title text-center text-light" style="text-shadow: 2px 2px black;">View all (@Model.Pictures.Count())</h1>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
 @section Stylesheets
 {
-<link rel="stylesheet" href="/css/magnific-popup.css" />
+    <link type="text/css" rel="stylesheet" href="/css/lightgallery.css" />
 }
 
 @section Scripts
 {
-    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <script src="/js/lightgallery.umd.js"></script>
 
     <script>
-        $('.gallery-item').magnificPopup({
-            type: 'image',
-            gallery:{
-                enabled:true
+    const galleryBtns = document.querySelectorAll('.img-thumbnail');
+
+    const gallery = lightGallery(galleryBtns, {
+        dynamic: true,
+        dynamicEl: [
+            @foreach (var picture in Model.Pictures)
+            {
+                <text>{
+                    src: '/picture/@picture.FileName',
+                    thumb: '/picture/@picture.FileName/thumbnail',
+                },
+                </text>
             }
+        ],
+    });
+
+    galleryBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            gallery.openGallery(parseInt(btn.getAttribute('data-index')));
         });
+    });
+
+    document.getElementById('viewAllBtn').addEventListener('click', function () {
+        gallery.openGallery(parseInt(3));
+    });
     </script>
 }

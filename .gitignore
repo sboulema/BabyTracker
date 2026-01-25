@@ -8,7 +8,9 @@
 /src/appsettings.development.json
 /src/node_modules
 /src/wwwroot/js
+/src/wwwroot/fonts
 /src/wwwroot/css/colsVisibility.css
 /src/wwwroot/css/flatpickr.min.css
 /src/wwwroot/css/magnific-popup.css
 /src/wwwroot/css/bootstrap.min.css
+/src/wwwroot/css/lightgallery.css
