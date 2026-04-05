@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Auth0.AuthenticationApi;
 using Auth0.AuthenticationApi.Models;
 using Auth0.ManagementApi;
-using Auth0.ManagementApi.Models;
-using Auth0.ManagementApi.Paging;
 using BabyTracker.Models.Account;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
 
 namespace BabyTracker.Services;
 
@@ -26,7 +24,7 @@ public interface IAccountService
 
     Task<bool> SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData);
 
-    Task<List<User>?> SearchUsersWithEnableMemoriesEmail();
+    Task<List<UserResponseSchema>?> SearchUsersWithEnableMemoriesEmail();
 
     Task<string> ResetPassword(LoginViewModel model);
 }
@@ -106,76 +104,63 @@ public class AccountService(IConfiguration configuration,
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var clientUser = await managementApiClient.Users.GetAsync(userId);
+        var clientUser = await managementApiClient.Users.GetAsync(userId, new());
 
         return GetUserMetaData(clientUser);
     }
 
-    public static UserMetaData? GetUserMetaData(User user)
+    public static UserMetaData? GetUserMetaData(GetUserResponseContent user)
     {
-        if (user.UserMetadata is not JObject userMetaDataObject)
-        {
-            return null;
-        }
+        var json = JsonSerializer.Serialize(user.UserMetadata);
+        return JsonSerializer.Deserialize<UserMetaData>(json);
+    }
 
-        return userMetaDataObject.ToObject<UserMetaData>();
+    public static UserMetaData? GetUserMetaData(UserResponseSchema user)
+    {
+        var json = JsonSerializer.Serialize(user.UserMetadata);
+        return JsonSerializer.Deserialize<UserMetaData>(json);
     }
 
     public async Task<bool> SaveUserMetaData(ClaimsPrincipal user, UserMetaData userMetaData)
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+        var json = JsonSerializer.Serialize(userMetaData);
+        var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
+
         await managementApiClient.Users.UpdateAsync(userId, new()
         {
-            UserMetadata = userMetaData
+            UserMetadata = dict
         });
 
         return true;
     }
 
-    public async Task<List<User>?> SearchUsersWithEnableMemoriesEmail()
+    public async Task<List<UserResponseSchema>?> SearchUsersWithEnableMemoriesEmail()
+        => await QueryUsers("user_metadata.EnableMemoriesEmail:true");
+
+    private async Task<UserResponseSchema?> SearchUsersWithShareList(string emailAddress)
     {
-        var users = new List<User>();
-
-        var pageNo = 0;
-
-        IPagedList<User> page;
-
-        do
-        {
-            page = await managementApiClient.Users.GetAllAsync(
-                new() { Query = "user_metadata.EnableMemoriesEmail:true" },
-                new(pageNo)
-            );
-
-            users.AddRange(page);
-
-            pageNo++;
-        } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
-
-        return users;
+        var users = await QueryUsers($"user_metadata.ShareList:{emailAddress}");
+        return users?.FirstOrDefault();
     }
 
-    private async Task<User?> SearchUsersWithShareList(string emailAddress)
+    private async Task<List<UserResponseSchema>?> QueryUsers(string query)
     {
-        var users = new List<User>();
+        var users = new List<UserResponseSchema>();
 
-        var pageNo = 0;
-
-        IPagedList<User> page;
-
-        do
+        var request = new ListUsersRequestParameters
         {
-            page = await managementApiClient.Users.GetAllAsync(
-                new() { Query = $"user_metadata.ShareList:{emailAddress}" },
-                new(pageNo)
-            );
+            Q = query
+        };
 
-            users.AddRange(page);
+        var pager = await managementApiClient.Users.ListAsync(request);
 
-            pageNo++;
-        } while (page.Paging != null && page.Paging.Length == page.Paging.Limit);
+        await foreach (var user in pager)
+        {
+            users.Add(user);
+        }
 
-        return users.FirstOrDefault();
+        return users;
     }
 }

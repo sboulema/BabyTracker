@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Auth0.ManagementApi.Models;
+using Auth0.ManagementApi;
 using BabyTracker.Services;
 using Microsoft.Extensions.Configuration;
 using Mjml.Net;
@@ -10,12 +10,12 @@ namespace BabyTracker.Repositories;
 
 public interface IEmailRepository
 {
-    Task<bool> SendEmail(string mjml, User user, string userId, string babyName);
+    Task<bool> SendEmail(string mjml, UserResponseSchema user, string userId, string babyName);
 }
 
 public class EmailRepository(IConfiguration configuration) : IEmailRepository
 {
-    public async Task<bool> SendEmail(string mjml, User user, string userId, string babyName)
+    public async Task<bool> SendEmail(string mjml, UserResponseSchema user, string userId, string babyName)
     {
         var userMetaData = AccountService.GetUserMetaData(user);
 
