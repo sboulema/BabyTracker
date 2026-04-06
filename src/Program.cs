@@ -54,8 +54,7 @@ builder.Services.AddAuth0AuthenticationClient(config =>
 });
 
 builder.Services
-	.AddAuth0ManagementClient()
-	.AddManagementAccessToken();
+	.AddAuth0ManagementClient();
 
 builder.Services
 	.AddScoped<IAccountService, AccountService>()
