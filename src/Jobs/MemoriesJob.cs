@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using BabyTracker.Services;
 using Quartz;
@@ -5,15 +6,8 @@ using Quartz;
 namespace BabyTracker.Jobs;
 
 [DisallowConcurrentExecution]
-public class MemoriesJob : IJob
+public class MemoriesJob(IMemoriesService memoriesService) : IJob
 {
-    private readonly IMemoriesService _memoriesService;
-
-    public MemoriesJob(IMemoriesService memoriesService)
-    {
-        _memoriesService = memoriesService;
-    }
-
-    public async Task Execute(IJobExecutionContext context)
-        => await _memoriesService.SendMemoriesEmail();
+    public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        => await memoriesService.SendMemoriesEmail();
 }

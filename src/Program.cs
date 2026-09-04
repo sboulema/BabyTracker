@@ -13,7 +13,6 @@ using System.IO;
 using System.Threading.Tasks;
 using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
-using Quartz.AspNetCore;
 using Microsoft.Data.Sqlite;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
@@ -34,7 +33,7 @@ builder.Services.AddQuartz(q =>
 	);
 });
 
-builder.Services.AddQuartzServer(q => q.WaitForJobsToComplete = true);
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
