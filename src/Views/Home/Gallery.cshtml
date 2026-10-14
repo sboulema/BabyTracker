@@ -1,26 +1,45 @@
-﻿@model BabyTracker.Models.ViewModels.GalleryViewModel
+﻿@using System.Text.Json
+
+@model BabyTracker.Models.ViewModels.GalleryViewModel
 
 @{
     ViewData["Title"] = "Gallery - BabyTracker";
+
+    var pictures = Model?.Pictures.ToList() ?? [];
+
+    var previewPictures = pictures
+        .Take(3)
+        .Select((picture, index) => (picture, index))
+        .ToList();
+
+    var dynamicEl = pictures.Select(p => new
+    {
+        src = $"/picture/{p.FileName}",
+        thumb = $"/picture/{p.FileName}/thumbnail"
+    });
 }
 
-@if (Model != null)
+@if (pictures.Count > 0)
 {
-    <div class="row">
-        @foreach (var picture in Model.Pictures.Take(3))
+    <div id="gallery" class="row">
+        @foreach (var (picture, index) in previewPictures)
         {
             <div class="col-lg-6 col-md-6 col-xs-6 mb-3" role="button">
-                <img src="~/picture/@picture.FileName/thumbnail" class="img-thumbnail" data-index="@Model.Pictures.IndexOf(picture)" />
+                <img src="~/picture/@picture.FileName/thumbnail" class="img-thumbnail gallery-item" data-index="@index" />
             </div>
         }
-        <div id="viewAllBtn" class="col-lg-6 col-md-6 col-xs-6 mb-3" role="button">
-            <div class="card">
-                <img src="~/picture/@Model.Pictures[3].FileName/thumbnail" class="card-img img-thumbnail" />
-                <div class="card-img-overlay align-content-center">
-                    <h1 class="card-title text-center text-light" style="text-shadow: 2px 2px black;">View all (@Model.Pictures.Count())</h1>
+
+        @if (pictures.Count > 3)
+        {
+            <div id="viewAllBtn" class="col-lg-6 col-md-6 col-xs-6 mb-3" role="button">
+                <div class="card">
+                    <img src="~/picture/@pictures[3].FileName/thumbnail" class="card-img img-thumbnail" />
+                    <div class="card-img-overlay align-content-center">
+                        <h1 class="card-title text-center text-light" style="text-shadow: 2px 2px black;">View all (@pictures.Count)</h1>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 }
 
@@ -31,33 +50,25 @@
 
 @section Scripts
 {
-    <script src="/js/lightgallery.umd.js"></script>
+    @if (pictures.Count > 0)
+    {
+        <script src="/js/lightgallery.umd.js"></script>
 
-    <script>
-    const galleryBtns = document.querySelectorAll('.img-thumbnail');
+        <script>
+            const gallery = lightGallery(document.getElementById('gallery'), {
+                dynamic: true,
+                dynamicEl: @Html.Raw(JsonSerializer.Serialize(dynamicEl)),
+            });
 
-    const gallery = lightGallery(galleryBtns, {
-        dynamic: true,
-        dynamicEl: [
-            @foreach (var picture in Model.Pictures)
-            {
-                <text>{
-                    src: '/picture/@picture.FileName',
-                    thumb: '/picture/@picture.FileName/thumbnail',
-                },
-                </text>
-            }
-        ],
-    });
+            document.querySelectorAll('.gallery-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    gallery.openGallery(parseInt(item.dataset.index));
+                });
+            });
 
-    galleryBtns.forEach(btn => {
-        btn.addEventListener('click', function () {
-            gallery.openGallery(parseInt(btn.getAttribute('data-index')));
-        });
-    });
-
-    document.getElementById('viewAllBtn').addEventListener('click', function () {
-        gallery.openGallery(parseInt(3));
-    });
-    </script>
+            document.getElementById('viewAllBtn')?.addEventListener('click', () => {
+                gallery.openGallery(3);
+            });
+        </script>
+    }
 }
