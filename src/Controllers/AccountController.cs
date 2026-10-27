@@ -37,7 +37,10 @@ public class AccountController(IAccountService accountService) : Controller
 			return RedirectToAction("Login");
 		}
 
-		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
+		{
+			IsPersistent = model.RememberMe
+		});
 
 		return RedirectToLocal(returnUrl);
 	}
@@ -81,10 +84,6 @@ public class AccountController(IAccountService accountService) : Controller
 	[HttpGet("[action]")]
 	public async Task Logout()
 	{
-		await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties
-		{
-			RedirectUri = Url.Action("Index", "Home")
-		});
 		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 	}
 
