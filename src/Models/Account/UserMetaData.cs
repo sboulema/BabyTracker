@@ -20,4 +20,10 @@ public class UserMetaData
 	public bool UseFullCardImages { get; set; }
 	
 	public bool UseCards { get; set; }
+
+	public string? PendingEmailAddress { get; set; }
+
+	public string? EmailChangeTokenHash { get; set; }
+
+	public DateTimeOffset? EmailChangeTokenExpiresAt { get; set; }
 }
