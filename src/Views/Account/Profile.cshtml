@@ -73,22 +73,22 @@
     
     <hr />
 
-    <h2>Change email address</h2>
-    <p>Current email: <strong>@Model.EmailAddress</strong></p>
-    <form asp-action="RequestEmailChange" asp-controller="Account" method="post">
-        @Html.AntiForgeryToken()
-        <div class="mb-3">
-            <label for="newEmailAddress" class="form-label">New email address</label>
-            <input id="newEmailAddress" name="NewEmailAddress" type="email" class="form-control" required autocomplete="email" />
-            <div class="form-text">We’ll send a verification link. Your current email remains active until you verify the new address.</div>
-        </div>
-        <button type="submit" class="btn btn-primary">Send verification email</button>
-    </form>
-
+    <h2>Account Management</h2>
+    <div class="mb-4">
+        <h3>Change email address</h3>
+        <p>Current email: <strong>@Model.EmailAddress</strong></p>
+        <form asp-action="RequestEmailChange" asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="newEmailAddress" class="form-label">New email address</label>
+                <input id="newEmailAddress" name="NewEmailAddress" type="email" class="form-control" required autocomplete="email" />
+                <div class="form-text">Auth0 will email you instructions to verify the new address. The address may change before verification is complete.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Request email change</button>
+        </form>
+    </div>
     <hr />
-
     <div class="text-center">
-        <h2>Account Management</h2>
         <a href="/account/removeaccount" class="btn btn-danger">Remove Account</a>
     </div>
 }
