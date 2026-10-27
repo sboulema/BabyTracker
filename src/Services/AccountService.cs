@@ -175,16 +175,17 @@ public class AccountService(IConfiguration configuration,
             return false;
         }
 
+        metadata.PendingEmailAddress = null;
+        metadata.EmailChangeTokenHash = null;
+        metadata.EmailChangeTokenExpiresAt = null;
+        var json = JsonSerializer.Serialize(metadata);
+        var userMetadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
+
         await managementApiClient.Users.UpdateAsync(userId, new()
         {
             Email = pendingEmail,
             EmailVerified = true,
-            UserMetadata = new Dictionary<string, object?>
-            {
-                ["PendingEmailAddress"] = null,
-                ["EmailChangeTokenHash"] = null,
-                ["EmailChangeTokenExpiresAt"] = null
-            }
+            UserMetadata = userMetadata
         });
 
         return true;
