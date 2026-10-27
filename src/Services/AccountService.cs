@@ -38,7 +38,6 @@ public interface IAccountService
 
     Task<bool> RequestEmailChange(ClaimsPrincipal user, string email);
 
-    Task<bool> VerifyEmailChange(string userId, string token);
 }
 
 public class AccountService(IConfiguration configuration,
