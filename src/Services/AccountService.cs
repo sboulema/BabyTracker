@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Mail;
+using System.Security.Cryptography;
+using System.Text;
+using PostmarkDotNet;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
@@ -32,6 +36,10 @@ public interface IAccountService
     Task<string> ResetPassword(LoginViewModel model);
 
     Task<bool> RemoveAccount(ClaimsPrincipal user);
+
+    Task<bool> RequestEmailChange(ClaimsPrincipal user, string email, string verificationUrl);
+
+    Task<bool> VerifyEmailChange(string userId, string token);
 }
 
 public class AccountService(IConfiguration configuration,
@@ -104,6 +112,82 @@ public class AccountService(IConfiguration configuration,
             Email = model.EmailAddress
         });
         return result;
+    }
+
+    public async Task<bool> RequestEmailChange(ClaimsPrincipal user, string email, string verificationUrl)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !MailAddress.TryCreate(email, out var address))
+        {
+            return false;
+        }
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return false;
+        }
+
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var metadata = await GetUserMetaData(user) ?? new UserMetaData();
+        metadata.PendingEmailAddress = address.Address;
+        metadata.EmailChangeTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        metadata.EmailChangeTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1);
+
+        if (!await SaveUserMetaData(user, metadata))
+        {
+            return false;
+        }
+
+        var message = new PostmarkMessage
+        {
+            To = address.Address,
+            From = $"{configuration["MEMORIES_FROM_NAME"]} <{configuration["MEMORIES_FROM_EMAIL"]}>",
+            Subject = "BabyTracker - Verify your new email address",
+            TextBody = $"To confirm your new BabyTracker email address, open this link within one hour:\n\n{verificationUrl}?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}\n\nIf you did not request this change, ignore this email."
+        };
+
+        var result = await new PostmarkClient(configuration["POSTMARK_API_TOKEN"]).SendMessageAsync(message);
+        return result.Status == PostmarkStatus.Success;
+    }
+
+    public async Task<bool> VerifyEmailChange(string userId, string token)
+    {
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        var clientUser = await managementApiClient.Users.GetAsync(userId, new());
+        var metadata = GetUserMetaData(clientUser);
+        if (metadata?.PendingEmailAddress is not { Length: > 0 } pendingEmail ||
+            string.IsNullOrEmpty(metadata.EmailChangeTokenHash) ||
+            metadata.EmailChangeTokenExpiresAt <= DateTimeOffset.UtcNow)
+        {
+            return false;
+        }
+
+        var suppliedHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        if (!CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(suppliedHash),
+            Encoding.UTF8.GetBytes(metadata.EmailChangeTokenHash)))
+        {
+            return false;
+        }
+
+        await managementApiClient.Users.UpdateAsync(userId, new()
+        {
+            Email = pendingEmail,
+            EmailVerified = true,
+            UserMetadata = new Dictionary<string, object?>
+            {
+                ["PendingEmailAddress"] = null,
+                ["EmailChangeTokenHash"] = null,
+                ["EmailChangeTokenExpiresAt"] = null
+            }
+        });
+
+        return true;
     }
 
     public async Task<bool> RemoveAccount(ClaimsPrincipal user)
