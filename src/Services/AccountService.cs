@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
@@ -10,7 +11,9 @@ using Auth0.ManagementApi;
 using BabyTracker.Models.Account;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Services;
 
@@ -27,11 +30,14 @@ public interface IAccountService
     Task<List<UserResponseSchema>?> SearchUsersWithEnableMemoriesEmail();
 
     Task<string> ResetPassword(LoginViewModel model);
+
+    Task<bool> RemoveAccount(ClaimsPrincipal user);
 }
 
 public class AccountService(IConfiguration configuration,
     IAuthenticationApiClient authenticationApiClient,
-    IManagementApiClient managementApiClient) : IAccountService
+    IManagementApiClient managementApiClient,
+    IWebHostEnvironment webHostEnvironment) : IAccountService
 {
     public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
     {
@@ -98,6 +104,52 @@ public class AccountService(IConfiguration configuration,
             Email = model.EmailAddress
         });
         return result;
+    }
+
+    public async Task<bool> RemoveAccount(ClaimsPrincipal user)
+    {
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var activeUserId = user.FindFirstValue("activeUserId");
+
+        try
+        {
+            await managementApiClient.Users.DeleteAsync(userId);
+            
+            RemoveDataCloneDirectory(activeUserId);
+            
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private void RemoveDataCloneDirectory(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return;
+        }
+
+        var path = $"/data/Data/{userId}";
+
+        if (!webHostEnvironment.IsProduction())
+        {
+            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", userId);
+        }
+
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
+        }
+        catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error removing data clone directory '{path}'. {e.Message}");
+        }
     }
 
     public async Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user)
