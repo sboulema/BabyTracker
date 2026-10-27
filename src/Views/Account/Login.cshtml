@@ -22,6 +22,11 @@
         <input type="password" class="form-control" placeholder="Password" asp-for="@Model.Password" value="@Model.Password" >
       </div>
 
+      <div class="mb-3 form-check">
+        <input asp-for="@Model.RememberMe" class="form-check-input" />
+        <label class="form-check-label" for="RememberMe">Remember me</label>
+      </div>
+
       <center>
           <button type="submit" class="btn btn-primary">Login</button>
       </center>

@@ -1,21 +1,23 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Quartz;
-using BabyTracker.Jobs;
-using Microsoft.AspNetCore.Builder;
-using tusdotnet;
-using tusdotnet.Stores;
-using tusdotnet.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
-using BabyTracker.Services;
-using Microsoft.AspNetCore.Http;
+using System;
 using System.IO;
 using System.Threading.Tasks;
-using tusdotnet.Models;
 using Auth0Net.DependencyInjection;
-using Microsoft.Data.Sqlite;
+using BabyTracker.Jobs;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
+using BabyTracker.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Quartz;
+using tusdotnet;
+using tusdotnet.Interfaces;
+using tusdotnet.Models;
+using tusdotnet.Stores;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,8 +44,17 @@ builder.Services.AddOutputCache(options => options.AddPolicy("AuthenticatedOutpu
 builder.Services.AddControllersWithViews();
 
 builder.Services
-	.AddAuthentication()
-	.AddCookie(options => options.LoginPath = "/account/login");
+	.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+	.AddCookie(options =>
+	{
+		options.LoginPath = "/account/login";
+		options.Cookie.Name = "BabyTracker.Auth";
+		options.Cookie.HttpOnly = true;
+		options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+		options.Cookie.SameSite = SameSiteMode.Lax;
+		options.ExpireTimeSpan = TimeSpan.FromDays(30);
+		options.SlidingExpiration = true;
+	});
 
 builder.Services.AddAuth0AuthenticationClient(config =>
 {
