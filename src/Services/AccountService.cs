@@ -37,7 +37,7 @@ public interface IAccountService
 
     Task<bool> RemoveAccount(ClaimsPrincipal user);
 
-    Task<bool> RequestEmailChange(ClaimsPrincipal user, string email, string verificationUrl);
+    Task<string?> GetUserEmail(ClaimsPrincipal user);\n\n    Task<bool> RequestEmailChange(ClaimsPrincipal user, string email, string verificationUrl);
 
     Task<bool> VerifyEmailChange(string userId, string token);
 }
@@ -112,6 +112,18 @@ public class AccountService(IConfiguration configuration,
             Email = model.EmailAddress
         });
         return result;
+    }
+
+    public async Task<string?> GetUserEmail(ClaimsPrincipal user)
+    {
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        var clientUser = await managementApiClient.Users.GetAsync(userId, new());
+        return clientUser.Email;
     }
 
     public async Task<bool> RequestEmailChange(ClaimsPrincipal user, string email, string verificationUrl)
