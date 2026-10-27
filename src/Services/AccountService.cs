@@ -158,11 +158,7 @@ public class AccountService(IConfiguration configuration,
             To = address.Address,
             From = $"{configuration["MEMORIES_FROM_NAME"]} <{configuration["MEMORIES_FROM_EMAIL"]}>",
             Subject = "BabyTracker - Verify your new email address",
-            TextBody = $"To confirm your new BabyTracker email address, open this link within one hour:
-
-{verificationUrl}?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}
-
-If you did not request this change, ignore this email."
+            TextBody = $"To confirm your new BabyTracker email address, open this link within one hour:\n\n{verificationUrl}?userId={Uri.EscapeDataString(userId)}&token={Uri.EscapeDataString(token)}\n\nIf you did not request this change, ignore this email."
         };
 
         var result = await new PostmarkClient(configuration["POSTMARK_API_TOKEN"]).SendMessageAsync(message);
