@@ -95,6 +95,7 @@ public class AccountController(IAccountService accountService) : Controller
 
 		var model = new ProfileViewModel
 		{
+            EmailAddress = await accountService.GetUserEmail(User) ?? string.Empty,
 			EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
 			MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
 			ShareList = userMetaData?.ShareList ?? string.Empty,
@@ -134,6 +135,41 @@ public class AccountController(IAccountService accountService) : Controller
 
 		return RedirectToAction("Profile");
 	}
+
+    [Authorize]
+    [HttpPost("[action]")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestEmailChange(ProfileViewModel model)
+    {
+        var verificationUrl = Url.Action(nameof(VerifyEmailChange), "Account", null, Request.Scheme);
+        var success = verificationUrl != null &&
+            await accountService.RequestEmailChange(User, model.NewEmailAddress, verificationUrl);
+
+        TempData["notificationMessage"] = success
+            ? "Check your new email address for a verification link. Your current email remains active until verified."
+            : "Could not send the verification email. Check the address and try again.";
+        TempData["notificationType"] = success ? "success" : "danger";
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("[action]")]
+    public async Task<IActionResult> VerifyEmailChange(string userId, string token)
+    {
+        var success = await accountService.VerifyEmailChange(userId, token);
+        TempData["notificationMessage"] = success
+            ? "Your email address has been updated. Please sign in again."
+            : "This email verification link is invalid or has expired.";
+        TempData["notificationType"] = success ? "success" : "danger";
+
+        if (success)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        return RedirectToAction(nameof(Login));
+    }
 
 	[Authorize]
 	[HttpGet("[action]")]
