@@ -41,4 +41,17 @@ public class Baby
         var period = Period.Between(birthday, today, PeriodUnits.Months);
         return period.Months;
     }
+
+    public double AgeInMonthsAt(Instant moment)
+    {
+        var birthday = Instant.FromUnixTimeSeconds(DOB).InUtc().Date;
+        var date = moment.InUtc().Date;
+
+        var wholeMonths = Period.Between(birthday, date, PeriodUnits.Months).Months;
+        var monthStart = birthday.PlusMonths(wholeMonths);
+        var monthEnd = birthday.PlusMonths(wholeMonths + 1);
+
+        return wholeMonths
+            + (double)Period.DaysBetween(monthStart, date) / Period.DaysBetween(monthStart, monthEnd);
+    }
 }

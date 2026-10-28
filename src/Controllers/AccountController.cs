@@ -37,7 +37,10 @@ public class AccountController(IAccountService accountService) : Controller
 			return RedirectToAction("Login");
 		}
 
-		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
+		{
+			IsPersistent = model.RememberMe
+		});
 
 		return RedirectToLocal(returnUrl);
 	}
@@ -81,10 +84,6 @@ public class AccountController(IAccountService accountService) : Controller
 	[HttpGet("[action]")]
 	public async Task Logout()
 	{
-		await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties
-		{
-			RedirectUri = Url.Action("Index", "Home")
-		});
 		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 	}
 
@@ -96,6 +95,7 @@ public class AccountController(IAccountService accountService) : Controller
 
 		var model = new ProfileViewModel
 		{
+            EmailAddress = await accountService.GetUserEmail(User) ?? string.Empty,
 			EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
 			MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
 			ShareList = userMetaData?.ShareList ?? string.Empty,
@@ -134,6 +134,57 @@ public class AccountController(IAccountService accountService) : Controller
 		TempData["notificationType"] = success ? "success" : "danger";
 
 		return RedirectToAction("Profile");
+	}
+
+    [Authorize]
+    [HttpPost("[action]")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestEmailChange(ProfileViewModel model)
+    {
+        var success = await accountService.RequestEmailChange(User, model.NewEmailAddress);
+
+        TempData["notificationMessage"] = success
+            ? "Your email address has been changed."
+            : "Could not change the email address. Check the address and try again.";
+        TempData["notificationType"] = success ? "success" : "danger";
+
+        if (success)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+	[Authorize]
+	[HttpGet("[action]")]
+	public IActionResult RemoveAccount()
+	{
+		ViewBag.Theme = ThemesEnum.Auto;
+
+		return View();
+	}
+
+	[Authorize]
+	[HttpPost("[action]")]
+	public async Task<IActionResult> RemoveAccountConfirm()
+	{
+		var success = await accountService.RemoveAccount(User);
+
+		if (success)
+		{
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			TempData["notificationMessage"] = "Your account has been successfully removed.";
+			TempData["notificationType"] = "success";
+			return RedirectToAction("Login");
+		}
+		else
+		{
+			TempData["notificationMessage"] = "Failed to remove your account. Please try again.";
+			TempData["notificationType"] = "danger";
+			return RedirectToAction("Profile");
+		}
 	}
 
 	private IActionResult RedirectToLocal(string returnUrl)

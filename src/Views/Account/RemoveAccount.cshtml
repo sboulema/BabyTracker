@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Remove Account - BabyTracker";
+}
+
+<h1 class="display-4 text-center mb-5">Remove Account</h1>
+
+<br />
+
+@await Html.PartialAsync("_Notification")
+
+<div class="card col-12 col-lg-6 offset-lg-3 p-3">
+    <h3>Are you sure you want to remove your account?</h3>
+    <p>This action cannot be undone. All your data and settings will be permanently deleted.</p>
+    
+    <form asp-action="RemoveAccountConfirm" asp-controller="Account">
+        <center>
+            <button type="submit" class="btn btn-danger">Yes, Remove My Account</button>
+            <a href="/account/profile" class="btn btn-secondary">Cancel</a>
+        </center>
+    </form>
+</div>
