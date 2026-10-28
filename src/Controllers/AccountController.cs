@@ -148,6 +148,12 @@ public class AccountController(IAccountService accountService) : Controller
             : "Could not change the email address. Check the address and try again.";
         TempData["notificationType"] = success ? "success" : "danger";
 
+        if (success)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+
         return RedirectToAction(nameof(Profile));
     }
 
