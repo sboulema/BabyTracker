@@ -113,6 +113,7 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
                 }
 
                 var bufferTransferred = false;
+                var connectionTransferred = false;
                 try
                 {
                     Marshal.Copy(plaintextDatabase, 0, databaseBuffer, plaintextDatabase.Length);
@@ -137,12 +138,17 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
                         new DataOptions()
                             .UseSQLite()
                             .UseConnection(sqliteConnection, disposeConnection: true));
+                    connectionTransferred = true;
                 }
                 finally
                 {
                     if (!bufferTransferred)
                     {
                         SQLitePCL.raw.sqlite3_free(databaseBuffer);
+                    }
+
+                    if (!connectionTransferred)
+                    {
                         sqliteConnection.Dispose();
                     }
                 }
