@@ -95,6 +95,7 @@ public class AccountController(IAccountService accountService) : Controller
 
 		var model = new ProfileViewModel
 		{
+            EmailAddress = await accountService.GetUserEmail(User) ?? string.Empty,
 			EnableMemoriesEmail = userMetaData?.EnableMemoriesEmail ?? false,
 			MemoriesAddresses = userMetaData?.MemoriesAddresses ?? string.Empty,
 			ShareList = userMetaData?.ShareList ?? string.Empty,
@@ -134,6 +135,27 @@ public class AccountController(IAccountService accountService) : Controller
 
 		return RedirectToAction("Profile");
 	}
+
+    [Authorize]
+    [HttpPost("[action]")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestEmailChange(ProfileViewModel model)
+    {
+        var success = await accountService.RequestEmailChange(User, model.NewEmailAddress);
+
+        TempData["notificationMessage"] = success
+            ? "Your email address has been changed."
+            : "Could not change the email address. Check the address and try again.";
+        TempData["notificationType"] = success ? "success" : "danger";
+
+        if (success)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
 
 	[Authorize]
 	[HttpGet("[action]")]

@@ -4,6 +4,9 @@ namespace BabyTracker.Models.ViewModels;
 
 public class ProfileViewModel : BaseViewModel
 {
+	public string EmailAddress { get; set; } = string.Empty;
+
+	public string NewEmailAddress { get; set; } = string.Empty;
 	public bool EnableMemoriesEmail { get; set; }
 
 	public string MemoriesAddresses { get; set; } = string.Empty;

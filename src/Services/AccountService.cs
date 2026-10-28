@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Mail;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
@@ -32,6 +33,11 @@ public interface IAccountService
     Task<string> ResetPassword(LoginViewModel model);
 
     Task<bool> RemoveAccount(ClaimsPrincipal user);
+
+    Task<string?> GetUserEmail(ClaimsPrincipal user);
+
+    Task<bool> RequestEmailChange(ClaimsPrincipal user, string email);
+
 }
 
 public class AccountService(IConfiguration configuration,
@@ -49,7 +55,7 @@ public class AccountService(IConfiguration configuration,
             {
                 ClientId = configuration["AUTH0_CLIENTID"],
                 ClientSecret = configuration["AUTH0_CLIENTSECRET"],
-                Scope = "openid profile",
+                Scope = "openid profile email",
                 Realm = "Username-Password-Authentication",
                 Username = model.EmailAddress,
                 Password = model.Password
@@ -70,6 +76,7 @@ public class AccountService(IConfiguration configuration,
         [
             new Claim(ClaimTypes.NameIdentifier, user.UserId),
             new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
             new Claim("nickname", user.NickName),
             new Claim("picture", user.Picture),
             new Claim("userId", userId),
@@ -104,6 +111,38 @@ public class AccountService(IConfiguration configuration,
             Email = model.EmailAddress
         });
         return result;
+    }
+
+    public Task<string?> GetUserEmail(ClaimsPrincipal user)
+        => Task.FromResult(user.FindFirst(ClaimTypes.Email)?.Value);
+
+    public async Task<bool> RequestEmailChange(ClaimsPrincipal user, string email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !MailAddress.TryCreate(email, out var address))
+        {
+            return false;
+        }
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return false;
+        }
+
+        try
+        {
+            await managementApiClient.Users.UpdateAsync(userId, new()
+            {
+                Email = address.Address,
+                ClientId = configuration["AUTH0_CLIENTID"]
+            });
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> RemoveAccount(ClaimsPrincipal user)

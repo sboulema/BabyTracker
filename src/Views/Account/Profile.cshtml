@@ -72,9 +72,23 @@
     </form>
     
     <hr />
-    
+
+    <h2>Account Management</h2>
+    <div class="mb-4">
+        <h3>Change email address</h3>
+        <p>Current email: <strong>@Model.EmailAddress</strong></p>
+        <form asp-action="RequestEmailChange" asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="newEmailAddress" class="form-label">New email address</label>
+                <input id="newEmailAddress" name="NewEmailAddress" type="email" class="form-control" required autocomplete="email" />
+                <div class="form-text">The email address will be changed immediately and will no longer be marked as verified.</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Change email address</button>
+        </form>
+    </div>
+    <hr />
     <div class="text-center">
-        <h2>Account Management</h2>
         <a href="/account/removeaccount" class="btn btn-danger">Remove Account</a>
     </div>
 }
