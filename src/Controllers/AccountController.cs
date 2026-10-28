@@ -38,20 +38,10 @@ public class AccountController(IAccountService accountService, IImportService im
 		}
 
 		var activeUserId = claimsPrincipal.FindFirstValue("activeUserId");
-
-
 		if (!string.IsNullOrEmpty(activeUserId))
-
-
 		{
-
-
 			await importService.EnsureDataCloneEncrypted(activeUserId);
-
-
 		}
-
-
 
 		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
 		{
