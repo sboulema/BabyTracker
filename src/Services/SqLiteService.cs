@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 
 namespace BabyTracker.Services;
 
@@ -46,7 +47,6 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
     IDataEncryptionService dataEncryptionService) : ISqLiteService
 {
     private DataConnection? _db;
-    private string? _decryptedDatabasePath;
 
     public void OpenDataConnection(ClaimsPrincipal user)
     {
@@ -87,34 +87,75 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             {
                 dataEncryptionService.EncryptFile(file, key);
             }
-        }
-        catch
-        {
-            CryptographicOperations.ZeroMemory(key);
-            throw;
-        }
 
-        var temporaryRoot = Path.GetTempPath();
-        var temporaryDirectory = Path.Combine(temporaryRoot, Guid.NewGuid().ToString("N"));
-        _decryptedDatabasePath = Path.Combine(temporaryDirectory, "EasyLog.db");
+            var encryptedDatabase = File.ReadAllBytes(path);
+            byte[] plaintextDatabase;
+            try
+            {
+                plaintextDatabase = dataEncryptionService.DecryptFile(encryptedDatabase, key);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(encryptedDatabase);
+            }
 
-        try
-        {
-            dataEncryptionService.DecryptFile(path, _decryptedDatabasePath, key);
+            try
+            {
+                var sqliteConnection = new SqliteConnection("Data Source=:memory:");
+                sqliteConnection.Open();
 
+                // SQLite takes ownership of this native buffer and frees it when the connection closes.
+                var databaseBuffer = SQLitePCL.raw.sqlite3_malloc64(plaintextDatabase.LongLength);
+                if (databaseBuffer == IntPtr.Zero)
+                {
+                    sqliteConnection.Dispose();
+                    throw new OutOfMemoryException("Unable to allocate memory for the SQLite database.");
+                }
+
+                var bufferTransferred = false;
+                try
+                {
+                    Marshal.Copy(plaintextDatabase, 0, databaseBuffer, plaintextDatabase.Length);
+
+                    // SQLITE_DESERIALIZE_FREEONCLOSE | SQLITE_DESERIALIZE_READONLY
+                    const int deserializeFlags = 1 | 4;
+                    var result = SQLitePCL.raw.sqlite3_deserialize(
+                        sqliteConnection.Handle,
+                        "main",
+                        databaseBuffer,
+                        plaintextDatabase.LongLength,
+                        plaintextDatabase.LongLength,
+                        deserializeFlags);
+
+                    if (result != SQLitePCL.raw.SQLITE_OK)
+                    {
+                        throw new InvalidOperationException($"Unable to load the SQLite database into memory (SQLite error {result}).");
+                    }
+
+                    bufferTransferred = true;
+                    _db = new DataConnection(
+                        new DataOptions()
+                            .UseSQLite()
+                            .UseConnection(sqliteConnection, disposeConnection: true));
+                }
+                finally
+                {
+                    if (!bufferTransferred)
+                    {
+                        SQLitePCL.raw.sqlite3_free(databaseBuffer);
+                        sqliteConnection.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(plaintextDatabase);
+            }
         }
         finally
         {
             CryptographicOperations.ZeroMemory(key);
         }
-
-        _db = new DataConnection(
-            new DataOptions()
-            .UseSQLite(new SqliteConnectionStringBuilder
-            {
-                DataSource = _decryptedDatabasePath,
-                Mode = SqliteOpenMode.ReadOnly
-            }.ToString()));
     }
 
     public async Task CloseDataConnection()
@@ -125,18 +166,8 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
         }
 
         await _db.CloseAsync();
+        await _db.DisposeAsync();
         _db = null;
-
-        if (_decryptedDatabasePath != null)
-        {
-            var temporaryDirectory = Path.GetDirectoryName(_decryptedDatabasePath);
-            if (temporaryDirectory != null && Directory.Exists(temporaryDirectory))
-            {
-                Directory.Delete(temporaryDirectory, true);
-            }
-
-            _decryptedDatabasePath = null;
-        }
     }
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)
