@@ -55,7 +55,7 @@ public class AccountService(IConfiguration configuration,
             {
                 ClientId = configuration["AUTH0_CLIENTID"],
                 ClientSecret = configuration["AUTH0_CLIENTSECRET"],
-                Scope = "openid profile",
+                Scope = "openid profile email",
                 Realm = "Username-Password-Authentication",
                 Username = model.EmailAddress,
                 Password = model.Password
@@ -76,6 +76,7 @@ public class AccountService(IConfiguration configuration,
         [
             new Claim(ClaimTypes.NameIdentifier, user.UserId),
             new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
             new Claim("nickname", user.NickName),
             new Claim("picture", user.Picture),
             new Claim("userId", userId),
@@ -112,17 +113,8 @@ public class AccountService(IConfiguration configuration,
         return result;
     }
 
-    public async Task<string?> GetUserEmail(ClaimsPrincipal user)
-    {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            return null;
-        }
-
-        var clientUser = await managementApiClient.Users.GetAsync(userId, new());
-        return clientUser.Email;
-    }
+    public Task<string?> GetUserEmail(ClaimsPrincipal user)
+        => Task.FromResult(user.FindFirst(ClaimTypes.Email)?.Value);
 
     public async Task<bool> RequestEmailChange(ClaimsPrincipal user, string email)
     {
