@@ -75,6 +75,26 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
         }
 
         var key = userDataKeyService.GetOrCreateKeyAsync(userId).GetAwaiter().GetResult();
+        try
+        {
+            // Encrypt existing plaintext clones during the first read after this feature is deployed.
+            foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*", SearchOption.AllDirectories))
+            {
+                var extension = Path.GetExtension(file);
+                if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".db", StringComparison.OrdinalIgnoreCase))
+                {
+                    dataEncryptionService.EncryptFile(file, key);
+                }
+            }
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(key);
+            throw;
+        }
+
         var temporaryRoot = OperatingSystem.IsLinux() && Directory.Exists("/dev/shm")
             ? "/dev/shm/BabyTracker"
             : Path.GetTempPath();
