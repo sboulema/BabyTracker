@@ -46,10 +46,13 @@ public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiCl
                 ? new Dictionary<string, object>()
                 : user.AppMetadata.ToDictionary(item => item.Key, item => item.Value);
 
-            if (appMetadata.TryGetValue(MetadataKey, out var value) &&
-                value is string encodedKey &&
-                TryDecodeKey(encodedKey, out var existingKey))
+            if (appMetadata.TryGetValue(MetadataKey, out var value))
             {
+                if (value is not string encodedKey || !TryDecodeKey(encodedKey, out var existingKey))
+                {
+                    throw new CryptographicException($"The stored encryption key for Auth0 user '{auth0UserId}' is invalid.");
+                }
+
                 KeyCache[auth0UserId] = existingKey;
                 return existingKey.ToArray();
             }
