@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;\nusing Microsoft.Data.Sqlite;\nusing System.Security.Cryptography;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+using System.Security.Cryptography;
 
 namespace BabyTracker.Services;
 
