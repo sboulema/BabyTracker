@@ -82,11 +82,6 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
         var key = userDataKeyService.GetOrCreateKeyAsync(userId).GetAwaiter().GetResult();
         try
         {
-            // Encrypt existing plaintext clones during the first read after this feature is deployed.
-            foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*", SearchOption.AllDirectories))
-            {
-                dataEncryptionService.EncryptFile(file, key);
-            }
 
             var encryptedDatabase = File.ReadAllBytes(path);
             byte[] plaintextDatabase;
