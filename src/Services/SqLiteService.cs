@@ -98,9 +98,10 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
                 CryptographicOperations.ZeroMemory(encryptedDatabase);
             }
 
-            var temporaryDatabasePath = Path.GetTempFileName();
+            string? temporaryDatabasePath = null;
             try
             {
+                temporaryDatabasePath = Path.GetTempFileName();
                 File.WriteAllBytes(temporaryDatabasePath, plaintextDatabase);
 
                 using var fileConnection = new SqliteConnection(new SqliteConnectionStringBuilder
@@ -134,7 +135,10 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             finally
             {
                 CryptographicOperations.ZeroMemory(plaintextDatabase);
-                File.Delete(temporaryDatabasePath);
+                if (temporaryDatabasePath != null)
+                {
+                    File.Delete(temporaryDatabasePath);
+                }
             }
         }
         finally
