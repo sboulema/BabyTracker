@@ -3,6 +3,7 @@ using BabyTracker.Models.Database;
 using LinqToDB;
 using LinqToDB.Async;
 using LinqToDB.Data;
+using LinqToDB.DataProvider.SQLite;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -11,6 +12,8 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+using System.Security.Cryptography;
 
 namespace BabyTracker.Services;
 
@@ -39,7 +42,9 @@ public interface ISqLiteService
     Task<List<IDbEntry>> Search(string match, string babyName);
 }
 
-public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteService
+public class SqLiteService(IWebHostEnvironment webHostEnvironment,
+    IUserDataKeyService userDataKeyService,
+    IDataEncryptionService dataEncryptionService) : ISqLiteService
 {
     private DataConnection? _db;
 
@@ -74,9 +79,70 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
             return;
         }
 
-        _db = new DataConnection(
-            new DataOptions()
-            .UseSQLite($"Data Source={path}"));
+        var key = userDataKeyService.GetOrCreateKeyAsync(userId).GetAwaiter().GetResult();
+        try
+        {
+
+            var encryptedDatabase = File.ReadAllBytes(path);
+            byte[] plaintextDatabase;
+            try
+            {
+                plaintextDatabase = dataEncryptionService.DecryptFile(encryptedDatabase, key);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(encryptedDatabase);
+            }
+
+            string? temporaryDatabasePath = null;
+            try
+            {
+                temporaryDatabasePath = Path.GetTempFileName();
+                File.WriteAllBytes(temporaryDatabasePath, plaintextDatabase);
+
+                using var fileConnection = new SqliteConnection(new SqliteConnectionStringBuilder
+                {
+                    DataSource = temporaryDatabasePath,
+                    Mode = SqliteOpenMode.ReadOnly
+                }.ToString());
+                fileConnection.Open();
+
+                var memoryConnection = new SqliteConnection("Data Source=:memory:");
+                var connectionTransferred = false;
+                try
+                {
+                    memoryConnection.Open();
+                    fileConnection.BackupDatabase(memoryConnection);
+
+                    _db = new DataConnection(
+                        new DataOptions()
+                            .UseConnection(
+                                SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
+                                memoryConnection,
+                                disposeConnection: true));
+                    connectionTransferred = true;
+                }
+                finally
+                {
+                    if (!connectionTransferred)
+                    {
+                        memoryConnection.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(plaintextDatabase);
+                if (temporaryDatabasePath != null)
+                {
+                    File.Delete(temporaryDatabasePath);
+                }
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     public async Task CloseDataConnection()
@@ -87,6 +153,8 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
         }
 
         await _db.CloseAsync();
+        await _db.DisposeAsync();
+        _db = null;
     }
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)

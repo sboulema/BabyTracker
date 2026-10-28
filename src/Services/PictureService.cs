@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +12,9 @@ public interface IPictureService
     Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName);
 }
 
-public class PictureService : IPictureService
+public class PictureService(
+    IUserDataKeyService userDataKeyService,
+    IDataEncryptionService dataEncryptionService) : IPictureService
 {
     public async Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName)
     {
@@ -35,13 +37,21 @@ public class PictureService : IPictureService
             return null;
         }
 
-        return await File.ReadAllBytesAsync(picturePath);
+        var key = await userDataKeyService.GetOrCreateKeyAsync(userId);
+        try
+        {
+            var encryptedContent = await File.ReadAllBytesAsync(picturePath);
+            return dataEncryptionService.DecryptFile(encryptedContent, key);
+        }
+        finally
+        {
+            System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     private static string GetPicturePath(IHostEnvironment hostEnvironment, string userId, string fileName)
     {
-        var basePath = hostEnvironment.IsProduction() ? "/data/Data" : $"{hostEnvironment.ContentRootPath}/Data";
-        var picturePath = Path.Combine(basePath, userId, $"{fileName}.jpg");
-        return picturePath;
+        var basePath = hostEnvironment.IsProduction() ? "/data/Data" : Path.Combine(hostEnvironment.ContentRootPath, "Data");
+        return Path.Combine(basePath, userId, $"{fileName}.jpg");
     }
 }
