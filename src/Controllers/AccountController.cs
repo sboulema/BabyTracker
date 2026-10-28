@@ -144,8 +144,8 @@ public class AccountController(IAccountService accountService) : Controller
         var success = await accountService.RequestEmailChange(User, model.NewEmailAddress);
 
         TempData["notificationMessage"] = success
-            ? "Auth0 has been asked to send a verification email to your new address. Follow its instructions to complete the change."
-            : "Could not request the email change. Check the address and try again.";
+            ? "Your email address has been changed."
+            : "Could not change the email address. Check the address and try again.";
         TempData["notificationType"] = success ? "success" : "danger";
 
         return RedirectToAction(nameof(Profile));
