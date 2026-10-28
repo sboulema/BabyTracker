@@ -72,6 +72,8 @@ builder.Services
 	.AddScoped<IMemoriesService, MemoriesService>()
 	.AddScoped<IChartService, ChartService>()
 	.AddScoped<IImportService, ImportService>()
+	.AddScoped<IUserDataKeyService, Auth0UserDataKeyService>()
+	.AddSingleton<IDataEncryptionService, DataEncryptionService>()
 	.AddScoped<IPictureService, PictureService>()
 	.AddScoped<IEmailRepository, EmailRepository>();
 
