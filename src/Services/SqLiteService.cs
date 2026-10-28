@@ -102,14 +102,6 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
         {
             dataEncryptionService.DecryptFile(path, _decryptedDatabasePath, key);
 
-            foreach (var suffix in new[] { "-wal", "-journal" })
-            {
-                var encryptedSidecarPath = path + suffix;
-                if (File.Exists(encryptedSidecarPath))
-                {
-                    dataEncryptionService.DecryptFile(encryptedSidecarPath, _decryptedDatabasePath + suffix, key);
-                }
-            }
         }
         finally
         {
