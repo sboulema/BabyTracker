@@ -13,7 +13,7 @@ using BabyTracker.Constants;
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
-public class AccountController(IAccountService accountService) : Controller
+public class AccountController(IAccountService accountService, IImportService importService) : Controller
 {
 	[HttpGet("[action]")]
 	public IActionResult Login(string returnUrl = "")
@@ -36,6 +36,22 @@ public class AccountController(IAccountService accountService) : Controller
 
 			return RedirectToAction("Login");
 		}
+
+		var activeUserId = claimsPrincipal.FindFirstValue("activeUserId");
+
+
+		if (!string.IsNullOrEmpty(activeUserId))
+
+
+		{
+
+
+			await importService.EnsureDataCloneEncrypted(activeUserId);
+
+
+		}
+
+
 
 		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
 		{
