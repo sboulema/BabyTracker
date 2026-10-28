@@ -39,29 +39,40 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
 
         Directory.CreateDirectory(extractPath);
 
-        using (var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
-        {
-            archive.ExtractToDirectory(extractPath, overwriteFiles: true);
-        }
-
         try
         {
-            var key = await userDataKeyService.GetOrCreateKeyAsync(activeUserId);
-            foreach (var file in Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
             {
-                var extension = Path.GetExtension(file);
-                if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-                    extension.Equals(".db", StringComparison.OrdinalIgnoreCase))
+                archive.ExtractToDirectory(extractPath, overwriteFiles: true);
+            }
+
+            var key = await userDataKeyService.GetOrCreateKeyAsync(activeUserId);
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories))
                 {
-                    dataEncryptionService.EncryptFile(file, key);
+                    var extension = Path.GetExtension(file);
+                    if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                        extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                        extension.Equals(".db", StringComparison.OrdinalIgnoreCase))
+                    {
+                        dataEncryptionService.EncryptFile(file, key);
+                    }
                 }
+            }
+            finally
+            {
+                System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
             }
         }
         catch
         {
             // Never leave an incomplete import containing plaintext files.
-            Directory.Delete(extractPath, true);
+            if (Directory.Exists(extractPath))
+            {
+                Directory.Delete(extractPath, true);
+            }
+
             throw;
         }
 
