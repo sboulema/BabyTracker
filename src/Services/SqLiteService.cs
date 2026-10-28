@@ -94,15 +94,7 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             throw;
         }
 
-        if (webHostEnvironment.IsProduction() &&
-            (!OperatingSystem.IsLinux() || !Directory.Exists("/dev/shm")))
-        {
-            throw new InvalidOperationException("A memory-backed /dev/shm filesystem is required to open the encrypted SQLite database in production.");
-        }
-
-        var temporaryRoot = webHostEnvironment.IsProduction()
-            ? "/dev/shm/BabyTracker"
-            : Path.GetTempPath();
+        var temporaryRoot = Path.GetTempPath();
         var temporaryDirectory = Path.Combine(temporaryRoot, Guid.NewGuid().ToString("N"));
         _decryptedDatabasePath = Path.Combine(temporaryDirectory, "EasyLog.db");
 
@@ -110,7 +102,7 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
         {
             dataEncryptionService.DecryptFile(path, _decryptedDatabasePath, key);
 
-            foreach (var suffix in new[] { "-wal", "-shm", "-journal" })
+            foreach (var suffix in new[] { "-wal", "-journal" })
             {
                 var encryptedSidecarPath = path + suffix;
                 if (File.Exists(encryptedSidecarPath))
