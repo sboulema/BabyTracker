@@ -169,8 +169,18 @@ public sealed class DataEncryptionService : IDataEncryptionService
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(plaintextPath)!);
+            var directory = Path.GetDirectoryName(plaintextPath)!;
+            Directory.CreateDirectory(directory);
+            if (OperatingSystem.IsLinux())
+            {
+                File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+
             File.WriteAllBytes(plaintextPath, plaintext);
+            if (OperatingSystem.IsLinux())
+            {
+                File.SetUnixFileMode(plaintextPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
         }
         finally
         {
