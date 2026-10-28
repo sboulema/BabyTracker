@@ -143,7 +143,6 @@ public class AccountService(IConfiguration configuration,
             {
                 Email = address.Address,
                 EmailVerified = false,
-                VerifyEmail = true,
                 ClientId = configuration["AUTH0_CLIENTID"]
             });
 
