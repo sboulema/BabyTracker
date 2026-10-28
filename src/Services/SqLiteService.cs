@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
+using System.Threading.Tasks;\nusing Microsoft.Data.Sqlite;\nusing System.Security.Cryptography;
 
 namespace BabyTracker.Services;
 
@@ -74,9 +74,29 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
             return;
         }
 
+        var key = userDataKeyService.GetOrCreateKeyAsync(userId).GetAwaiter().GetResult();
+        var temporaryRoot = OperatingSystem.IsLinux() && Directory.Exists("/dev/shm")
+            ? "/dev/shm/BabyTracker"
+            : Path.GetTempPath();
+        var temporaryDirectory = Path.Combine(temporaryRoot, Guid.NewGuid().ToString("N"));
+        _decryptedDatabasePath = Path.Combine(temporaryDirectory, "EasyLog.db");
+
+        try
+        {
+            dataEncryptionService.DecryptFile(path, _decryptedDatabasePath, key);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
+
         _db = new DataConnection(
             new DataOptions()
-            .UseSQLite($"Data Source={path}"));
+            .UseSQLite(new SqliteConnectionStringBuilder
+            {
+                DataSource = _decryptedDatabasePath,
+                Mode = SqliteOpenMode.ReadOnly
+            }.ToString()));
     }
 
     public async Task CloseDataConnection()
@@ -87,6 +107,18 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteServ
         }
 
         await _db.CloseAsync();
+        _db = null;
+
+        if (_decryptedDatabasePath != null)
+        {
+            var temporaryDirectory = Path.GetDirectoryName(_decryptedDatabasePath);
+            if (temporaryDirectory != null && Directory.Exists(temporaryDirectory))
+            {
+                Directory.Delete(temporaryDirectory, true);
+            }
+
+            _decryptedDatabasePath = null;
+        }
     }
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)
