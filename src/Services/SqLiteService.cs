@@ -120,8 +120,10 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
 
                     _db = new DataConnection(
                         new DataOptions()
-                            .UseSQLite()
-                            .UseConnection(memoryConnection, disposeConnection: true));
+                            .UseConnection(
+                                SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
+                                memoryConnection,
+                                disposeConnection: true));
                     connectionTransferred = true;
                 }
                 finally
