@@ -39,9 +39,12 @@ public interface ISqLiteService
     Task<List<IDbEntry>> Search(string match, string babyName);
 }
 
-public class SqLiteService(IWebHostEnvironment webHostEnvironment) : ISqLiteService
+public class SqLiteService(IWebHostEnvironment webHostEnvironment,
+    IUserDataKeyService userDataKeyService,
+    IDataEncryptionService dataEncryptionService) : ISqLiteService
 {
     private DataConnection? _db;
+    private string? _decryptedDatabasePath;
 
     public void OpenDataConnection(ClaimsPrincipal user)
     {
