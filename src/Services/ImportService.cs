@@ -50,11 +50,7 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
             {
                 foreach (var file in Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories))
                 {
-                    var extension = Path.GetExtension(file);
-                    if (IsSensitiveDataFile(file, extension))
-                    {
-                        dataEncryptionService.EncryptFile(file, key);
-                    }
+                    dataEncryptionService.EncryptFile(file, key);
                 }
             }
             finally
@@ -89,14 +85,6 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
         var path = GetDataClonePath(activeUserId);
         return Directory.Exists(path) && File.Exists(Path.Combine(path, "EasyLog.db"));
     }
-
-    private static bool IsSensitiveDataFile(string path, string extension)
-        => extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-           extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-           extension.Equals(".db", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-wal", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-shm", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-journal", StringComparison.OrdinalIgnoreCase);
 
     private string GetDataClonePath(string activeUserId)
     {
