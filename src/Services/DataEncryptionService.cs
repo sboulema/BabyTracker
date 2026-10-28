@@ -5,7 +5,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Auth0.ManagementApi;
-using Microsoft.Data.Sqlite;
 
 namespace BabyTracker.Services;
 
@@ -66,7 +65,7 @@ public interface IDataEncryptionService
 {
     void EncryptFile(string path, byte[] key);
     byte[] DecryptFile(byte[] encryptedContent, byte[] key);
-    void EncryptSqliteDatabase(string path, byte[] key);
+    void DecryptFile(string encryptedPath, string plaintextPath, byte[] key);
 }
 
 public sealed class DataEncryptionService : IDataEncryptionService
@@ -81,6 +80,7 @@ public sealed class DataEncryptionService : IDataEncryptionService
 
         if (IsEncrypted(plaintext))
         {
+            CryptographicOperations.ZeroMemory(plaintext);
             return;
         }
 
@@ -100,9 +100,21 @@ public sealed class DataEncryptionService : IDataEncryptionService
         Buffer.BlockCopy(ciphertext, 0, encrypted, Magic.Length + NonceSize + TagSize, ciphertext.Length);
 
         var temporaryPath = path + ".encrypted";
-        File.WriteAllBytes(temporaryPath, encrypted);
-        File.Move(temporaryPath, path, true);
-        CryptographicOperations.ZeroMemory(plaintext);
+        try
+        {
+            File.WriteAllBytes(temporaryPath, encrypted);
+            File.Move(temporaryPath, path, true);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+            CryptographicOperations.ZeroMemory(ciphertext);
+            CryptographicOperations.ZeroMemory(encrypted);
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
     }
 
     public byte[] DecryptFile(byte[] encryptedContent, byte[] key)
@@ -125,39 +137,24 @@ public sealed class DataEncryptionService : IDataEncryptionService
         return plaintext;
     }
 
-    public void EncryptSqliteDatabase(string path, byte[] key)
+    public void DecryptFile(string encryptedPath, string plaintextPath, byte[] key)
     {
-        var encryptedPath = path + ".encrypted";
-        if (File.Exists(encryptedPath))
+        var encrypted = File.ReadAllBytes(encryptedPath);
+        var plaintext = DecryptFile(encrypted, key);
+
+        try
         {
-            File.Delete(encryptedPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(plaintextPath)!);
+            File.WriteAllBytes(plaintextPath, plaintext);
         }
-
-        var connectionString = new SqliteConnectionStringBuilder
+        finally
         {
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadWrite
-        }.ToString();
-
-        using (var connection = new SqliteConnection(connectionString))
-        {
-            connection.Open();
-
-            using var command = connection.CreateCommand();
-            command.CommandText = """
-                ATTACH DATABASE $encryptedPath AS encrypted KEY $key;
-                SELECT sqlcipher_export('encrypted');
-                DETACH DATABASE encrypted;
-                """;
-            command.Parameters.AddWithValue("$encryptedPath", encryptedPath);
-            command.Parameters.AddWithValue("$key", Convert.ToBase64String(key));
-            command.ExecuteNonQuery();
+            CryptographicOperations.ZeroMemory(encrypted);
+            CryptographicOperations.ZeroMemory(plaintext);
         }
-
-        File.Move(encryptedPath, path, true);
     }
 
     private static bool IsEncrypted(ReadOnlySpan<byte> content)
-        => content.Length >= Magic.Length &&
+        => content.Length >= Magic.Length + NonceSize + TagSize &&
            content[..Magic.Length].SequenceEqual(Magic);
 }
