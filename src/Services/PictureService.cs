@@ -38,8 +38,17 @@ public class PictureService(
         }
 
         var key = await userDataKeyService.GetOrCreateKeyAsync(userId);
-        var encryptedContent = await File.ReadAllBytesAsync(picturePath);
-        return dataEncryptionService.DecryptFile(encryptedContent, key);
+        try
+        {
+            // Also migrate legacy pictures when they are requested directly.
+            dataEncryptionService.EncryptFile(picturePath, key);
+            var encryptedContent = await File.ReadAllBytesAsync(picturePath);
+            return dataEncryptionService.DecryptFile(encryptedContent, key);
+        }
+        finally
+        {
+            System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     private static string GetPicturePath(IHostEnvironment hostEnvironment, string userId, string fileName)
