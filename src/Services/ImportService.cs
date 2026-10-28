@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.IO;
-using System.IO.Compression;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -19,32 +18,51 @@ public interface IImportService
 
 public class ImportService(IWebHostEnvironment webHostEnvironment,
     IOutputCacheStore outputCacheStore,
+    IUserDataKeyService userDataKeyService,
+    IDataEncryptionService dataEncryptionService,
     ILogger<ImportService> logger) : IImportService
 {
     public async Task<string> Unzip(ClaimsPrincipal user, Stream stream)
     {
-        var extractPath = GetDataClonePath(user);
+        var activeUserId = user.FindFirstValue("activeUserId");
+        if (string.IsNullOrWhiteSpace(activeUserId))
+        {
+            throw new InvalidOperationException("No active user is available for this import.");
+        }
+
+        var extractPath = GetDataClonePath(activeUserId);
+
+        if (Directory.Exists(extractPath))
+        {
+            Directory.Delete(extractPath, true);
+        }
+
+        Directory.CreateDirectory(extractPath);
+
+        using (var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
+        {
+            archive.ExtractToDirectory(extractPath, overwriteFiles: true);
+        }
 
         try
         {
-            if (Directory.Exists(extractPath))
+            var key = await userDataKeyService.GetOrCreateKeyAsync(activeUserId);
+            foreach (var file in Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories))
             {
-                Directory.Delete(extractPath, true);
+                var extension = Path.GetExtension(file);
+                if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".db", StringComparison.OrdinalIgnoreCase))
+                {
+                    dataEncryptionService.EncryptFile(file, key);
+                }
             }
         }
-        catch (Exception e)
+        catch
         {
-            logger.LogError($"Error removing data clone path '{extractPath}'. {e.Message}");
-        }
-
-        try
-        {
-            using var archive = new ZipArchive(stream);
-            archive.ExtractToDirectory(extractPath, true);
-        }
-        catch (Exception e)
-        {
-            logger.LogError($"Error extracting data into clone path '{extractPath}'. {e.Message}");
+            // Never leave an incomplete import containing plaintext files.
+            Directory.Delete(extractPath, true);
+            throw;
         }
 
         await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
@@ -53,17 +71,24 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
     }
 
     public bool HasDataClone(ClaimsPrincipal user)
-        => Directory.Exists(GetDataClonePath(user));
-
-    private string GetDataClonePath(ClaimsPrincipal user)
     {
         var activeUserId = user.FindFirstValue("activeUserId");
+        if (string.IsNullOrWhiteSpace(activeUserId))
+        {
+            return false;
+        }
 
+        var path = GetDataClonePath(activeUserId);
+        return Directory.Exists(path) && File.Exists(Path.Combine(path, "EasyLog.db"));
+    }
+
+    private string GetDataClonePath(string activeUserId)
+    {
         var path = $"/data/Data/{activeUserId}";
 
         if (!webHostEnvironment.IsProduction())
         {
-            path = $"{webHostEnvironment.ContentRootPath}/Data/{activeUserId}";
+            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", activeUserId);
         }
 
         return path;
