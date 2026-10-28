@@ -142,7 +142,6 @@ public class AccountService(IConfiguration configuration,
             await managementApiClient.Users.UpdateAsync(userId, new()
             {
                 Email = address.Address,
-                EmailVerified = false,
                 ClientId = configuration["AUTH0_CLIENTID"]
             });
 
