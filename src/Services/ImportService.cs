@@ -14,6 +14,8 @@ public interface IImportService
     Task<string> Unzip(ClaimsPrincipal user, Stream stream);
 
     bool HasDataClone(ClaimsPrincipal user);
+
+    Task EnsureDataCloneEncrypted(string userId);
 }
 
 public class ImportService(IWebHostEnvironment webHostEnvironment,
@@ -72,6 +74,34 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
         await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
 
         return extractPath;
+    }
+
+    public async Task EnsureDataCloneEncrypted(string userId)
+    {
+        var extractPath = GetDataClonePath(userId);
+        if (!Directory.Exists(extractPath))
+        {
+            return;
+        }
+
+        var files = Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories).ToArray();
+        if (files.Length == 0)
+        {
+            return;
+        }
+
+        var key = await userDataKeyService.GetOrCreateKeyAsync(userId);
+        try
+        {
+            foreach (var file in files)
+            {
+                dataEncryptionService.EncryptFile(file, key);
+            }
+        }
+        finally
+        {
+            System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     public bool HasDataClone(ClaimsPrincipal user)
