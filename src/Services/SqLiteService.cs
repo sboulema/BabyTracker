@@ -13,7 +13,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using System.Security.Cryptography;
-using System.Runtime.InteropServices;
 
 namespace BabyTracker.Services;
 
@@ -99,63 +98,43 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
                 CryptographicOperations.ZeroMemory(encryptedDatabase);
             }
 
+            var temporaryDatabasePath = Path.GetTempFileName();
             try
             {
-                var sqliteConnection = new SqliteConnection("Data Source=:memory:");
-                sqliteConnection.Open();
+                File.WriteAllBytes(temporaryDatabasePath, plaintextDatabase);
 
-                // SQLite takes ownership of this native buffer and frees it when the connection closes.
-                var databaseBuffer = SQLitePCL.raw.sqlite3_malloc64(plaintextDatabase.LongLength);
-                if (databaseBuffer == IntPtr.Zero)
+                using var fileConnection = new SqliteConnection(new SqliteConnectionStringBuilder
                 {
-                    sqliteConnection.Dispose();
-                    throw new OutOfMemoryException("Unable to allocate memory for the SQLite database.");
-                }
+                    DataSource = temporaryDatabasePath,
+                    Mode = SqliteOpenMode.ReadOnly
+                }.ToString());
+                fileConnection.Open();
 
-                var bufferTransferred = false;
+                var memoryConnection = new SqliteConnection("Data Source=:memory:");
                 var connectionTransferred = false;
                 try
                 {
-                    Marshal.Copy(plaintextDatabase, 0, databaseBuffer, plaintextDatabase.Length);
+                    memoryConnection.Open();
+                    fileConnection.BackupDatabase(memoryConnection);
 
-                    // SQLITE_DESERIALIZE_FREEONCLOSE | SQLITE_DESERIALIZE_READONLY
-                    const int deserializeFlags = 1 | 4;
-                    var result = SQLitePCL.raw.sqlite3_deserialize(
-                        sqliteConnection.Handle,
-                        "main",
-                        databaseBuffer,
-                        plaintextDatabase.LongLength,
-                        plaintextDatabase.LongLength,
-                        deserializeFlags);
-
-                    if (result != SQLitePCL.raw.SQLITE_OK)
-                    {
-                        throw new InvalidOperationException($"Unable to load the SQLite database into memory (SQLite error {result}).");
-                    }
-
-                    bufferTransferred = true;
                     _db = new DataConnection(
                         new DataOptions()
                             .UseSQLite()
-                            .UseConnection(sqliteConnection, disposeConnection: true));
+                            .UseConnection(memoryConnection, disposeConnection: true));
                     connectionTransferred = true;
                 }
                 finally
                 {
-                    if (!bufferTransferred)
-                    {
-                        SQLitePCL.raw.sqlite3_free(databaseBuffer);
-                    }
-
                     if (!connectionTransferred)
                     {
-                        sqliteConnection.Dispose();
+                        memoryConnection.Dispose();
                     }
                 }
             }
             finally
             {
                 CryptographicOperations.ZeroMemory(plaintextDatabase);
+                File.Delete(temporaryDatabasePath);
             }
         }
         finally
