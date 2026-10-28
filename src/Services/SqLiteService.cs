@@ -85,11 +85,7 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             // Encrypt existing plaintext clones during the first read after this feature is deployed.
             foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*", SearchOption.AllDirectories))
             {
-                var extension = Path.GetExtension(file);
-                if (IsSensitiveDataFile(file, extension))
-                {
-                    dataEncryptionService.EncryptFile(file, key);
-                }
+                dataEncryptionService.EncryptFile(file, key);
             }
         }
         catch
@@ -158,14 +154,6 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             _decryptedDatabasePath = null;
         }
     }
-
-    private static bool IsSensitiveDataFile(string path, string extension)
-        => extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-           extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-           extension.Equals(".db", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-wal", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-shm", StringComparison.OrdinalIgnoreCase) ||
-           path.EndsWith(".db-journal", StringComparison.OrdinalIgnoreCase);
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)
     {
