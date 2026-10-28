@@ -86,9 +86,7 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*", SearchOption.AllDirectories))
             {
                 var extension = Path.GetExtension(file);
-                if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-                    extension.Equals(".db", StringComparison.OrdinalIgnoreCase))
+                if (IsSensitiveDataFile(file, extension))
                 {
                     dataEncryptionService.EncryptFile(file, key);
                 }
@@ -115,6 +113,15 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
         try
         {
             dataEncryptionService.DecryptFile(path, _decryptedDatabasePath, key);
+
+            foreach (var suffix in new[] { "-wal", "-shm", "-journal" })
+            {
+                var encryptedSidecarPath = path + suffix;
+                if (File.Exists(encryptedSidecarPath))
+                {
+                    dataEncryptionService.DecryptFile(encryptedSidecarPath, _decryptedDatabasePath + suffix, key);
+                }
+            }
         }
         finally
         {
@@ -151,6 +158,14 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             _decryptedDatabasePath = null;
         }
     }
+
+    private static bool IsSensitiveDataFile(string path, string extension)
+        => extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+           extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+           extension.Equals(".db", StringComparison.OrdinalIgnoreCase) ||
+           path.EndsWith(".db-wal", StringComparison.OrdinalIgnoreCase) ||
+           path.EndsWith(".db-shm", StringComparison.OrdinalIgnoreCase) ||
+           path.EndsWith(".db-journal", StringComparison.OrdinalIgnoreCase);
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)
     {
