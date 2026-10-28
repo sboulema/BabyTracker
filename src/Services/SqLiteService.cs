@@ -100,7 +100,13 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             throw;
         }
 
-        var temporaryRoot = OperatingSystem.IsLinux() && Directory.Exists("/dev/shm")
+        if (webHostEnvironment.IsProduction() &&
+            (!OperatingSystem.IsLinux() || !Directory.Exists("/dev/shm")))
+        {
+            throw new InvalidOperationException("A memory-backed /dev/shm filesystem is required to open the encrypted SQLite database in production.");
+        }
+
+        var temporaryRoot = webHostEnvironment.IsProduction()
             ? "/dev/shm/BabyTracker"
             : Path.GetTempPath();
         var temporaryDirectory = Path.Combine(temporaryRoot, Guid.NewGuid().ToString("N"));
