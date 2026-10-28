@@ -1,11 +1,11 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace BabyTracker.Services;
 
@@ -19,8 +19,7 @@ public interface IImportService
 public class ImportService(IWebHostEnvironment webHostEnvironment,
     IOutputCacheStore outputCacheStore,
     IUserDataKeyService userDataKeyService,
-    IDataEncryptionService dataEncryptionService,
-    ILogger<ImportService> logger) : IImportService
+    IDataEncryptionService dataEncryptionService) : IImportService
 {
     public async Task<string> Unzip(ClaimsPrincipal user, Stream stream)
     {
