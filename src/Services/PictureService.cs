@@ -40,8 +40,6 @@ public class PictureService(
         var key = await userDataKeyService.GetOrCreateKeyAsync(userId);
         try
         {
-            // Also migrate legacy pictures when they are requested directly.
-            dataEncryptionService.EncryptFile(picturePath, key);
             var encryptedContent = await File.ReadAllBytesAsync(picturePath);
             return dataEncryptionService.DecryptFile(encryptedContent, key);
         }
