@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Collections.Concurrent;
+using System.Threading;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Auth0.ManagementApi;
@@ -16,6 +18,8 @@ public interface IUserDataKeyService
 public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiClient) : IUserDataKeyService
 {
     private const string MetadataKey = "BabyTrackerDataEncryptionKey";
+    private static readonly ConcurrentDictionary<string, byte[]> KeyCache = new();
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> UserLocks = new();
 
     public async Task<byte[]> GetOrCreateKeyAsync(string userId)
     {
@@ -23,27 +27,48 @@ public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiCl
             ? userId
             : $"auth0|{userId}";
 
-        var user = await managementApiClient.Users.GetAsync(auth0UserId, new());
-        var appMetadata = user.AppMetadata == null
-            ? new Dictionary<string, object>()
-            : user.AppMetadata.ToDictionary(item => item.Key, item => item.Value);
-
-        if (appMetadata.TryGetValue(MetadataKey, out var value) &&
-            value is string encodedKey &&
-            TryDecodeKey(encodedKey, out var existingKey))
+        if (KeyCache.TryGetValue(auth0UserId, out var cachedKey))
         {
-            return existingKey;
+            return cachedKey.ToArray();
         }
 
-        var key = RandomNumberGenerator.GetBytes(32);
-        appMetadata[MetadataKey] = Convert.ToBase64String(key);
-
-        await managementApiClient.Users.UpdateAsync(auth0UserId, new()
+        var userLock = UserLocks.GetOrAdd(auth0UserId, _ => new SemaphoreSlim(1, 1));
+        await userLock.WaitAsync();
+        try
         {
-            AppMetadata = appMetadata
-        });
+            if (KeyCache.TryGetValue(auth0UserId, out cachedKey))
+            {
+                return cachedKey.ToArray();
+            }
 
-        return key;
+            var user = await managementApiClient.Users.GetAsync(auth0UserId, new());
+            var appMetadata = user.AppMetadata == null
+                ? new Dictionary<string, object>()
+                : user.AppMetadata.ToDictionary(item => item.Key, item => item.Value);
+
+            if (appMetadata.TryGetValue(MetadataKey, out var value) &&
+                value is string encodedKey &&
+                TryDecodeKey(encodedKey, out var existingKey))
+            {
+                KeyCache[auth0UserId] = existingKey;
+                return existingKey.ToArray();
+            }
+
+            var key = RandomNumberGenerator.GetBytes(32);
+            appMetadata[MetadataKey] = Convert.ToBase64String(key);
+
+            await managementApiClient.Users.UpdateAsync(auth0UserId, new()
+            {
+                AppMetadata = appMetadata
+            });
+
+            KeyCache[auth0UserId] = key;
+            return key.ToArray();
+        }
+        finally
+        {
+            userLock.Release();
+        }
     }
 
     private static bool TryDecodeKey(string value, out byte[] key)
