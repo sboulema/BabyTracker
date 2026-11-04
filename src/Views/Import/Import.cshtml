@@ -6,9 +6,33 @@
 
 <br />
 
+<div class="card col-12 col-lg-6 offset-lg-3 mb-3">
+  <div class="card-body">
+    <h5 class="card-title">How to create your own Data Clone</h5>
+    <p class="card-text">
+      Export your data from the Baby Tracker app, then upload the file below.
+    </p>
+
+    <h6>Android</h6>
+    <ol>
+      <li>Open <a href="https://play.google.com/store/apps/details?id=com.nighp.babytracker_android">Baby Tracker</a> and go to <strong>Settings</strong>.</li>
+      <li>Choose the <strong>Export Data Clone</strong> option.</li>
+      <li>Save the data clone <code>.btcp</code> file, then upload it below.</li>
+    </ol>
+
+    <h6>iPhone</h6>
+    <ol>
+      <li>Open <a href="https://apps.apple.com/app/id845657206">Baby Tracker</a> and go to <strong>Settings</strong>.</li>
+      <li>Choose the <strong>Export Data Clone</strong> option.</li>
+      <li>Save the data clone <code>.eml</code> file to the Files app, then upload it below.</li>
+    </ol>
+  </div>
+</div>
+
 <div class="card col-12 col-lg-6 offset-lg-3">
   <div class="card-body">
     <h5 class="card-title">Upload your own BabyTracker Data Clone</h5>
+
     <form asp-controller="Import" asp-action="ImportFile" method="post" enctype="multipart/form-data">
         <div class="mb-3">
           <label for="importFile" class="form-label">Upload file</label>
@@ -19,6 +43,13 @@
                 <div class="progress-bar" id="progress-bar" role="progressbar" style="background-color: #bd4d85">0%</div>
         </div>
     </form>
+
+    <div class="alert alert-info d-flex align-items-start" role="note">
+        <i class="fa-solid fa-lock me-2 mt-1"></i>
+        <div>
+            Your data clone is transferred over a secure connection and stored in encrypted form on our server.
+        </div>
+    </div>
   </div>
 </div>
 
@@ -26,7 +57,7 @@
     <script src="/js/tus.min.js"></script>
 
     <script>
-        const input = document.querySelector('input');
+        const input = document.querySelector('#importFile');
         const progress = document.querySelector('#progress');
         const progressBar = document.querySelector('#progress-bar');
 

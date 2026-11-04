@@ -76,15 +76,23 @@ public class AccountController(IAccountService accountService,
 		return View(new LoginViewModel());
 	}
 
-	[HttpPost("[action]")]
-	public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
-	{
-		await accountService.Register(model);
+    [HttpPost("[action]")]
+    public async Task<IActionResult> Register(LoginViewModel model, string returnUrl = "")
+    {
+        var result = await accountService.Register(model);
 
-		return await Login(model, returnUrl);
-	}
+        if (!result.Success)
+        {
+            TempData["notificationMessage"] = result.Error;
+            TempData["notificationType"] = "danger";
 
-	[HttpGet("[action]")]
+            return RedirectToAction("Register");
+        }
+
+        return await Login(model, returnUrl);
+    }
+
+    [HttpGet("[action]")]
 	public IActionResult ResetPassword()
 	{
 		ViewBag.Theme = ThemesEnum.Auto;
@@ -103,14 +111,17 @@ public class AccountController(IAccountService accountService,
 		return RedirectToAction("Login");
 	}
 
-	[Authorize]
-	[HttpGet("[action]")]
-	public async Task Logout()
-	{
-		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-	}
+    [Authorize]
+    [HttpPost("[action]")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-	[Authorize]
+        return RedirectToAction("Index", "Home");
+    }
+
+    [Authorize]
 	[HttpGet("[action]")]
 	public async Task<IActionResult> Profile()
 	{

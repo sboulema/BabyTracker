@@ -76,7 +76,7 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 - Postmark account
 
 ## Building Dependencies
-- .NET 9.0
+- .NET 10.0
 - NPM
 
 ### Debugging

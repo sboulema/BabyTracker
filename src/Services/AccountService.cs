@@ -1,20 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Mail;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Auth0.AuthenticationApi;
 using Auth0.AuthenticationApi.Models;
+using Auth0.Core.Exceptions;
 using Auth0.ManagementApi;
 using BabyTracker.Models.Account;
 using BabyTracker.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 
 namespace BabyTracker.Services;
 
@@ -22,7 +21,7 @@ public interface IAccountService
 {
     Task<ClaimsPrincipal?> Login(LoginViewModel model);
 
-    Task<SignupUserResponse?> Register(LoginViewModel model);
+    Task<RegisterResult> Register(LoginViewModel model);
 
     Task<UserMetaData?> GetUserMetaData(ClaimsPrincipal user);
 
@@ -37,7 +36,6 @@ public interface IAccountService
     Task<string?> GetUserEmail(ClaimsPrincipal user);
 
     Task<bool> RequestEmailChange(ClaimsPrincipal user, string email);
-
 }
 
 public class AccountService(IConfiguration configuration,
@@ -89,17 +87,30 @@ public class AccountService(IConfiguration configuration,
         return claimsPrincipal;
     }
 
-    public async Task<SignupUserResponse?> Register(LoginViewModel model)
+    public async Task<RegisterResult> Register(LoginViewModel model)
     {
-        var result = await authenticationApiClient.SignupUserAsync(new SignupUserRequest
+        try
         {
-            ClientId = configuration["AUTH0_CLIENTID"],
-            Email = model.EmailAddress,
-            Password = model.Password,
-            Connection = "Username-Password-Authentication",
-            Name = model.EmailAddress,
-        });
-        return result;
+            await authenticationApiClient.SignupUserAsync(new SignupUserRequest
+            {
+                ClientId = configuration["AUTH0_CLIENTID"],
+                Email = model.EmailAddress,
+                Password = model.Password,
+                Connection = "Username-Password-Authentication",
+                Name = model.EmailAddress,
+            });
+
+            return new RegisterResult(true);
+        }
+        catch (ErrorApiException e)
+        {
+            return new RegisterResult(false, e.ApiError?.Error switch
+            {
+                "invalid_password" => "That password is too weak. Choose a longer password with a mix of characters.",
+                "invalid_signup" => "We couldn't create this account. If you already have one, log in or reset your password.",
+                _ => "Registration failed. Please try again."
+            });
+        }
     }
 
     public async Task<string> ResetPassword(LoginViewModel model)
@@ -230,7 +241,7 @@ public class AccountService(IConfiguration configuration,
 
     private async Task<UserResponseSchema?> SearchUsersWithShareList(string emailAddress)
     {
-        var users = await QueryUsers($"user_metadata.ShareList:{emailAddress}");
+        var users = await QueryUsers($"user_metadata.ShareList:\"{emailAddress}\"");
         return users?.FirstOrDefault();
     }
 

@@ -4,14 +4,53 @@
     ViewData["Title"] = "BabyTracker";
 }
 
-<h1 class="display-4 text-center mb-5">BabyTracker</h1>
+<h1 class="display-4 text-center mb-3">BabyTracker</h1>
+<p class="lead text-center mb-5">
+  View everything you logged in the BabyTracker mobile app on the big screen.
+</p>
 
-<br />
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8 col-xl-7">
 
-<div class="card col-12 col-lg-6 offset-lg-3">
-  <div class="card-body">
-    <h5 class="card-title">Welcome</h5>
-    <p class="card-text">Please login and upload your first Data Clone to get started!</p>
-    <a href="/account/login" class="btn btn-primary">Login</a>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">What does this website do?</h5>
+        <p class="card-text">
+          BabyTracker takes a Data Clone exported from the BabyTracker mobile app
+          and turns it into a website you can browse on any device.
+        </p>
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2"><i class="fa-solid fa-book-open fa-fw me-2"></i><strong>Diary:</strong> see all logged events as a list or as cards.</li>
+          <li class="mb-2"><i class="fa-solid fa-clock-rotate-left fa-fw me-2"></i><strong>Memories:</strong> what happened a year ago? Two years ago? Get it delivered by email.</li>
+          <li class="mb-2"><i class="fa-solid fa-images fa-fw me-2"></i><strong>Gallery:</strong> all your baby photos in one place.</li>
+          <li><i class="fa-solid fa-chart-line fa-fw me-2"></i><strong>Growth charts:</strong> length/height, weight, head circumference and BMI, plotted against the 3rd, 50th and 97th percentiles of the WHO Child Growth Standards.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Why create an account?</h5>
+        <ul class="mb-0">
+          <li><strong>Your data stays yours.</strong> An account protects everything about your baby, so only you can see it.</li>
+          <li><strong>Come back anytime.</strong> Your Data Clone is stored securely, so you only need to upload it once.</li>
+          <li><strong>Share with family.</strong> Share your baby with another user so they can follow along too.</li>
+          <li><strong>Memories email.</strong> Enable it in your profile to receive memories from the past.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Get started</h5>
+        <ol>
+          <li>Log in or create an account.</li>
+          <li>Export a Data Clone from the BabyTracker mobile app and upload it. We explain how on the next page.</li>
+          <li>Select your baby and start exploring.</li>
+        </ol>
+        <a href="/account/login" class="btn btn-primary">Login / Register</a>
+      </div>
+    </div>
+
   </div>
 </div>

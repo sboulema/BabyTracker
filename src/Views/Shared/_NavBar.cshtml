@@ -1,10 +1,11 @@
 @model BabyTracker.Models.ViewModels.BaseViewModel
 
-<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark border-bottom box-shadow mb-3" style="background-color: #bd4d85">
+<nav class="navbar navbar-expand-sm navbar-dark border-bottom box-shadow mb-3" style="background-color: #bd4d85">
     <div class="container">
         <a class="navbar-brand text-white" asp-area="" asp-controller="Home" asp-action="Index">BabyTracker</a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -13,21 +14,13 @@
                 @if (!string.IsNullOrEmpty(Model?.BabyName))
                 {
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/@Model.BabyName">
-                            @Model.BabyName
-                        </a>
+                        <a class="nav-link text-white" href="/@Model.BabyName">@Model.BabyName</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/@Model.BabyName/charts">
-                            Charts
-                        </a>
+                        <a class="nav-link text-white" href="/@Model.BabyName/charts">Charts</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/@Model.BabyName/gallery">
-                            Gallery
-                        </a>
+                        <a class="nav-link text-white" href="/@Model.BabyName/gallery">Gallery</a>
                     </li>
                 }
 
@@ -44,23 +37,24 @@
                     </li>
                 }
             </ul>
-        </div>
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav ms-auto">
-                @if (Model != null &&
-                     User.Identity?.IsAuthenticated == true)
+            <ul class="navbar-nav">
+                @if (Model != null && User.Identity?.IsAuthenticated == true)
                 {
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img class="rounded-circle article-img" src="@Model.ProfileImageUrl" height="30" data-bs-toggle="tooltip" data-bs-placement="bottom" title="@Model.NickName"/>
+                        <a class="nav-link text-white dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img class="rounded-circle article-img" src="@Model.ProfileImageUrl" height="30" alt="" />
                             @Model.NickName
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/account/profile">Profile</a></li>
                             <li><a class="dropdown-item" href="/import">Import</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/account/logout">Logout</a></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 }

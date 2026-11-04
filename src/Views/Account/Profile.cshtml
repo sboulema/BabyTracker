@@ -1,94 +1,112 @@
-﻿@model BabyTracker.Models.ViewModels.ProfileViewModel
+﻿@using BabyTracker.Constants
+
+@model BabyTracker.Models.ViewModels.ProfileViewModel
 
 @{
     ViewData["Title"] = "BabyTracker";
 }
 
-<h1 class="display-4 text-center mb-5">Profile settings</h1>
-
-<br />
+<h1 class="display-4 text-center my-5">Profile settings</h1>
 
 @await Html.PartialAsync("_Notification")
 
 @if (Model != null)
 {
-    <form asp-action="ProfileSave" asp-controller="Account">
-      <h2>Data clone sharing</h2>
-      <div class="mb-3">
-        <label for="memoriesEmailAddresses" class="form-label">Share with other users</label>
-        <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.ShareList" value="@Model.ShareList"></textarea>
-      </div>
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
 
-      <h2>Memories</h2>
-      <div class="mb-3 form-check">
-        <input asp-for="EnableMemoriesEmail" class="form-check-input" />
-        <label class="form-check-label" for="enableMemoriesEmail">Enable memories email</label>
-      </div>
+      <form asp-action="ProfileSave" asp-controller="Account">
 
-      <div class="mb-3">
-        <label for="memoriesEmailAddresses" class="form-label">Memories email addresses</label>
-        <textarea class="form-control" id="memoriesEmailAddresses" rows="3" asp-for="@Model.MemoriesAddresses" value="@Model.MemoriesAddresses"></textarea>
-        <div id="memoriesEmailAddressesHelp" class="form-text">You can specify multiple valid email addresses by comma-separating them.</div>
-      </div>
-
-      <h2>Diary</h2>
-
-      <div class="mb-3">
-        <label for="fontSize" class="form-label">Font size</label>
-        <select class="form-select" id="fontSize" asp-for="@Model.FontSize" value="@Model.FontSize">
-          <option value="1">XXX-Large</option>
-          <option value="2">XX-Large</option>
-          <option value="3">X-Large</option>
-          <option value="4">Large</option>
-          <option value="5">Medium</option>
-          <option value="6">Small</option>
-        </select>
-      </div>
-
-      <div class="mb-3 form-check">
-        <input asp-for="@Model.UseCards" class="form-check-input" />
-        <label class="form-check-label" for="UseCards">Use cards for diary</label>
-        <div class="form-text">Instead of showing diary entries as list items use cards.</div>
-      </div>
-
-      <div class="mb-3 form-check">
-        <input asp-for="@Model.UseFullCardImages" class="form-check-input" />
-        <label class="form-check-label" for="UseFullCardImages">Use full card images</label>
-        <div class="form-text">Instead of thumbnails use full images for diary cards.</div>
-      </div>
-
-      <h2>Theme</h2>
-
-      <div class="mb-3">
-        <label for="theme" class="form-label">Theme</label>
-        <select class="form-select" id="theme" asp-for="@Model.Theme" value="@Model.Theme">
-          <option value="0">Auto</option>
-          <option value="1">Light</option>
-          <option value="2">Dark</option>
-        </select>
-      </div>
-
-      <button type="submit" class="btn btn-primary">Save</button>
-    </form>
-    
-    <hr />
-
-    <h2>Account Management</h2>
-    <div class="mb-4">
-        <h3>Change email address</h3>
-        <p>Current email: <strong>@Model.EmailAddress</strong></p>
-        <form asp-action="RequestEmailChange" asp-controller="Account" method="post">
-            @Html.AntiForgeryToken()
+        <div class="card mb-4">
+          <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-palette me-2"></i>Appearance</h2></div>
+          <div class="card-body">
             <div class="mb-3">
-                <label for="newEmailAddress" class="form-label">New email address</label>
-                <input id="newEmailAddress" name="NewEmailAddress" type="email" class="form-control" required autocomplete="email" />
-                <div class="form-text">The email address will be changed immediately and will no longer be marked as verified.</div>
+              <label asp-for="Theme" class="form-label">Theme</label>
+              <select asp-for="Theme" class="form-select" asp-items="Html.GetEnumSelectList<ThemesEnum>()"></select>
             </div>
-            <button type="submit" class="btn btn-primary">Change email address</button>
-        </form>
+
+            <div class="mb-3">
+              <label asp-for="FontSize" class="form-label">Diary font size</label>
+              <select asp-for="FontSize" class="form-select">
+                <option value="1">XXX-Large</option>
+                <option value="2">XX-Large</option>
+                <option value="3">X-Large</option>
+                <option value="4">Large</option>
+                <option value="5">Medium</option>
+                <option value="6">Small</option>
+              </select>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <input asp-for="UseCards" class="form-check-input" role="switch" />
+              <label asp-for="UseCards" class="form-check-label">Use cards for diary</label>
+              <div class="form-text">Show diary entries as cards instead of list items.</div>
+            </div>
+
+            <div class="form-check form-switch">
+              <input asp-for="UseFullCardImages" class="form-check-input" role="switch" />
+              <label asp-for="UseFullCardImages" class="form-check-label">Use full card images</label>
+              <div class="form-text">Show full images on diary cards instead of thumbnails.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-share-nodes me-2"></i>Data clone sharing</h2></div>
+          <div class="card-body">
+            <label asp-for="ShareList" class="form-label">Share with other users</label>
+            <textarea asp-for="ShareList" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-envelope me-2"></i>Memories</h2></div>
+          <div class="card-body">
+            <div class="form-check form-switch mb-3">
+              <input asp-for="EnableMemoriesEmail" class="form-check-input" role="switch" />
+              <label asp-for="EnableMemoriesEmail" class="form-check-label">Enable memories email</label>
+            </div>
+
+            <label asp-for="MemoriesAddresses" class="form-label">Memories email addresses</label>
+            <textarea asp-for="MemoriesAddresses" class="form-control" rows="3" aria-describedby="memoriesAddressesHelp"></textarea>
+            <div id="memoriesAddressesHelp" class="form-text">
+              You can specify multiple valid email addresses by comma-separating them.
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid d-sm-flex justify-content-sm-end mb-5">
+          <button type="submit" class="btn btn-primary px-5">Save</button>
+        </div>
+      </form>
+
+      <div class="card mb-4">
+        <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-user me-2"></i>Account</h2></div>
+        <div class="card-body">
+          <h3 class="h6">Change email address</h3>
+          <p class="mb-3">Current email: <strong>@Model.EmailAddress</strong></p>
+
+          <form asp-action="RequestEmailChange" asp-controller="Account" method="post">
+            <div class="mb-3">
+              <label for="newEmailAddress" class="form-label">New email address</label>
+              <input id="newEmailAddress" name="NewEmailAddress" type="email" class="form-control" required autocomplete="email" />
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Change email address</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-danger mb-5">
+        <div class="card-header text-danger"><h2 class="h5 mb-0">Danger zone</h2></div>
+        <div class="card-body d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+          <div>
+            <strong>Remove account</strong>
+            <div class="text-muted small">This permanently deletes your account and data.</div>
+          </div>
+          <a href="/account/removeaccount" class="btn btn-danger">Remove Account</a>
+        </div>
+      </div>
+
     </div>
-    <hr />
-    <div class="text-center">
-        <a href="/account/removeaccount" class="btn btn-danger">Remove Account</a>
-    </div>
+  </div>
 }

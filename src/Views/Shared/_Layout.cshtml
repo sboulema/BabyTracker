@@ -18,11 +18,11 @@
 
     @RenderSection("HeaderScripts", required: false)
 </head>
-<body data-bs-theme="@ViewBag.Theme?.ToString().ToLower()">
+<body class="d-flex flex-column min-vh-100" data-bs-theme="@ViewBag.Theme?.ToString().ToLower()">
     <header>
         @await Html.PartialAsync("_NavBar")
     </header>
-    <div class="container">
+    <div class="container flex-grow-1">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -32,7 +32,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-auto">
-                    &copy; 2020 - 2026 : BabyTracker
+                    &copy; 2020 - 2026 : <a href="https://github.com/sboulema/BabyTracker" target="_blank">BabyTracker</a> : This website is not produced, endorsed, supported, or affiliated with nighp software
                 </div>
 
                 @if (ViewData.ContainsKey("LastEntry")) {

@@ -6,25 +6,41 @@
 
 @if (Model != null)
 {
-    <h1 class="display-4 text-center mb-5">Register</h1>
+    <h1 class="display-4 text-center my-5">Register</h1>
 
-    <br />
+    @await Html.PartialAsync("_Notification")
 
-    <div class="card col-12 col-lg-6 offset-lg-3 p-3">
-        <form asp-action="Register" asp-controller="Account">
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1"><i class="fas fa-at"></i></span>
-            <input type="text" class="form-control" placeholder="Email" asp-for="@Model.EmailAddress" value="@Model.EmailAddress" >
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-5 col-xl-4">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <p class="text-muted">
+              Create an account to upload your Data Clone and keep your baby's data protected.
+            </p>
+
+            <form asp-action="Register" asp-controller="Account">
+              <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+              <div class="form-floating mb-3">
+                <input asp-for="EmailAddress" type="email" class="form-control" placeholder="Email" autocomplete="email" autofocus />
+                <label asp-for="EmailAddress">Email</label>
+              </div>
+
+              <div class="form-floating mb-4">
+                <input asp-for="Password" type="password" class="form-control" placeholder="Password" autocomplete="new-password" />
+                <label asp-for="Password">Password</label>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Register</button>
+              </div>
+            </form>
           </div>
 
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1"><i class="fas fa-key"></i></span>
-            <input type="password" class="form-control" placeholder="Password" asp-for="@Model.Password" value="@Model.Password" >
+          <div class="card-footer text-center py-3">
+            Already have an account? <a href="/account/login">Login</a>
           </div>
-
-          <center>
-              <button type="submit" class="btn btn-primary">Register</button>
-          </center>
-        </form>
+        </div>
+      </div>
     </div>
 }
