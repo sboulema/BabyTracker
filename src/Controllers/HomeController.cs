@@ -27,7 +27,7 @@ public class HomeController(
 		if (User.Identity?.IsAuthenticated == true &&
 			importService.HasDataClone(User))
 		{
-			sqLiteService.OpenDataConnection(User);
+			await sqLiteService.OpenDataConnectionAsync(User);
 
 			var babiesViewModel = new BabiesViewModel
 			{
@@ -72,7 +72,7 @@ public class HomeController(
 	[HttpGet("{babyName}/{date?}")]
 	public async Task<IActionResult> Diary(string babyName, DateOnly? date, string? q)
 	{
-		sqLiteService.OpenDataConnection(User);
+		await sqLiteService.OpenDataConnectionAsync(User);
 
 		var availableDates = await sqLiteService.GetAllEntryDates(babyName);
 
@@ -151,7 +151,7 @@ public class HomeController(
 	[HttpGet("{babyName}/memories")]
 	public async Task<IActionResult> Memories(string babyName)
 	{
-		sqLiteService.OpenDataConnection(User);
+		await sqLiteService.OpenDataConnectionAsync(User);
 
 		var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
 
@@ -178,7 +178,7 @@ public class HomeController(
 	[HttpGet("{babyName}/charts/{months?}")]
 	public async Task<IActionResult> Charts(string babyName, int? months = null)
 	{
-		sqLiteService.OpenDataConnection(User);
+		await sqLiteService.OpenDataConnectionAsync(User);
 
 		var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);
 
@@ -204,7 +204,7 @@ public class HomeController(
 	[HttpGet("{babyName}/gallery")]
 	public async Task<IActionResult> Gallery(string babyName)
 	{
-		sqLiteService.OpenDataConnection(User);
+		await sqLiteService.OpenDataConnectionAsync(User);
 
 		var pictures = await sqLiteService.GetPictures(babyName);
 		var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, babyName);

@@ -36,24 +36,34 @@ public class MemoriesService(IConfiguration configuration,
         {
             var userId = user.UserId.Replace("auth0|", string.Empty);
 
-            sqLiteService.OpenDataConnection(userId);
-
-            var babies = await sqLiteService.GetBabiesFromDb();
-
-            foreach (var baby in babies)
+            // One unreadable clone must not stop the memories email for everyone after it.
+            try
             {
-                var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name);
+                await sqLiteService.OpenDataConnectionAsync(userId);
 
-                logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
+                var babies = await sqLiteService.GetBabiesFromDb();
 
-                if (memories.Any())
+                foreach (var baby in babies)
                 {
-                    var mjml = await GetMJML(memories, userId, baby.Name);
-                    await emailRepository.SendEmail(mjml, user, userId, baby.Name);
+                    var memories = await sqLiteService.GetMemoriesFromDb(DateTime.Now, baby.Name);
+
+                    logger.LogInformation($"Found {memories.Count} memories for {baby.Name}");
+
+                    if (memories.Any())
+                    {
+                        var mjml = await GetMJML(memories, userId, baby.Name);
+                        await emailRepository.SendEmail(mjml, user, userId, baby.Name);
+                    }
                 }
             }
-
-            await sqLiteService.CloseDataConnection();
+            catch (Exception e)
+            {
+                logger.LogError(e, "Sending the memories email for user {UserId} failed", userId);
+            }
+            finally
+            {
+                await sqLiteService.CloseDataConnection();
+            }
         }
     }
 

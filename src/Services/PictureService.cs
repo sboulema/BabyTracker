@@ -1,20 +1,25 @@
-﻿using System.IO;
+using System.IO;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace BabyTracker.Services;
 
 public interface IPictureService
 {
-    Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName);
+    Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName);
 
-    Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName);
+    Task<byte[]?> GetPicture(string userId, string fileName);
 }
 
-public class PictureService : IPictureService
+public class PictureService(
+    IDataClonePathProvider pathProvider,
+    IUserDataKeyService userDataKeyService,
+    IDataEncryptionService dataEncryptionService,
+    ILogger<PictureService> logger) : IPictureService
 {
-    public async Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, ClaimsPrincipal user, string fileName)
+    public async Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName)
     {
         var activeUserId = user.FindFirstValue("activeUserId");
 
@@ -23,25 +28,44 @@ public class PictureService : IPictureService
             return null;
         }
 
-        return await GetPicture(hostEnvironment, activeUserId, fileName);
+        return await GetPicture(activeUserId, fileName);
     }
 
-    public async Task<byte[]?> GetPicture(IHostEnvironment hostEnvironment, string userId, string fileName)
+    public async Task<byte[]?> GetPicture(string userId, string fileName)
     {
-        var picturePath = GetPicturePath(hostEnvironment, userId, fileName);
-
-        if (!File.Exists(picturePath))
+        // Rejects ids/names with separators or ".." so a request cannot escape the clone directory.
+        if (!pathProvider.TryGetPicturePath(userId, fileName, out var picturePath) ||
+            !File.Exists(picturePath))
         {
             return null;
         }
 
-        return await File.ReadAllBytesAsync(picturePath);
-    }
+        byte[]? key = null;
 
-    private static string GetPicturePath(IHostEnvironment hostEnvironment, string userId, string fileName)
-    {
-        var basePath = hostEnvironment.IsProduction() ? "/data/Data" : $"{hostEnvironment.ContentRootPath}/Data";
-        var picturePath = Path.Combine(basePath, userId, $"{fileName}.jpg");
-        return picturePath;
+        try
+        {
+            // Read path: never creates a key.
+            key = await userDataKeyService.GetRequiredKeyAsync(userId);
+
+            var encryptedContent = await File.ReadAllBytesAsync(picturePath);
+
+            return dataEncryptionService.DecryptFile(
+                encryptedContent,
+                key,
+                pathProvider.GetAssociatedData(userId, $"{fileName}.jpg"));
+        }
+        catch (CryptographicException e)
+        {
+            logger.LogError(e, "Could not decrypt picture '{FileName}' of user {UserId}", fileName, userId);
+
+            return null;
+        }
+        finally
+        {
+            if (key is not null)
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -13,7 +15,9 @@ using BabyTracker.Constants;
 namespace BabyTracker.Controllers;
 
 [Route("[controller]")]
-public class AccountController(IAccountService accountService) : Controller
+public class AccountController(IAccountService accountService,
+	IImportService importService,
+	ILogger<AccountController> logger) : Controller
 {
 	[HttpGet("[action]")]
 	public IActionResult Login(string returnUrl = "")
@@ -35,6 +39,25 @@ public class AccountController(IAccountService accountService) : Controller
 			TempData["notificationType"] = "danger";
 
 			return RedirectToAction("Login");
+		}
+
+		var activeUserId = claimsPrincipal.FindFirstValue("activeUserId");
+		if (!string.IsNullOrEmpty(activeUserId))
+		{
+			try
+			{
+				await importService.EnsureDataCloneEncrypted(activeUserId);
+			}
+			catch (Exception e)
+			{
+				// Fail closed: do not sign in to a clone that may still hold plaintext files.
+				logger.LogError(e, "Encrypting the data clone of user {UserId} failed", activeUserId);
+
+				TempData["notificationMessage"] = "Your data could not be secured right now. Please try again later.";
+				TempData["notificationType"] = "danger";
+
+				return RedirectToAction("Login");
+			}
 		}
 
 		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
