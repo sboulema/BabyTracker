@@ -28,13 +28,13 @@ public class ChartService(ISqLiteService sqLiteService) : IChartService
     {
         var viewModel = new ChartsViewModel();
 
-        sqLiteService.OpenDataConnection(user);
-
         var entries = new List<Growth>();
         var babies = new List<Baby>();
 
         try
         {
+            await sqLiteService.OpenDataConnectionAsync(user);
+
             entries = await sqLiteService.GetGrowth(long.MinValue, long.MaxValue, babyName);
             babies = await sqLiteService.GetBabiesFromDb();
         }

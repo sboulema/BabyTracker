@@ -43,7 +43,7 @@ public interface IAccountService
 public class AccountService(IConfiguration configuration,
     IAuthenticationApiClient authenticationApiClient,
     IManagementApiClient managementApiClient,
-    IWebHostEnvironment webHostEnvironment) : IAccountService
+    IDataClonePathProvider pathProvider) : IAccountService
 {
     public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
     {
@@ -147,15 +147,18 @@ public class AccountService(IConfiguration configuration,
 
     public async Task<bool> RemoveAccount(ClaimsPrincipal user)
     {
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var activeUserId = user.FindFirstValue("activeUserId");
+        var auth0UserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        // The account's own clone only. "activeUserId" is the clone being viewed, which for a
+        // user who has been shared someone else's data is that owner's clone, not theirs.
+        var ownUserId = user.FindFirstValue("userId");
 
         try
         {
-            await managementApiClient.Users.DeleteAsync(userId);
-            
-            RemoveDataCloneDirectory(activeUserId);
-            
+            await managementApiClient.Users.DeleteAsync(auth0UserId);
+
+            RemoveDataCloneDirectory(ownUserId);
+
             return true;
         }
         catch (Exception)
@@ -171,12 +174,7 @@ public class AccountService(IConfiguration configuration,
             return;
         }
 
-        var path = $"/data/Data/{userId}";
-
-        if (!webHostEnvironment.IsProduction())
-        {
-            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", userId);
-        }
+        var path = pathProvider.GetUserPath(userId);
 
         try
         {

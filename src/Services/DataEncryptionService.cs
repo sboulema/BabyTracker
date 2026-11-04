@@ -1,61 +1,78 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace BabyTracker.Services;
 
+/// <remarks>
+/// File layout: "BTENC2" | 12-byte nonce | 16-byte tag | ciphertext.
+/// AES-256-GCM; the associated data is the magic plus a caller-supplied context (user + relative path).
+/// </remarks>
 public sealed class DataEncryptionService : IDataEncryptionService
 {
-    private static readonly byte[] Magic = "BTENC1"u8.ToArray();
+    private static readonly byte[] Magic = "BTENC2"u8.ToArray();
     private const int NonceSize = 12;
     private const int TagSize = 16;
+    private static readonly int HeaderSize = Magic.Length + NonceSize + TagSize;
 
-    public void EncryptFile(string path, byte[] key)
+    public bool IsEncrypted(string path)
     {
-        var plaintext = File.ReadAllBytes(path);
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        if (IsEncrypted(plaintext))
+        if (stream.Length < HeaderSize)
         {
-            CryptographicOperations.ZeroMemory(plaintext);
+            return false;
+        }
+
+        Span<byte> header = stackalloc byte[Magic.Length];
+        var read = stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false);
+
+        return read == header.Length && header.SequenceEqual(Magic);
+    }
+
+    public void EncryptFile(string path, byte[] key, string associatedData)
+    {
+        if (IsEncrypted(path))
+        {
             return;
         }
 
-        var nonce = RandomNumberGenerator.GetBytes(NonceSize);
-        var ciphertext = new byte[plaintext.Length];
-        var tag = new byte[TagSize];
+        var plaintext = File.ReadAllBytes(path);
 
-        using (var aes = new AesGcm(key, TagSize))
-        {
-            aes.Encrypt(nonce, plaintext, ciphertext, tag, Magic);
-        }
-
-        var encrypted = new byte[Magic.Length + NonceSize + TagSize + ciphertext.Length];
-        Buffer.BlockCopy(Magic, 0, encrypted, 0, Magic.Length);
-        Buffer.BlockCopy(nonce, 0, encrypted, Magic.Length, NonceSize);
-        Buffer.BlockCopy(tag, 0, encrypted, Magic.Length + NonceSize, TagSize);
-        Buffer.BlockCopy(ciphertext, 0, encrypted, Magic.Length + NonceSize + TagSize, ciphertext.Length);
-
-        var temporaryPath = path + ".encrypted";
         try
         {
-            File.WriteAllBytes(temporaryPath, encrypted);
-            File.Move(temporaryPath, path, true);
+            WriteAtomically(path, Encrypt(plaintext, key, associatedData));
         }
         finally
         {
             CryptographicOperations.ZeroMemory(plaintext);
-            CryptographicOperations.ZeroMemory(ciphertext);
-            CryptographicOperations.ZeroMemory(encrypted);
-            if (File.Exists(temporaryPath))
-            {
-                File.Delete(temporaryPath);
-            }
         }
     }
 
-    public byte[] DecryptFile(byte[] encryptedContent, byte[] key)
+    public void EncryptStream(Stream plaintext, string destinationPath, byte[] key, string associatedData)
     {
-        if (!IsEncrypted(encryptedContent))
+        using var buffer = new MemoryStream();
+        plaintext.CopyTo(buffer);
+
+        var plaintextBytes = buffer.GetBuffer();
+
+        try
+        {
+            var encrypted = Encrypt(plaintextBytes.AsSpan(0, (int)buffer.Length), key, associatedData);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            WriteAtomically(destinationPath, encrypted);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintextBytes);
+        }
+    }
+
+    public byte[] DecryptFile(byte[] encryptedContent, byte[] key, string associatedData)
+    {
+        if (!HasHeader(encryptedContent))
         {
             throw new CryptographicException("The file is not encrypted with BabyTracker file encryption.");
         }
@@ -68,39 +85,67 @@ public sealed class DataEncryptionService : IDataEncryptionService
         var ciphertext = encryptedContent.AsSpan(offset);
         var plaintext = new byte[ciphertext.Length];
 
-        using var aes = new AesGcm(key, TagSize);
-        aes.Decrypt(nonce, ciphertext, tag, plaintext, Magic);
-        return plaintext;
+        try
+        {
+            using var aes = new AesGcm(key, TagSize);
+            aes.Decrypt(nonce, ciphertext, tag, plaintext, BuildAssociatedData(associatedData));
+            return plaintext;
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+            throw;
+        }
     }
 
-    public void DecryptFile(string encryptedPath, string plaintextPath, byte[] key)
+    /// <summary>Single allocation: header and ciphertext are written straight into the output buffer.</summary>
+    private static byte[] Encrypt(ReadOnlySpan<byte> plaintext, byte[] key, string associatedData)
     {
-        var encrypted = File.ReadAllBytes(encryptedPath);
-        var plaintext = DecryptFile(encrypted, key);
+        var encrypted = new byte[HeaderSize + plaintext.Length];
+
+        Magic.CopyTo(encrypted, 0);
+
+        var nonce = encrypted.AsSpan(Magic.Length, NonceSize);
+        var tag = encrypted.AsSpan(Magic.Length + NonceSize, TagSize);
+        var ciphertext = encrypted.AsSpan(HeaderSize);
+
+        RandomNumberGenerator.Fill(nonce);
+
+        using var aes = new AesGcm(key, TagSize);
+        aes.Encrypt(nonce, plaintext, ciphertext, tag, BuildAssociatedData(associatedData));
+
+        return encrypted;
+    }
+
+    private static void WriteAtomically(string path, byte[] content)
+    {
+        var temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
 
         try
         {
-            var directory = Path.GetDirectoryName(plaintextPath)!;
-            Directory.CreateDirectory(directory);
-            if (OperatingSystem.IsLinux())
-            {
-                File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-            }
-
-            File.WriteAllBytes(plaintextPath, plaintext);
-            if (OperatingSystem.IsLinux())
-            {
-                File.SetUnixFileMode(plaintextPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-            }
+            File.WriteAllBytes(temporaryPath, content);
+            File.Move(temporaryPath, path, overwrite: true);
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(encrypted);
-            CryptographicOperations.ZeroMemory(plaintext);
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
         }
     }
 
-    private static bool IsEncrypted(ReadOnlySpan<byte> content)
-        => content.Length >= Magic.Length + NonceSize + TagSize &&
-           content[..Magic.Length].SequenceEqual(Magic);
+    private static byte[] BuildAssociatedData(string associatedData)
+    {
+        var context = Encoding.UTF8.GetBytes(associatedData);
+        var result = new byte[Magic.Length + context.Length];
+
+        Magic.CopyTo(result, 0);
+        context.CopyTo(result, Magic.Length);
+
+        return result;
+    }
+
+    private static bool HasHeader(ReadOnlySpan<byte> content)
+        => content.Length >= HeaderSize && content[..Magic.Length].SequenceEqual(Magic);
 }

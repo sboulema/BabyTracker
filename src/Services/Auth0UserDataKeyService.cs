@@ -1,21 +1,35 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Auth0.ManagementApi;
 
 namespace BabyTracker.Services;
 
+/// <remarks>
+/// Assumes a single application instance: the per-user lock and the key cache are in-process,
+/// and Auth0 has no conditional update, so two instances creating a key at the same time could
+/// overwrite each other.
+/// </remarks>
 public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiClient) : IUserDataKeyService
 {
     private const string MetadataKey = "BabyTrackerDataEncryptionKey";
-    private static readonly ConcurrentDictionary<string, byte[]> KeyCache = new();
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> UserLocks = new();
+    private const int KeySize = 32;
+
+    private readonly static ConcurrentDictionary<string, byte[]> KeyCache = new();
+    private readonly static ConcurrentDictionary<string, SemaphoreSlim> UserLocks = new();
+
+    public Task<byte[]?> GetKeyAsync(string userId)
+        => ResolveKeyAsync(userId, createIfMissing: false);
 
     public async Task<byte[]> GetOrCreateKeyAsync(string userId)
+        => await ResolveKeyAsync(userId, createIfMissing: true)
+           ?? throw new CryptographicException($"Could not create a data encryption key for user '{userId}'.");
+
+    private async Task<byte[]?> ResolveKeyAsync(string userId, bool createIfMissing)
     {
         var auth0UserId = userId.StartsWith("auth0|", StringComparison.Ordinal)
             ? userId
@@ -23,44 +37,53 @@ public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiCl
 
         if (KeyCache.TryGetValue(auth0UserId, out var cachedKey))
         {
-            return cachedKey.ToArray();
+            return [.. cachedKey];
         }
 
         var userLock = UserLocks.GetOrAdd(auth0UserId, _ => new SemaphoreSlim(1, 1));
         await userLock.WaitAsync();
+
         try
         {
             if (KeyCache.TryGetValue(auth0UserId, out cachedKey))
             {
-                return cachedKey.ToArray();
+                return [.. cachedKey];
             }
 
             var user = await managementApiClient.Users.GetAsync(auth0UserId, new());
-            var appMetadata = user.AppMetadata == null
-                ? new Dictionary<string, object>()
-                : user.AppMetadata.ToDictionary(item => item.Key, item => item.Value);
 
-            if (appMetadata.TryGetValue(MetadataKey, out var value))
+            if (user.AppMetadata is not null &&
+                user.AppMetadata.TryGetValue(MetadataKey, out var value))
             {
-                if (value is not string encodedKey || !TryDecodeKey(encodedKey, out var existingKey))
+                // Never replace a stored key: that would make existing encrypted files unreadable.
+                if (!TryReadKey(value, out var existingKey))
                 {
                     throw new CryptographicException($"The stored encryption key for Auth0 user '{auth0UserId}' is invalid.");
                 }
 
                 KeyCache[auth0UserId] = existingKey;
-                return existingKey.ToArray();
+                return [.. existingKey];
             }
 
-            var key = RandomNumberGenerator.GetBytes(32);
-            appMetadata[MetadataKey] = Convert.ToBase64String(key);
+            if (!createIfMissing)
+            {
+                return null;
+            }
 
+            var key = RandomNumberGenerator.GetBytes(KeySize);
+
+            // app_metadata is merged per top-level property, so only the new key is sent;
+            // other app_metadata values are left untouched.
             await managementApiClient.Users.UpdateAsync(auth0UserId, new()
             {
-                AppMetadata = appMetadata
+                AppMetadata = new Dictionary<string, object?>
+                {
+                    [MetadataKey] = Convert.ToBase64String(key)
+                }
             });
 
             KeyCache[auth0UserId] = key;
-            return key.ToArray();
+            return [.. key];
         }
         finally
         {
@@ -68,16 +91,40 @@ public sealed class Auth0UserDataKeyService(IManagementApiClient managementApiCl
         }
     }
 
-    private static bool TryDecodeKey(string value, out byte[] key)
+    /// <summary>
+    /// The Management API client deserializes app_metadata values into <c>object</c>, which
+    /// System.Text.Json materializes as <see cref="JsonElement"/>, not <see cref="string"/>.
+    /// </summary>
+    private static bool TryReadKey(object? value, out byte[] key)
     {
+        key = [];
+
+        var encodedKey = value switch
+        {
+            string text => text,
+            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString(),
+            _ => null
+        };
+
+        if (encodedKey is null)
+        {
+            return false;
+        }
+
         try
         {
-            key = Convert.FromBase64String(value);
-            return key.Length == 32;
+            var decoded = Convert.FromBase64String(encodedKey);
+
+            if (decoded.Length != KeySize)
+            {
+                return false;
+            }
+
+            key = decoded;
+            return true;
         }
         catch (FormatException)
         {
-            key = [];
             return false;
         }
     }

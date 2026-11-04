@@ -1,12 +1,14 @@
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.OutputCaching;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace BabyTracker.Services;
 
@@ -19,11 +21,19 @@ public interface IImportService
     Task EnsureDataCloneEncrypted(string userId);
 }
 
-public class ImportService(IWebHostEnvironment webHostEnvironment,
-    IOutputCacheStore outputCacheStore,
+public class ImportService(IOutputCacheStore outputCacheStore,
     IUserDataKeyService userDataKeyService,
-    IDataEncryptionService dataEncryptionService) : IImportService
+    IDataEncryptionService dataEncryptionService,
+    IDataClonePathProvider pathProvider,
+    ILogger<ImportService> logger) : IImportService
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> UserLocks = new();
+
+    /// <summary>
+    /// Extracts the archive straight into encrypted files inside a staging directory
+    /// (plaintext never touches the disk), then swaps the staging directory in place of
+    /// the existing clone. A failed import leaves the previous clone untouched.
+    /// </summary>
     public async Task<string> Unzip(ClaimsPrincipal user, Stream stream)
     {
         var activeUserId = user.FindFirstValue("activeUserId");
@@ -32,76 +42,95 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
             throw new InvalidOperationException("No active user is available for this import.");
         }
 
-        var extractPath = GetDataClonePath(activeUserId);
+        var targetPath = pathProvider.GetUserPath(activeUserId);
+        var stagingPath = pathProvider.GetStagingPath(activeUserId);
 
-        if (Directory.Exists(extractPath))
-        {
-            Directory.Delete(extractPath, true);
-        }
+        using var userLock = await AcquireLockAsync(activeUserId);
 
-        Directory.CreateDirectory(extractPath);
+        // Safe to create a key here: an import replaces the whole clone, so there are no
+        // existing encrypted files that a new key could orphan.
+        var key = await userDataKeyService.GetOrCreateKeyAsync(activeUserId);
 
         try
         {
+            Directory.CreateDirectory(stagingPath);
+
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
             {
-                archive.ExtractToDirectory(extractPath, overwriteFiles: true);
+                archive.Entries
+                    .Where(entry => !string.IsNullOrEmpty(entry.Name))
+                    .ToList()
+                    .ForEach(entry => EncryptEntry(entry, stagingPath, activeUserId, key));
             }
 
-            var key = await userDataKeyService.GetOrCreateKeyAsync(activeUserId);
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories))
-                {
-                    dataEncryptionService.EncryptFile(file, key);
-                }
-            }
-            finally
-            {
-                System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
-            }
+            SwapIntoPlace(activeUserId, stagingPath, targetPath);
         }
-        catch
+        catch (Exception e)
         {
-            // Never leave an incomplete import containing plaintext files.
-            if (Directory.Exists(extractPath))
-            {
-                Directory.Delete(extractPath, true);
-            }
+            logger.LogError(e, "Importing the data clone for user {UserId} failed", activeUserId);
+
+            DeleteDirectoryQuietly(stagingPath);
 
             throw;
         }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
 
-        await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier), default);
+        await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty, default);
 
-        return extractPath;
+        return targetPath;
     }
 
+    /// <summary>
+    /// Encrypts any plaintext files left in the user's clone (clones imported before encryption
+    /// existed). Cheap when nothing is left to do: only file headers are read.
+    /// </summary>
     public async Task EnsureDataCloneEncrypted(string userId)
     {
-        var extractPath = GetDataClonePath(userId);
-        if (!Directory.Exists(extractPath))
+        var userPath = pathProvider.GetUserPath(userId);
+        if (!Directory.Exists(userPath))
         {
             return;
         }
 
-        var files = Directory.EnumerateFiles(extractPath, "*", SearchOption.AllDirectories).ToArray();
-        if (files.Length == 0)
+        using var userLock = await AcquireLockAsync(userId);
+
+        var allFiles = Directory.EnumerateFiles(userPath, "*", SearchOption.AllDirectories).ToArray();
+        var plaintextFiles = allFiles
+            .Where(file => !dataEncryptionService.IsEncrypted(file))
+            .ToArray();
+
+        if (plaintextFiles.Length == 0)
         {
             return;
         }
 
-        var key = await userDataKeyService.GetOrCreateKeyAsync(userId);
+        // A clone that already holds encrypted files must keep using its existing key.
+        // Minting a new one would make those files permanently unreadable.
+        var hasEncryptedFiles = plaintextFiles.Length < allFiles.Length;
+        var key = hasEncryptedFiles
+            ? await userDataKeyService.GetRequiredKeyAsync(userId)
+            : await userDataKeyService.GetOrCreateKeyAsync(userId);
+
         try
         {
-            foreach (var file in files)
-            {
-                dataEncryptionService.EncryptFile(file, key);
-            }
+            plaintextFiles
+                .ToList()
+                .ForEach(file => dataEncryptionService.EncryptFile(
+                    file,
+                    key,
+                    pathProvider.GetAssociatedData(userId, Path.GetRelativePath(userPath, file))));
+
+            logger.LogInformation(
+                "Encrypted {Count} plaintext file(s) in the data clone of user {UserId}",
+                plaintextFiles.Length,
+                userId);
         }
         finally
         {
-            System.Security.Cryptography.CryptographicOperations.ZeroMemory(key);
+            CryptographicOperations.ZeroMemory(key);
         }
     }
 
@@ -113,19 +142,84 @@ public class ImportService(IWebHostEnvironment webHostEnvironment,
             return false;
         }
 
-        var path = GetDataClonePath(activeUserId);
-        return Directory.Exists(path) && File.Exists(Path.Combine(path, "EasyLog.db"));
+        return File.Exists(pathProvider.GetDatabasePath(activeUserId));
     }
 
-    private string GetDataClonePath(string activeUserId)
+    private void EncryptEntry(ZipArchiveEntry entry, string stagingPath, string userId, byte[] key)
     {
-        var path = $"/data/Data/{activeUserId}";
+        var stagingRoot = Path.GetFullPath(stagingPath);
+        var destinationPath = Path.GetFullPath(Path.Combine(stagingRoot, entry.FullName));
 
-        if (!webHostEnvironment.IsProduction())
+        // The archive is user-supplied: refuse entries that would land outside the staging directory.
+        if (!destinationPath.StartsWith(stagingRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         {
-            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", activeUserId);
+            throw new IOException($"The archive entry '{entry.FullName}' is outside the target directory.");
         }
 
-        return path;
+        using var entryStream = entry.Open();
+
+        dataEncryptionService.EncryptStream(
+            entryStream,
+            destinationPath,
+            key,
+            pathProvider.GetAssociatedData(userId, Path.GetRelativePath(stagingRoot, destinationPath)));
+    }
+
+    private void SwapIntoPlace(string userId, string stagingPath, string targetPath)
+    {
+        var hadPreviousClone = Directory.Exists(targetPath);
+        var backupPath = pathProvider.GetBackupPath(userId);
+
+        if (hadPreviousClone)
+        {
+            Directory.Move(targetPath, backupPath);
+        }
+
+        try
+        {
+            Directory.Move(stagingPath, targetPath);
+        }
+        catch
+        {
+            if (hadPreviousClone)
+            {
+                Directory.Move(backupPath, targetPath);
+            }
+
+            throw;
+        }
+
+        if (hadPreviousClone)
+        {
+            DeleteDirectoryQuietly(backupPath);
+        }
+    }
+
+    private void DeleteDirectoryQuietly(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Could not remove directory '{Path}'", path);
+        }
+    }
+
+    private static async Task<IDisposable> AcquireLockAsync(string userId)
+    {
+        var semaphore = UserLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
+
+        return new LockReleaser(semaphore);
+    }
+
+    private sealed class LockReleaser(SemaphoreSlim semaphore) : IDisposable
+    {
+        public void Dispose() => semaphore.Release();
     }
 }

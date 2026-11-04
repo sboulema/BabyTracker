@@ -26,6 +26,9 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 	kestrel.Limits.MaxRequestBodySize = null;
 });
 
+// Encrypts leftover plaintext clones before the app accepts requests and before the memories job can run.
+builder.Services.AddHostedService<DataCloneMigrationService>();
+
 builder.Services.AddQuartz(q =>
 {
 	q.ScheduleJob<MemoriesJob>(trigger => trigger
@@ -72,6 +75,7 @@ builder.Services
 	.AddScoped<IMemoriesService, MemoriesService>()
 	.AddScoped<IChartService, ChartService>()
 	.AddScoped<IImportService, ImportService>()
+	.AddSingleton<IDataClonePathProvider, DataClonePathProvider>()
 	.AddScoped<IUserDataKeyService, Auth0UserDataKeyService>()
 	.AddSingleton<IDataEncryptionService, DataEncryptionService>()
 	.AddScoped<IPictureService, PictureService>()

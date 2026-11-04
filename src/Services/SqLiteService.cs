@@ -4,8 +4,6 @@ using LinqToDB;
 using LinqToDB.Async;
 using LinqToDB.Data;
 using LinqToDB.DataProvider.SQLite;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,15 +11,16 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace BabyTracker.Services;
 
 public interface ISqLiteService
 {
-    void OpenDataConnection(ClaimsPrincipal user);
+    Task OpenDataConnectionAsync(ClaimsPrincipal user);
 
-    void OpenDataConnection(string userId);
+    Task OpenDataConnectionAsync(string userId);
 
     Task CloseDataConnection();
 
@@ -42,13 +41,15 @@ public interface ISqLiteService
     Task<List<IDbEntry>> Search(string match, string babyName);
 }
 
-public class SqLiteService(IWebHostEnvironment webHostEnvironment,
+public class SqLiteService(IDataClonePathProvider pathProvider,
     IUserDataKeyService userDataKeyService,
-    IDataEncryptionService dataEncryptionService) : ISqLiteService
+    IDataEncryptionService dataEncryptionService) : ISqLiteService, IAsyncDisposable
 {
+    private const int SqliteHeaderSize = 100;
+
     private DataConnection? _db;
 
-    public void OpenDataConnection(ClaimsPrincipal user)
+    public async Task OpenDataConnectionAsync(ClaimsPrincipal user)
     {
         var activeUserId = user.FindFirstValue("activeUserId");
 
@@ -57,91 +58,54 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
             return;
         }
 
-        OpenDataConnection(activeUserId);
+        await OpenDataConnectionAsync(activeUserId);
     }
 
     /// <summary>
-    /// Open a connection with the SQLite db file
+    /// Decrypts the clone database and opens it as a read-only, in-memory SQLite database.
+    /// The plaintext never touches the disk.
     /// </summary>
     /// <param name="userId">userId without prefix</param>
-    /// <returns></returns>
-    public void OpenDataConnection(string userId)
+    public async Task OpenDataConnectionAsync(string userId)
     {
-        var path = $"/data/Data/{userId}/EasyLog.db";
+        // Never leak a previously opened in-memory database.
+        await CloseDataConnection();
 
-        if (!webHostEnvironment.IsProduction())
-        {
-            path = Path.Combine(webHostEnvironment.ContentRootPath, "Data", userId, "EasyLog.db");
-        }
+        var path = pathProvider.GetDatabasePath(userId);
 
-        if (!Path.Exists(path))
+        if (!File.Exists(path))
         {
             return;
         }
 
-        var key = userDataKeyService.GetOrCreateKeyAsync(userId).GetAwaiter().GetResult();
+        byte[]? key = null;
+        byte[]? plaintextDatabase = null;
+
         try
         {
+            // Read path: never creates a key.
+            key = await userDataKeyService.GetRequiredKeyAsync(userId);
 
-            var encryptedDatabase = File.ReadAllBytes(path);
-            byte[] plaintextDatabase;
-            try
-            {
-                plaintextDatabase = dataEncryptionService.DecryptFile(encryptedDatabase, key);
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(encryptedDatabase);
-            }
+            var encryptedDatabase = await File.ReadAllBytesAsync(path);
 
-            string? temporaryDatabasePath = null;
-            try
-            {
-                temporaryDatabasePath = Path.GetTempFileName();
-                File.WriteAllBytes(temporaryDatabasePath, plaintextDatabase);
+            plaintextDatabase = dataEncryptionService.DecryptFile(
+                encryptedDatabase,
+                key,
+                pathProvider.GetAssociatedData(userId, DataClonePathProvider.DatabaseFileName));
 
-                using var fileConnection = new SqliteConnection(new SqliteConnectionStringBuilder
-                {
-                    DataSource = temporaryDatabasePath,
-                    Mode = SqliteOpenMode.ReadOnly
-                }.ToString());
-                fileConnection.Open();
-
-                var memoryConnection = new SqliteConnection("Data Source=:memory:");
-                var connectionTransferred = false;
-                try
-                {
-                    memoryConnection.Open();
-                    fileConnection.BackupDatabase(memoryConnection);
-
-                    _db = new DataConnection(
-                        new DataOptions()
-                            .UseConnection(
-                                SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
-                                memoryConnection,
-                                disposeConnection: true));
-                    connectionTransferred = true;
-                }
-                finally
-                {
-                    if (!connectionTransferred)
-                    {
-                        memoryConnection.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(plaintextDatabase);
-                if (temporaryDatabasePath != null)
-                {
-                    File.Delete(temporaryDatabasePath);
-                }
-            }
+            _db = CreateReadOnlyMemoryConnection(plaintextDatabase);
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(key);
+            if (key is not null)
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+
+            if (plaintextDatabase is not null)
+            {
+                CryptographicOperations.ZeroMemory(plaintextDatabase);
+            }
         }
     }
 
@@ -154,7 +118,85 @@ public class SqLiteService(IWebHostEnvironment webHostEnvironment,
 
         await _db.CloseAsync();
         await _db.DisposeAsync();
+
         _db = null;
+    }
+
+    public async ValueTask DisposeAsync()
+        => await CloseDataConnection();
+
+    private static DataConnection CreateReadOnlyMemoryConnection(byte[] plaintextDatabase)
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+
+        try
+        {
+            connection.Open();
+            DeserializeDatabase(connection, plaintextDatabase);
+
+            return new DataConnection(
+                new DataOptions()
+                    .UseConnection(
+                        SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
+                        connection,
+                        disposeConnection: true));
+        }
+        catch
+        {
+            connection.Dispose();
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Hands the database image to SQLite as the contents of the in-memory database.
+    /// SQLite takes ownership of the buffer (SQLITE_DESERIALIZE_FREEONCLOSE) and frees it when
+    /// the connection closes, also when deserialization fails.
+    /// </summary>
+    private static void DeserializeDatabase(SqliteConnection connection, byte[] plaintextDatabase)
+    {
+        if (plaintextDatabase.Length < SqliteHeaderSize)
+        {
+            throw new InvalidDataException("The data clone database is not a valid SQLite database.");
+        }
+
+        // A database image in WAL mode cannot be opened from memory ("unable to open database
+        // file"). Bytes 18 and 19 of the header are the read and write format versions
+        // (1 = rollback journal, 2 = WAL); marking them 1 makes SQLite read the image as-is.
+        // The image holds a checkpointed database, as the previous backup-based approach assumed.
+        if (plaintextDatabase[18] == 2)
+        {
+            plaintextDatabase[18] = 1;
+        }
+
+        if (plaintextDatabase[19] == 2)
+        {
+            plaintextDatabase[19] = 1;
+        }
+
+        var size = plaintextDatabase.Length;
+        var buffer = SQLitePCL.raw.sqlite3_malloc64(size);
+
+        if (buffer == IntPtr.Zero)
+        {
+            throw new OutOfMemoryException("Could not allocate memory for the data clone database.");
+        }
+
+        Marshal.Copy(plaintextDatabase, 0, buffer, size);
+
+        var result = SQLitePCL.raw.sqlite3_deserialize(
+            connection.Handle!,
+            "main",
+            buffer,
+            size,
+            size,
+            SQLitePCL.raw.SQLITE_DESERIALIZE_FREEONCLOSE | SQLitePCL.raw.SQLITE_DESERIALIZE_READONLY);
+
+        if (result != SQLitePCL.raw.SQLITE_OK)
+        {
+            throw new InvalidOperationException($"SQLite could not load the data clone database (result code {result}).");
+        }
     }
 
     public async Task<List<IDbEntry>> GetEntriesFromDb(DateOnly date, string babyName)
