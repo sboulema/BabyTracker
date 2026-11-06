@@ -5,6 +5,7 @@ using Auth0Net.DependencyInjection;
 using BabyTracker.Jobs;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
+using Microsoft.AspNetCore.StaticFiles;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -94,7 +95,21 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+var contentTypeProvider = new FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = contentTypeProvider,
+    OnPrepareResponse = context =>
+    {
+        // Browsers must always revalidate the service worker script
+        if (context.File.Name == "sw.js")
+        {
+            context.Context.Response.Headers.CacheControl = "no-cache";
+        }
+    }
+});
 
 app.UseRouting();
 

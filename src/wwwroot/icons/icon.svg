@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#bd4d85"/>
+  <g transform="translate(256 256) scale(1.0) translate(-256 -256) translate(10 0)">
+    <!-- diary -->
+    <rect x="236" y="104" width="188" height="308" rx="24" fill="#f6d3e4"/>
+    <rect x="236" y="104" width="22" height="308" rx="11" fill="#e9a9c8"/>
+    <g fill="#bd4d85" opacity=".55">
+      <rect x="296" y="176" width="94" height="11" rx="5.5"/>
+      <rect x="296" y="218" width="94" height="11" rx="5.5"/>
+      <rect x="296" y="260" width="94" height="11" rx="5.5"/>
+    </g>
+    <!-- bookmark ribbon -->
+    <path d="M374 88 L406 88 L406 160 L390 146 L374 160 Z" fill="#fff"/>
+    <!-- baby -->
+    <g transform="translate(0 6)">
+      <circle cx="86" cy="300" r="23" fill="#fff" stroke="#bd4d85" stroke-width="10"/>
+      <circle cx="294" cy="300" r="23" fill="#fff" stroke="#bd4d85" stroke-width="10"/>
+      <circle cx="190" cy="290" r="100" fill="#fff" stroke="#bd4d85" stroke-width="10"/>
+      <path d="M190 196 C172 164 196 138 218 152 C232 162 224 180 208 178" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+      <g fill="none" stroke="#bd4d85" stroke-width="9" stroke-linecap="round">
+        <path d="M138 292 Q152 276 166 292"/>
+        <path d="M214 292 Q228 276 242 292"/>
+        <path d="M168 332 Q190 354 212 332"/>
+      </g>
+      <circle cx="136" cy="326" r="15" fill="#f6c1da"/>
+      <circle cx="244" cy="326" r="15" fill="#f6c1da"/>
+    </g>
+  </g>
+</svg>
