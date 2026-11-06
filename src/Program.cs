@@ -2,15 +2,16 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Auth0Net.DependencyInjection;
+using BabyTracker.Filters;
 using BabyTracker.Jobs;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
-using Microsoft.AspNetCore.StaticFiles;
 using BabyTracker.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -80,7 +81,9 @@ builder.Services
 	.AddScoped<IUserDataKeyService, Auth0UserDataKeyService>()
 	.AddSingleton<IDataEncryptionService, DataEncryptionService>()
 	.AddScoped<IPictureService, PictureService>()
-	.AddScoped<IEmailRepository, EmailRepository>();
+    .AddScoped<ICacheEvictionService, CacheEvictionService>()
+    .AddScoped<IEmailRepository, EmailRepository>()
+    .AddScoped<RequireDataCloneFilter>();
 
 var app = builder.Build();
 
@@ -113,11 +116,11 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
-app.UseOutputCache();
-
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseOutputCache();
 
 if (builder.Environment.IsDevelopment() &&
 	!Directory.Exists($"{builder.Environment.ContentRootPath}/Data"))

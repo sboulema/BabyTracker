@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Logging;
 
 namespace BabyTracker.Services;
@@ -21,7 +20,7 @@ public interface IImportService
     Task EnsureDataCloneEncrypted(string userId);
 }
 
-public class ImportService(IOutputCacheStore outputCacheStore,
+public class ImportService(ICacheEvictionService cacheEvictionService,
     IUserDataKeyService userDataKeyService,
     IDataEncryptionService dataEncryptionService,
     IDataClonePathProvider pathProvider,
@@ -78,7 +77,7 @@ public class ImportService(IOutputCacheStore outputCacheStore,
             CryptographicOperations.ZeroMemory(key);
         }
 
-        await outputCacheStore.EvictByTagAsync(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty, default);
+        await cacheEvictionService.EvictUserPagesAsync(user);
 
         return targetPath;
     }

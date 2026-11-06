@@ -1,14 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using BabyTracker.Services;
-using System;
-using BabyTracker.Models.ViewModels;
-using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
-using System.Security.Claims;
-using System.Linq;
-using BabyTracker.Constants;
-using BabyTracker.Models.Database;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using BabyTracker.Constants;
+using BabyTracker.Filters;
+using BabyTracker.Models.Database;
+using BabyTracker.Models.ViewModels;
+using BabyTracker.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
 namespace BabyTracker.Controllers;
@@ -20,56 +21,46 @@ public class HomeController(
 	IChartService chartService,
 	IAccountService accountService) : Controller
 {
-	[HttpGet]
-	public async Task<IActionResult> Index()
-	{
-		// User logged in and has a data clone available
-		if (User.Identity?.IsAuthenticated == true &&
-			importService.HasDataClone(User))
-		{
-			await sqLiteService.OpenDataConnectionAsync(User);
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        // User not logged in
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewBag.Theme = ThemesEnum.Auto;
 
-			var babiesViewModel = new BabiesViewModel
-			{
-				Babies = await sqLiteService.GetBabiesFromDb(),
-				NickName = User.FindFirstValue("nickname") ?? string.Empty,
-				ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
-				UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
-			};
+            return View(new BaseViewModel());
+        }
 
-			await sqLiteService.CloseDataConnection();
+        // User logged in but no data clone available
+        if (!importService.HasDataClone(User))
+        {
+            return Redirect("/import");
+        }
 
-			var userMetaData = await accountService.GetUserMetaData(User);
-			ViewBag.Theme = userMetaData?.Theme;
+        // User logged in and has a data clone available
+        await sqLiteService.OpenDataConnectionAsync(User);
 
-			return View("Babies", babiesViewModel);
-		}
+        var babiesViewModel = new BabiesViewModel
+        {
+            Babies = await sqLiteService.GetBabiesFromDb(),
+            NickName = User.FindFirstValue("nickname") ?? string.Empty,
+            ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
+            UserId = User.FindFirstValue("activeUserId") ?? string.Empty,
+        };
 
-		// User logged in but no data clone available
-		if (User.Identity?.IsAuthenticated == true)
-		{
-			var model = new BaseViewModel
-			{
-				NickName = User.FindFirstValue("nickname") ?? string.Empty,
-				ProfileImageUrl = User.FindFirstValue("picture") ?? string.Empty,
-				UserId = User.FindFirstValue("activeUserId") ?? string.Empty
-			};
+        await sqLiteService.CloseDataConnection();
 
-			var userMetaData = await accountService.GetUserMetaData(User);
-			ViewBag.Theme = userMetaData?.Theme;
+        var userMetaData = await accountService.GetUserMetaData(User);
+        ViewBag.Theme = userMetaData?.Theme;
 
-			return View("LoggedIn", model);
-		}
+        return View("Babies", babiesViewModel);
+    }
 
-		// User not logged in
-		ViewBag.Theme = ThemesEnum.Auto;
-
-		return View(new BaseViewModel());
-	}
-
-	[OutputCache(PolicyName = "AuthenticatedOutputCache")]
+    [OutputCache(PolicyName = "AuthenticatedOutputCache")]
 	[Authorize]
-	[HttpGet("{babyName}/{date?}")]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpGet("{babyName}/{date?}")]
 	public async Task<IActionResult> Diary(string babyName, DateOnly? date, string? q)
 	{
 		await sqLiteService.OpenDataConnectionAsync(User);
@@ -148,7 +139,8 @@ public class HomeController(
 	}
 
 	[Authorize]
-	[HttpGet("{babyName}/memories")]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpGet("{babyName}/memories")]
 	public async Task<IActionResult> Memories(string babyName)
 	{
 		await sqLiteService.OpenDataConnectionAsync(User);
@@ -175,7 +167,8 @@ public class HomeController(
 	}
 
 	[Authorize]
-	[HttpGet("{babyName}/charts/{months?}")]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpGet("{babyName}/charts/{months?}")]
 	public async Task<IActionResult> Charts(string babyName, int? months = null)
 	{
 		await sqLiteService.OpenDataConnectionAsync(User);
@@ -201,7 +194,8 @@ public class HomeController(
 	}
 
 	[Authorize]
-	[HttpGet("{babyName}/gallery")]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpGet("{babyName}/gallery")]
 	public async Task<IActionResult> Gallery(string babyName)
 	{
 		await sqLiteService.OpenDataConnectionAsync(User);

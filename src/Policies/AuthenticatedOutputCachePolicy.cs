@@ -14,7 +14,20 @@ public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
         OutputCacheContext context,
         CancellationToken cancellationToken)
     {
+        var user = context.HttpContext.User;
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // Never cache responses for anonymous users
+        if (string.IsNullOrEmpty(userId))
+        {
+            context.EnableOutputCaching = false;
+
+            return ValueTask.CompletedTask;
+        }
+
+        var activeUserId = user.FindFirstValue("activeUserId") ?? string.Empty;
         var attemptOutputCaching = AttemptOutputCaching(context);
+
         context.EnableOutputCaching = true;
         context.AllowCacheLookup = attemptOutputCaching;
         context.AllowCacheStorage = attemptOutputCaching;
@@ -24,31 +37,29 @@ public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
         // Vary by any query by default
         context.CacheVaryByRules.QueryKeys = "*";
 
-        var userId = context.HttpContext.Request.HttpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Vary by user and by the active clone, so switching
+        // to a shared baby's clone never serves the previous clone's pages
+        context.CacheVaryByRules.CacheKeyPrefix = $"{userId}:{activeUserId}";
 
-        if (!string.IsNullOrEmpty(userId))
-        {
-            context.CacheVaryByRules.CacheKeyPrefix = userId;
-
-            context.Tags.Add(userId);
-        }
+        // Tag by user so all of their entries can be evicted at once
+        context.Tags.Add(userId);
 
         return ValueTask.CompletedTask;
     }
 
-    ValueTask IOutputCachePolicy.ServeFromCacheAsync
-        (OutputCacheContext context, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    ValueTask IOutputCachePolicy.ServeFromCacheAsync(
+        OutputCacheContext context,
+        CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
-    ValueTask IOutputCachePolicy.ServeResponseAsync
-        (OutputCacheContext context, CancellationToken cancellationToken)
+    ValueTask IOutputCachePolicy.ServeResponseAsync(
+        OutputCacheContext context,
+        CancellationToken cancellationToken)
     {
-        var response = context.HttpContext.Response;
-
-        // Check response code
-        if (response.StatusCode != StatusCodes.Status200OK)
+        // Only cache successful responses, so the redirect from
+        // RequireDataCloneFilter is never stored
+        if (context.HttpContext.Response.StatusCode != StatusCodes.Status200OK)
         {
             context.AllowCacheStorage = false;
-            return ValueTask.CompletedTask;
         }
 
         return ValueTask.CompletedTask;
@@ -56,23 +67,16 @@ public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
 
     private static bool AttemptOutputCaching(OutputCacheContext context)
     {
-        // Check if the current request fulfills the requirements
-        // to be cached
         var request = context.HttpContext.Request;
 
-        // Verify the method
+        // Only GET and HEAD requests are cacheable
         if (!HttpMethods.IsGet(request.Method) &&
             !HttpMethods.IsHead(request.Method))
         {
             return false;
         }
 
-        // Verify existence of authorization headers
-        if (!StringValues.IsNullOrEmpty(request.Headers.Authorization))
-        {
-            return false;
-        }
-
-        return true;
+        // Requests with an Authorization header are not cacheable
+        return StringValues.IsNullOrEmpty(request.Headers.Authorization);
     }
 }

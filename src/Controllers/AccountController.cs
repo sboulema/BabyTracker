@@ -17,6 +17,7 @@ namespace BabyTracker.Controllers;
 [Route("[controller]")]
 public class AccountController(IAccountService accountService,
 	IImportService importService,
+    ICacheEvictionService cacheEvictionService,
 	ILogger<AccountController> logger) : Controller
 {
 	[HttpGet("[action]")]
@@ -163,6 +164,8 @@ public class AccountController(IAccountService accountService,
 		};
 
 		var success = await accountService.SaveUserMetaData(User, userMetaDate);
+
+        await cacheEvictionService.EvictUserPagesAsync(User);
 
 		TempData["notificationMessage"] = "Profile settings saved.";
 		TempData["notificationType"] = success ? "success" : "danger";

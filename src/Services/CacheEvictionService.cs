@@ -1,0 +1,26 @@
+﻿using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.OutputCaching;
+
+namespace BabyTracker.Services;
+
+public interface ICacheEvictionService
+{
+    Task EvictUserPagesAsync(ClaimsPrincipal user, CancellationToken cancellationToken = default);
+}
+
+public class CacheEvictionService(IOutputCacheStore outputCacheStore) : ICacheEvictionService
+{
+    public async Task EvictUserPagesAsync(ClaimsPrincipal user, CancellationToken cancellationToken = default)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return;
+        }
+
+        await outputCacheStore.EvictByTagAsync(userId, cancellationToken);
+    }
+}

@@ -41,7 +41,8 @@ public interface IAccountService
 public class AccountService(IConfiguration configuration,
     IAuthenticationApiClient authenticationApiClient,
     IManagementApiClient managementApiClient,
-    IDataClonePathProvider pathProvider) : IAccountService
+    IDataClonePathProvider pathProvider,
+    ICacheEvictionService cacheEvictionService) : IAccountService
 {
     public async Task<ClaimsPrincipal?> Login(LoginViewModel model)
     {
@@ -169,13 +170,15 @@ public class AccountService(IConfiguration configuration,
             await managementApiClient.Users.DeleteAsync(auth0UserId);
 
             RemoveDataCloneDirectory(ownUserId);
-
-            return true;
         }
         catch (Exception)
         {
             return false;
         }
+
+        await cacheEvictionService.EvictUserPagesAsync(user);
+
+        return true;
     }
 
     private void RemoveDataCloneDirectory(string? userId)
