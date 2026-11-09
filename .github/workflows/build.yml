@@ -33,6 +33,9 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore
 
+      - name: Build main project
+        run: dotnet build src/BabyTracker.csproj --no-restore --configuration Release
+
       - name: Build test project
         run: dotnet build tests/BabyTracker.Tests.csproj --no-restore --configuration Release
 
