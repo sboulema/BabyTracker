@@ -36,7 +36,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("diaper"));
         Assert.That(entry.CssColor, Is.EqualTo("blue"));
         Assert.That(entry.IconURL, Is.EqualTo("/img/icon_review_diaper.png"));
@@ -60,7 +61,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("formula"));
         Assert.That(entry.CssColor, Is.EqualTo("orange"));
         Assert.That(entry.IconURL, Is.EqualTo("/img/icon_review_formula.png"));
@@ -82,7 +84,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("joy"));
         Assert.That(entry.CssColor, Is.EqualTo("green"));
         Assert.That(entry.IconURL, Is.EqualTo("/img/icon_review_joy.png"));
@@ -107,7 +110,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("growth"));
         Assert.That(entry.Title, Is.EqualTo("Growth Length: 75.50 Weight: 10.20 Head: 45.30"));
     }
@@ -127,7 +131,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("sleep"));
         Assert.That(entry.CssColor, Is.EqualTo("dark-green"));
         Assert.That(entry.Title, Is.EqualTo("Slept 1 hrs 30 min"));
@@ -148,7 +153,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.Title, Is.EqualTo("Started sleeping"));
     }
 
@@ -167,7 +173,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("temperature"));
         Assert.That(entry.Title, Is.EqualTo("Temperature 37.5 &deg;C"));
     }
@@ -189,7 +196,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("medication"));
         Assert.That(entry.Title, Is.EqualTo("Paracetamol 5 ml"));
     }
@@ -210,7 +218,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("activity"));
         Assert.That(entry.Title, Is.EqualTo("Tummy time"));
         Assert.That(entry.PictureFileName, Is.EqualTo("activity123.jpg"));
@@ -231,7 +240,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("supplement"));
         Assert.That(entry.CssColor, Is.EqualTo("orange"));
         Assert.That(entry.Title, Is.EqualTo("Vitamin D drops"));
@@ -252,7 +262,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("vaccine"));
         Assert.That(entry.CssColor, Is.EqualTo("dark-green"));
         Assert.That(entry.Title, Is.EqualTo("MMR"));
@@ -274,7 +285,8 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         
-        DiaryEntryViewModel entry = result.Entries[0];
+        var entriesList = result.Entries.ToList();
+        DiaryEntryViewModel entry = entriesList[0];
         Assert.That(entry.CssClass, Is.EqualTo("milestone"));
         Assert.That(entry.Title, Is.EqualTo("First Steps"));
         Assert.That(entry.PictureFileName, Is.EqualTo("milestone123.jpg"));
@@ -309,7 +321,7 @@ public class DiaryServiceTests
         DiaryViewModel result = DiaryService.GetDays(entries);
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
-        Assert.That(result.Entries[0].PictureFileName, Is.EqualTo("memory123.jpg"));
+        Assert.That(result.Entries.ToList()[0].PictureFileName, Is.EqualTo("memory123.jpg"));
     }
 
     [Test]
@@ -322,7 +334,7 @@ public class DiaryServiceTests
         
         Assert.That(result.Entries, Has.Count.EqualTo(1));
         // Unknown entries should return an empty DiaryEntryViewModel
-        Assert.That(result.Entries[0].Title, Is.EqualTo(string.Empty));
+        Assert.That(result.Entries.ToList()[0].Title, Is.EqualTo(string.Empty));
     }
 
     [Test]
@@ -338,9 +350,9 @@ public class DiaryServiceTests
         DiaryViewModel result = DiaryService.GetDays(entries);
         
         Assert.That(result.Entries, Has.Count.EqualTo(3));
-        Assert.That(result.Entries[0].TimeStamp, Is.EqualTo(1705320002));
-        Assert.That(result.Entries[1].TimeStamp, Is.EqualTo(1705320001));
-        Assert.That(result.Entries[2].TimeStamp, Is.EqualTo(1705320000));
+        Assert.That(result.Entries.ToList()[0].TimeStamp, Is.EqualTo(1705320002));
+        Assert.That(result.Entries.ToList()[1].TimeStamp, Is.EqualTo(1705320001));
+        Assert.That(result.Entries.ToList()[2].TimeStamp, Is.EqualTo(1705320000));
     }
 
     // Helper class for testing unknown entry types
