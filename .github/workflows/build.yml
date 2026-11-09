@@ -16,6 +16,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/BabyTracker.csproj
+
+      - name: Build
+        run: dotnet build src/BabyTracker.csproj --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test tests/BabyTracker.Tests.csproj --configuration Release --verbosity normal
+
       - name: Docker Build
         uses: docker/build-push-action@v7
         with:
