@@ -100,9 +100,9 @@ public class DiaryServiceTests
         {
             Time = 1705320000,
             Note = "Monthly check",
-            Length = 75.5m,
-            Weight = 10.2m,
-            HeadSize = 45.3m
+            Length = 75.5,
+            Weight = 10.2,
+            HeadSize = 45.3
         };
         var entries = new List<IDbEntry> { growth };
         
@@ -165,7 +165,7 @@ public class DiaryServiceTests
         {
             Time = 1705320000,
             Note = "Fever check",
-            Temp = 37.5m
+            Temp = 37.5
         };
         var entries = new List<IDbEntry> { temperature };
         
