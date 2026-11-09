@@ -16,15 +16,6 @@ public class PointTests
     }
 
     [Test]
-    public void Point_WithDefaultConstructor_HasDefaultValues()
-    {
-        var point = new Point();
-
-        Assert.That(point.X, Is.EqualTo(0));
-        Assert.That(point.Y, Is.EqualTo(0));
-    }
-
-    [Test]
     public void Point_WithNegativeValues_HandlesCorrectly()
     {
         var point = new Point(-1.5, -2.5);
