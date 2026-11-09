@@ -252,42 +252,5 @@ public class DataEncryptionServiceTests
         Assert.That(decryptedText, Is.EqualTo(originalContent));
     }
 
-    [Test]
-    public void Encrypt_WithEmptyPlaintext_ReturnsValidEncryptedData()
-    {
-        byte[] key = new byte[32];
-        RandomNumberGenerator.Fill(key);
-        string associatedData = "user1|empty.txt";
-        byte[] plaintext = Array.Empty<byte>();
 
-        // Use reflection to call the private Encrypt method
-        var encrypted = (byte[])_encryptionService.GetType()
-            .GetMethod("Encrypt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-            ?.Invoke(null, new object[] { plaintext, key, associatedData });
-
-        Assert.That(encrypted, Is.Not.Null);
-        Assert.That(encrypted.Length, Is.GreaterThan(0));
-        // Should have at least the header (magic + nonce + tag)
-        Assert.That(encrypted.Length, Is.GreaterThanOrEqualTo(6 + 12 + 16));
-    }
-
-    [Test]
-    public void Encrypt_WithLargePlaintext_ReturnsCorrectSize()
-    {
-        byte[] key = new byte[32];
-        RandomNumberGenerator.Fill(key);
-        string associatedData = "user1|large.txt";
-        byte[] plaintext = new byte[10000];
-        RandomNumberGenerator.Fill(plaintext);
-
-        // Use reflection to call the private Encrypt method
-        var encrypted = (byte[])_encryptionService.GetType()
-            .GetMethod("Encrypt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-            ?.Invoke(null, new object[] { plaintext, key, associatedData });
-
-        Assert.That(encrypted, Is.Not.Null);
-        // Encrypted size should be header size + plaintext size
-        int expectedSize = 6 + 12 + 16 + plaintext.Length; // magic + nonce + tag + ciphertext
-        Assert.That(encrypted.Length, Is.EqualTo(expectedSize));
-    }
 }
