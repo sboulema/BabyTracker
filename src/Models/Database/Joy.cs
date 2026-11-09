@@ -10,14 +10,21 @@ public class Joy : IDbEntry, IMemoryEntry
     public Guid Id { get; set; }
 
     [Column]
+    public long Timestamp { get; set; }
+
+    [Column]
     public long Time { get; set; }
 
     [Column]
     public string Note { get; set; } = string.Empty;
 
     [Column]
-    public Guid BabyId { get; set; }
+    public int? HasPicture { get; set; }
 
     [Column]
+    public Guid BabyId { get; set; }
+
+    // Not a column of Joy: filled from the Picture join when reading.
+    [Column(SkipOnInsert = true, SkipOnUpdate = true)]
     public string FileName { get; set; } = string.Empty;
 }

@@ -7,10 +7,19 @@ namespace BabyTracker.Models.Database;
 public class Medication : IDbEntry
 {
     [Column]
+    public Guid Id { get; set; }
+
+    [Column]
+    public long Timestamp { get; set; }
+
+    [Column]
     public long Time { get; set; }
 
     [Column]
     public string Note { get; set; } = string.Empty;
+
+    [Column]
+    public int? HasPicture { get; set; }
 
     [Column]
     public Guid BabyId { get; set; }
@@ -19,7 +28,7 @@ public class Medication : IDbEntry
     public Guid MedicineSelectionId { get; set; }
 
     [Column]
-    public int Amount { get; set; }
+    public double Amount { get; set; }
 
     public string MedicationName { get; set; } = string.Empty;
 

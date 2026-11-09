@@ -4,11 +4,14 @@ using LinqToDB;
 using LinqToDB.Async;
 using LinqToDB.Data;
 using LinqToDB.DataProvider.SQLite;
+using LinqToDB.Mapping;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using System.Runtime.InteropServices;
@@ -23,6 +26,24 @@ public interface ISqLiteService
     Task OpenDataConnectionAsync(string userId);
 
     Task CloseDataConnection();
+
+    /// <summary>
+    /// Decrypts the clone of <paramref name="userId"/>, runs <paramref name="write"/> in a transaction
+    /// on a writable in-memory copy, and encrypts the result back over the clone.
+    /// The plaintext never touches the disk. Writes to the same clone are serialized.
+    /// </summary>
+    /// <param name="userId">userId without prefix (the active user id)</param>
+    Task AddEntryAsync(string userId, Func<DataConnection, Task> write);
+
+    Task<List<ActivityDescription>> GetActivityDescriptionsFromDb();
+
+    Task<List<MilestoneSelection>> GetMilestoneSelectionsFromDb();
+
+    Task<List<MedicationSelection>> GetMedicationSelectionsFromDb();
+
+    Task<List<VaccineSelection>> GetVaccineSelectionsFromDb();
+
+    Task<List<SupplementSelection>> GetSupplementSelectionsFromDb();
 
     Task<List<DateOnly>> GetAllEntryDates(string babyName);
 
@@ -46,6 +67,14 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
     IDataEncryptionService dataEncryptionService) : ISqLiteService, IAsyncDisposable
 {
     private const int SqliteHeaderSize = 100;
+
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> WriteLocks = new();
+
+    /// <summary>
+    /// Writes Guids as lowercase text. The app generates its ids with Java's UUID.toString(), which is
+    /// lowercase, and it compares ids as text, while Microsoft.Data.Sqlite would write them uppercase.
+    /// </summary>
+    private static readonly MappingSchema WriteMappingSchema = CreateWriteMappingSchema();
 
     private DataConnection? _db;
 
@@ -125,6 +154,95 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
     public async ValueTask DisposeAsync()
         => await CloseDataConnection();
 
+    public async Task AddEntryAsync(string userId, Func<DataConnection, Task> write)
+    {
+        var writeLock = WriteLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+
+        await writeLock.WaitAsync();
+
+        byte[]? key = null;
+        byte[]? plaintextDatabase = null;
+        byte[]? updatedDatabase = null;
+
+        try
+        {
+            var path = pathProvider.GetDatabasePath(userId);
+
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException("The data clone database does not exist.", path);
+            }
+
+            var associatedData = pathProvider.GetAssociatedData(userId, DataClonePathProvider.DatabaseFileName);
+
+            key = await userDataKeyService.GetRequiredKeyAsync(userId);
+
+            plaintextDatabase = dataEncryptionService.DecryptFile(
+                await File.ReadAllBytesAsync(path),
+                key,
+                associatedData);
+
+            using var connection = new SqliteConnection("Data Source=:memory:");
+            connection.Open();
+            DeserializeDatabase(connection, plaintextDatabase, readOnly: false);
+
+            await using (var db = new DataConnection(
+                new DataOptions()
+                    .UseConnection(
+                        SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
+                        connection,
+                        disposeConnection: false)
+                    .UseMappingSchema(WriteMappingSchema)))
+            {
+                // Disposing the transaction without committing rolls the changes back
+                using var transaction = await db.BeginTransactionAsync();
+
+                await write(db);
+
+                await transaction.CommitAsync();
+            }
+
+            updatedDatabase = SerializeDatabase(connection);
+
+            using var updatedStream = new MemoryStream(updatedDatabase);
+
+            // Encrypts and replaces the clone atomically
+            dataEncryptionService.EncryptStream(updatedStream, path, key, associatedData);
+        }
+        finally
+        {
+            if (key is not null)
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+
+            if (plaintextDatabase is not null)
+            {
+                CryptographicOperations.ZeroMemory(plaintextDatabase);
+            }
+
+            if (updatedDatabase is not null)
+            {
+                CryptographicOperations.ZeroMemory(updatedDatabase);
+            }
+
+            writeLock.Release();
+        }
+    }
+
+    private static MappingSchema CreateWriteMappingSchema()
+    {
+        var schema = new MappingSchema();
+
+        schema.SetConverter<Guid, DataParameter>(guid => new DataParameter
+        {
+            DataType = DataType.NVarChar,
+            Value = guid.ToString("D")
+        });
+
+        return schema;
+    }
+
     private static DataConnection CreateReadOnlyMemoryConnection(byte[] plaintextDatabase)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
@@ -154,7 +272,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
     /// SQLite takes ownership of the buffer (SQLITE_DESERIALIZE_FREEONCLOSE) and frees it when
     /// the connection closes, also when deserialization fails.
     /// </summary>
-    private static void DeserializeDatabase(SqliteConnection connection, byte[] plaintextDatabase)
+    private static void DeserializeDatabase(SqliteConnection connection, byte[] plaintextDatabase, bool readOnly = true)
     {
         if (plaintextDatabase.Length < SqliteHeaderSize)
         {
@@ -191,11 +309,37 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
             buffer,
             size,
             size,
-            SQLitePCL.raw.SQLITE_DESERIALIZE_FREEONCLOSE | SQLitePCL.raw.SQLITE_DESERIALIZE_READONLY);
+            SQLitePCL.raw.SQLITE_DESERIALIZE_FREEONCLOSE |
+            (readOnly
+                ? SQLitePCL.raw.SQLITE_DESERIALIZE_READONLY
+                : SQLitePCL.raw.SQLITE_DESERIALIZE_RESIZEABLE));
 
         if (result != SQLitePCL.raw.SQLITE_OK)
         {
             throw new InvalidOperationException($"SQLite could not load the data clone database (result code {result}).");
+        }
+    }
+
+    /// <summary>Copies the in-memory database image out of SQLite.</summary>
+    private static byte[] SerializeDatabase(SqliteConnection connection)
+    {
+        var buffer = SQLitePCL.raw.sqlite3_serialize(connection.Handle!, "main", out var size, 0);
+
+        if (buffer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("SQLite could not serialize the data clone database.");
+        }
+
+        try
+        {
+            var bytes = new byte[size];
+            Marshal.Copy(buffer, bytes, 0, (int)size);
+
+            return bytes;
+        }
+        finally
+        {
+            SQLitePCL.raw.sqlite3_free(buffer);
         }
     }
 
@@ -248,6 +392,66 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
         return babies;
     }
 
+    public async Task<List<ActivityDescription>> GetActivityDescriptionsFromDb()
+    {
+        if (_db == null)
+        {
+            return [];
+        }
+
+        return await _db.GetTable<ActivityDescription>()
+            .OrderBy(description => description.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<MilestoneSelection>> GetMilestoneSelectionsFromDb()
+    {
+        if (_db == null)
+        {
+            return [];
+        }
+
+        return await _db.GetTable<MilestoneSelection>()
+            .OrderBy(selection => selection.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<MedicationSelection>> GetMedicationSelectionsFromDb()
+    {
+        if (_db == null)
+        {
+            return [];
+        }
+
+        return await _db.GetTable<MedicationSelection>()
+            .OrderBy(selection => selection.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<VaccineSelection>> GetVaccineSelectionsFromDb()
+    {
+        if (_db == null)
+        {
+            return [];
+        }
+
+        return await _db.GetTable<VaccineSelection>()
+            .OrderBy(selection => selection.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<SupplementSelection>> GetSupplementSelectionsFromDb()
+    {
+        if (_db == null)
+        {
+            return [];
+        }
+
+        return await _db.GetTable<SupplementSelection>()
+            .OrderBy(selection => selection.Name)
+            .ToListAsync();
+    }
+
     public async Task<DateTime> GetLastEntryDateTime(string babyName)
     {
         var timestamp = await _db.GetTable<Diaper>().Select(diaper => diaper.Time)
@@ -291,6 +495,12 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
     {
         var pictures = await _db.GetTable<Picture>()
             .OrderByDescending(picture => picture.Timestamp)
+            .Select(picture => new Picture
+            {
+                Timestamp = picture.Timestamp,
+                ActivityId = picture.ActivityId,
+                FileName = picture.FileName
+            })
             .ToListAsync();
 
         return pictures;

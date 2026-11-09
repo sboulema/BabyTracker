@@ -7,16 +7,25 @@ namespace BabyTracker.Models.Database;
 public class Supplement : IDbEntry
 {
     [Column]
+    public Guid Id { get; set; }
+
+    [Column]
+    public long Timestamp { get; set; }
+
+    [Column]
     public long Time { get; set; }
 
     [Column]
     public string Note { get; set; } = string.Empty;
 
     [Column]
+    public int? HasPicture { get; set; }
+
+    [Column]
     public Guid BabyId { get; set; }
 
     [Column]
-    public Guid TypeId { get; set; }
+    public string TypeId { get; set; } = string.Empty;
 
     [Column]
     public string Unit { get; set; } = string.Empty;

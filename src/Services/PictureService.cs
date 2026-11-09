@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -11,6 +12,12 @@ public interface IPictureService
     Task<byte[]?> GetPicture(ClaimsPrincipal user, string fileName);
 
     Task<byte[]?> GetPicture(string userId, string fileName);
+
+    /// <summary>Encrypts a JPEG straight into the clone directory of <paramref name="userId"/>.</summary>
+    Task SavePictureAsync(string userId, string fileName, byte[] jpeg);
+
+    /// <summary>Removes a picture file, for example after a failed save of the entry it belongs to.</summary>
+    void DeletePicture(string userId, string fileName);
 }
 
 public class PictureService(
@@ -29,6 +36,45 @@ public class PictureService(
         }
 
         return await GetPicture(activeUserId, fileName);
+    }
+
+    public async Task SavePictureAsync(string userId, string fileName, byte[] jpeg)
+    {
+        if (!pathProvider.TryGetPicturePath(userId, fileName, out var picturePath))
+        {
+            throw new ArgumentException("The picture file name is not valid.", nameof(fileName));
+        }
+
+        byte[]? key = null;
+
+        try
+        {
+            key = await userDataKeyService.GetRequiredKeyAsync(userId);
+
+            using var stream = new MemoryStream(jpeg);
+
+            dataEncryptionService.EncryptStream(
+                stream,
+                picturePath,
+                key,
+                pathProvider.GetAssociatedData(userId, $"{fileName}.jpg"));
+        }
+        finally
+        {
+            if (key is not null)
+            {
+                CryptographicOperations.ZeroMemory(key);
+            }
+        }
+    }
+
+    public void DeletePicture(string userId, string fileName)
+    {
+        if (pathProvider.TryGetPicturePath(userId, fileName, out var picturePath) &&
+            File.Exists(picturePath))
+        {
+            File.Delete(picturePath);
+        }
     }
 
     public async Task<byte[]?> GetPicture(string userId, string fileName)

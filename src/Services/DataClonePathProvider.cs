@@ -50,6 +50,19 @@ public sealed class DataClonePathProvider(IWebHostEnvironment webHostEnvironment
         return true;
     }
 
+    public string GetSyncAccountPath(string userId)
+    {
+        if (!IsSafeSegment(userId))
+        {
+            throw new ArgumentException("The user id is not a valid file name.", nameof(userId));
+        }
+
+        var root = GetRootPath();
+        var parent = Path.GetDirectoryName(root.TrimEnd('/', '\\')) ?? root;
+
+        return Path.Combine(parent, "Sync", $"{userId}.json.enc");
+    }
+
     public string GetAssociatedData(string userId, string relativePath)
         => $"{userId}/{relativePath.Replace('\\', '/').TrimStart('/')}";
 

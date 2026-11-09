@@ -8,6 +8,9 @@ namespace BabyTracker.Models.Database;
 public class Baby
 {
     [Column]
+    public Guid Id { get; set; }
+
+    [Column]
     public long Timestamp { get; set; }
 
     [Column]

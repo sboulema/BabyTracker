@@ -1,0 +1,141 @@
+@using BabyTracker.Constants
+
+@model BabyTracker.Models.ViewModels.AddEntryViewModel
+
+@{
+    ViewData["Title"] = "Add entry - BabyTracker";
+}
+
+<div class="row">
+    <div class="col-12 col-lg-6 offset-lg-3">
+        <h1 class="h3 mb-4">Add entry</h1>
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label asp-for="Type" class="form-label"></label>
+                <select asp-for="Type" asp-items="Html.GetEnumSelectList<EntryTypeEnum>()" class="form-select" id="entryType"></select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Time" class="form-label"></label>
+                <input asp-for="Time" type="datetime-local" class="form-control" />
+                <span asp-validation-for="Time" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Diaper">
+                <label asp-for="DiaperStatus" class="form-label">Status</label>
+                <select asp-for="DiaperStatus" asp-items="Html.GetEnumSelectList<DiaperStatusEnum>()" class="form-select"></select>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Formula">
+                <label asp-for="FormulaAmount" class="form-label">Amount (ml)</label>
+                <input asp-for="FormulaAmount" type="number" min="1" class="form-control" />
+                <span asp-validation-for="FormulaAmount" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Sleep">
+                <label asp-for="SleepMinutes" class="form-label">Duration (minutes)</label>
+                <input asp-for="SleepMinutes" type="number" min="1" class="form-control" />
+                <span asp-validation-for="SleepMinutes" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Activity">
+                <label asp-for="ActivityDescriptionId" class="form-label">Activity</label>
+                <select asp-for="ActivityDescriptionId" asp-items="Model.ActivityDescriptions" class="form-select">
+                    <option value="">Choose...</option>
+                </select>
+                <span asp-validation-for="ActivityDescriptionId" class="text-danger"></span>
+                <label asp-for="ActivityMinutes" class="form-label mt-2">Duration (minutes)</label>
+                <input asp-for="ActivityMinutes" type="number" min="0" class="form-control" />
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Growth">
+                <label asp-for="GrowthWeight" class="form-label">Weight (kg)</label>
+                <input asp-for="GrowthWeight" type="number" step="0.001" min="0" class="form-control" />
+                <span asp-validation-for="GrowthWeight" class="text-danger"></span>
+                <label asp-for="GrowthLength" class="form-label mt-2">Length (cm)</label>
+                <input asp-for="GrowthLength" type="number" step="0.1" min="0" class="form-control" />
+                <label asp-for="GrowthHeadSize" class="form-label mt-2">Head size (cm)</label>
+                <input asp-for="GrowthHeadSize" type="number" step="0.1" min="0" class="form-control" />
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Temperature">
+                <label asp-for="TemperatureCelsius" class="form-label">Temperature (°C)</label>
+                <input asp-for="TemperatureCelsius" type="number" step="0.1" class="form-control" />
+                <span asp-validation-for="TemperatureCelsius" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Milestone">
+                <label asp-for="MilestoneSelectionId" class="form-label">Milestone</label>
+                <select asp-for="MilestoneSelectionId" asp-items="Model.MilestoneSelections" class="form-select">
+                    <option value="">Choose...</option>
+                </select>
+                <span asp-validation-for="MilestoneSelectionId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Picture">
+                <label asp-for="PictureFile" class="form-label">Photo</label>
+                <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
+                <span asp-validation-for="PictureFile" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Medication">
+                <label asp-for="MedicationSelectionId" class="form-label">Medication</label>
+                <select asp-for="MedicationSelectionId" asp-items="Model.MedicationSelections" class="form-select">
+                    <option value="">Choose...</option>
+                </select>
+                <span asp-validation-for="MedicationSelectionId" class="text-danger"></span>
+                <label asp-for="MedicationAmount" class="form-label mt-2">Amount (leave empty for the usual dose)</label>
+                <input asp-for="MedicationAmount" type="number" step="0.01" min="0" class="form-control" />
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Vaccine">
+                <label asp-for="VaccineSelectionId" class="form-label">Vaccine</label>
+                <select asp-for="VaccineSelectionId" asp-items="Model.VaccineSelections" class="form-select">
+                    <option value="">Choose...</option>
+                </select>
+                <span asp-validation-for="VaccineSelectionId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3 entry-field" data-type="Supplement">
+                <label asp-for="SupplementSelectionId" class="form-label">Supplement</label>
+                <select asp-for="SupplementSelectionId" asp-items="Model.SupplementSelections" class="form-select">
+                    <option value="">Choose...</option>
+                </select>
+                <span asp-validation-for="SupplementSelectionId" class="text-danger"></span>
+                <label asp-for="SupplementAmount" class="form-label mt-2">Amount</label>
+                <input asp-for="SupplementAmount" type="number" step="0.1" min="0" class="form-control" />
+                <span asp-validation-for="SupplementAmount" class="text-danger"></span>
+                <label asp-for="SupplementUnit" class="form-label mt-2">Unit</label>
+                <input asp-for="SupplementUnit" class="form-control" placeholder="ml" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Note" class="form-label"></label>
+                <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add</button>
+            <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Diary"
+               asp-route-babyName="@Model.BabyName" asp-route-date="@Model.Time.ToString("yyyy-MM-dd")">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        const entryType = document.getElementById("entryType");
+
+        function showEntryFields() {
+            const selected = entryType.selectedOptions[0].text;
+
+            document.querySelectorAll(".entry-field").forEach(field => {
+                field.style.display = field.dataset.type === selected ? "" : "none";
+            });
+        }
+
+        entryType.addEventListener("change", showEntryFields);
+        showEntryFields();
+    </script>
+}

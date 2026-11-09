@@ -1,5 +1,4 @@
-﻿using System;
-using LinqToDB.Mapping;
+﻿using LinqToDB.Mapping;
 
 namespace BabyTracker.Models.Database;
 
@@ -7,7 +6,7 @@ namespace BabyTracker.Models.Database;
 public class ActivityDescription
 {
     [Column]
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [Column]
     public string Name { get; set; } = string.Empty;

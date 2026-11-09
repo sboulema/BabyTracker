@@ -26,8 +26,12 @@ else
                 <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(Model!.DateNextUrl) ? "disabled" : string.Empty)" href="@Model.DateNextUrl"><i class="fas fa-angle-right"></i></a>
             </div>
         </div>
-        <div class="col">
-            <div class="input-group mb-3 float-end" style="width: fit-content;">
+        <div class="col d-flex justify-content-end gap-2">
+            <a class="btn btn-primary mb-3" asp-controller="Home" asp-action="AddEntry"
+               asp-route-babyName="@Model.BabyName" asp-route-date="@Model.Date.ToString("yyyy-MM-dd")">
+                <i class="fas fa-plus"></i> Add entry
+            </a>
+            <div class="input-group mb-3" style="width: fit-content;">
                 <input type="text" class="form-control" id="search-input" placeholder="Search">
                 <button class="btn btn-outline-secondary" type="button" id="search-button"><i class="fas fa-search"></i></button>
             </div>
