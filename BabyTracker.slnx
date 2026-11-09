@@ -5,4 +5,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="src/BabyTracker.csproj" />
+  <Project Path="tests/BabyTracker.Tests.csproj" />
 </Solution>
