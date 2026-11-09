@@ -1,3 +1,4 @@
+using BabyTracker.Models.Charts;
 using BabyTracker.Models.ViewModels;
 using NUnit.Framework;
 
@@ -29,10 +30,10 @@ public class ChartsViewModelTests
     {
         var viewModel = new ChartsViewModel
         {
-            WeightPoints = { new Models.Charts.Point(1, 10), new Models.Charts.Point(2, 12) },
-            LengthPoints = { new Models.Charts.Point(1, 75), new Models.Charts.Point(2, 80) },
-            HeadSizePoints = { new Models.Charts.Point(1, 45), new Models.Charts.Point(2, 47) },
-            BMIPoints = { new Models.Charts.Point(1, 18.5), new Models.Charts.Point(2, 19.0) }
+            WeightPoints = { new Point(1, 10), new Point(2, 12) },
+            LengthPoints = { new Point(1, 75), new Point(2, 80) },
+            HeadSizePoints = { new Point(1, 45), new Point(2, 47) },
+            BMIPoints = { new Point(1, 18.5), new Point(2, 19.0) }
         };
 
         Assert.That(viewModel.WeightPoints, Has.Count.EqualTo(2));
