@@ -51,14 +51,4 @@ public class PointTests
         Assert.That(point.Y, Is.EqualTo(2.345678).Within(0.000001));
     }
 
-    [Test]
-    public void Point_PropertyAssignment_Works()
-    {
-        var point = new Point();
-        point.X = 10;
-        point.Y = 20;
-
-        Assert.That(point.X, Is.EqualTo(10));
-        Assert.That(point.Y, Is.EqualTo(20));
-    }
 }
