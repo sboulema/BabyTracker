@@ -33,14 +33,8 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore
 
-      - name: Build main project
-        run: dotnet build src/BabyTracker.csproj --no-restore --configuration Release
-
-      - name: Build test project
-        run: dotnet build tests/BabyTracker.Tests.csproj --no-restore --configuration Release
-
-      - name: Run tests
-        run: dotnet test tests/BabyTracker.Tests.csproj --no-build --configuration Release --verbosity normal
+      - name: Build and test
+        run: dotnet test tests/BabyTracker.Tests.csproj --configuration Release --verbosity normal
 
       - name: Docker Build
         uses: docker/build-push-action@v7
