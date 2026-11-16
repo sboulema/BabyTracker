@@ -11,7 +11,6 @@ using BabyTracker.Models.Charts;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
 using ClosedXML.Excel;
-using NodaTime;
 
 namespace BabyTracker.Services;
 
@@ -56,7 +55,7 @@ public class ChartService(ISqLiteService sqLiteService) : IChartService
         var entryAges = entries
             .Select(entry => new {
                 Entry = entry,
-                Age = baby.AgeInMonthsAt(Instant.FromUnixTimeSeconds(entry.Time))
+                Age = baby.AgeInMonthsAt(entry.Time)
             })
             .Where(item => maxAge == null || item.Age <= maxAge);
 

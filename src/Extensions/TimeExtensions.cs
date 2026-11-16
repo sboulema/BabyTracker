@@ -1,5 +1,4 @@
 ﻿using System;
-using TimeZoneConverter;
 
 namespace BabyTracker.Extensions;
 
@@ -9,7 +8,7 @@ public static class TimeExtensions
         => DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime;
 
     public static DateTime ToDateTimeLocal(this long timestamp)
-        => TimeZoneInfo.ConvertTimeFromUtc(timestamp.ToDateTimeUTC(), TZConvert.GetTimeZoneInfo("W. Europe Standard Time"));
+        => timestamp.ToDateTimeUTC().ToLocalTime();
 
     public static DateOnly ToDateOnly(this long timestamp)
         => DateOnly.FromDateTime(timestamp.ToDateTimeUTC());
@@ -22,7 +21,7 @@ public static class TimeExtensions
     /// like the app's TimeZone.getRawOffset() / 1000.
     /// </summary>
     public static int GetCloneTimeZoneRawOffsetSeconds()
-        => (int)TZConvert.GetTimeZoneInfo("W. Europe Standard Time").BaseUtcOffset.TotalSeconds;
+        => (int)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
 
     /// <summary>
     /// Converts a wall-clock time in the time zone of the data clone (the inverse of
@@ -30,7 +29,7 @@ public static class TimeExtensions
     /// </summary>
     public static long ToUnixTimestampFromLocal(this DateTime localDateTime)
     {
-        var timeZone = TZConvert.GetTimeZoneInfo("W. Europe Standard Time");
+        var timeZone = TimeZoneInfo.Local;
         var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
 
         // Skip over the hour that does not exist when the clocks go forward
@@ -40,5 +39,22 @@ public static class TimeExtensions
         }
 
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(unspecified, timeZone)).ToUnixTimeSeconds();
+    }
+
+    /// <summary>
+    /// Whole months plus remaining days between two dates.
+    /// </summary>
+    public static (int Months, int Days) MonthsAndDaysUntil(this DateOnly start, DateOnly end)
+    {
+        var months = ((end.Year - start.Year) * 12) + end.Month - start.Month;
+
+        if (start.AddMonths(months) > end)
+        {
+            months--;
+        }
+
+        var days = end.DayNumber - start.AddMonths(months).DayNumber;
+
+        return (months, days);
     }
 }
