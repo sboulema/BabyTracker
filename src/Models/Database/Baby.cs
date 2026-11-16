@@ -1,6 +1,6 @@
 using System;
+using BabyTracker.Extensions;
 using LinqToDB.Mapping;
-using NodaTime;
 
 namespace BabyTracker.Models.Database;
 
@@ -25,33 +25,29 @@ public class Baby
     [Column("Picture")]
     public string PictureFileName { get; set; } = string.Empty;
 
+    private DateOnly Birthday
+        => DOB.ToDateOnly();
+
+    private static DateOnly Today
+        => DateOnly.FromDateTime(DateTime.UtcNow);
+
     public string Age()
     {
-        var birthday = Instant.FromUnixTimeSeconds(DOB).InUtc().Date;
-        var today = LocalDate.FromDateTime(DateTime.UtcNow);
-        var period = Period.Between(birthday, today,
-                            PeriodUnits.Months | PeriodUnits.Days);
-        return $"{period.Months} months {period.Days} days";
+        var (months, days) = Birthday.MonthsAndDaysUntil(Today);
+        return $"{months} months {days} days";
     }
 
     public int AgeInMonths()
-    {
-        var birthday = Instant.FromUnixTimeSeconds(DOB).InUtc().Date;
-        var today = LocalDate.FromDateTime(DateTime.UtcNow);
-        var period = Period.Between(birthday, today, PeriodUnits.Months);
-        return period.Months;
-    }
+        => Birthday.MonthsAndDaysUntil(Today).Months;
 
-    public double AgeInMonthsAt(Instant moment)
+    public double AgeInMonthsAt(long timestamp)
     {
-        var birthday = Instant.FromUnixTimeSeconds(DOB).InUtc().Date;
-        var date = moment.InUtc().Date;
-
-        var wholeMonths = Period.Between(birthday, date, PeriodUnits.Months).Months;
-        var monthStart = birthday.PlusMonths(wholeMonths);
-        var monthEnd = birthday.PlusMonths(wholeMonths + 1);
+        var date = timestamp.ToDateOnly();
+        var wholeMonths = Birthday.MonthsAndDaysUntil(date).Months;
+        var monthStart = Birthday.AddMonths(wholeMonths);
+        var monthEnd = Birthday.AddMonths(wholeMonths + 1);
 
         return wholeMonths
-            + (double)Period.DaysBetween(monthStart, date) / Period.DaysBetween(monthStart, monthEnd);
+            + ((double)(date.DayNumber - monthStart.DayNumber) / (monthEnd.DayNumber - monthStart.DayNumber));
     }
 }
