@@ -20,4 +20,15 @@ public class ProfileViewModel : BaseViewModel
 	public bool UseFullCardImages { get; set; }
 	
 	public bool UseCards { get; set; }
+
+	/// <summary>Whether syncing to the Baby Tracker app is switched on for this website at all.</summary>
+	public bool SyncAvailable { get; set; }
+
+	public bool SyncEnabled { get; set; }
+
+	public string SyncEmailAddress { get; set; } = string.Empty;
+
+	public bool SyncHasPassword { get; set; }
+
+	public string SyncDeviceId { get; set; } = string.Empty;
 }

@@ -10,13 +10,19 @@ public class Activity : IDbEntry, IMemoryEntry
     public Guid Id { get; set; }
 
     [Column]
+    public long Timestamp { get; set; }
+
+    [Column]
     public long Time { get; set; }
 
     [Column]
     public string Note { get; set; } = string.Empty;
 
+    [Column]
+    public int? HasPicture { get; set; }
+
     [Column("DescID")]
-    public Guid DescriptionId { get; set; }
+    public string DescriptionId { get; set; } = string.Empty;
 
     [Column]
     public Guid BabyId { get; set; }
@@ -24,9 +30,10 @@ public class Activity : IDbEntry, IMemoryEntry
     [Column]
     public int Duration { get; set; }
 
-    [Column]
+    // Not columns of OtherActivity: filled from the description and picture joins when reading.
+    [Column(SkipOnInsert = true, SkipOnUpdate = true)]
     public string Name { get; set; } = string.Empty;
 
-    [Column]
+    [Column(SkipOnInsert = true, SkipOnUpdate = true)]
     public string FileName { get; set; } = string.Empty;
 }

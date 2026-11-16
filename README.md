@@ -64,12 +64,24 @@ docker run -p 80:80 -e ... -e ... sboulema/babytracker
 | MEMORIES_FROM_EMAIL		 | Email address to use when sending memories email |
 | MEMORIES_FROM_NAME		 | Email sender name to use when sending memories email |
 | POSTMARK_API_TOKEN		 | Postmark API token used to send the memories email |
+| BabyTrackerSync__Enabled	 | Set to `true` to show the experimental [Baby Tracker app sync](docs/baby-tracker-sync-api.md) settings on the profile page. Off by default |
+| BabyTrackerSync__BaseUrl	 | Base url of the Baby Tracker sync server, defaults to `https://prodapp.babytrackers.com` |
 
 ## Volumes / Bind mounts
 
 | Path on container | Description                         |
 |-------------------|-------------------------------------|
-| /data             | Data clones are stored at this path |
+| /data             | Data clones are stored at `/data/Data`, the encrypted Baby Tracker sync accounts at `/data/Sync` |
+
+## Adding entries and syncing them to the app
+
+The diary page has an **Add entry** button. Entries are written into your (encrypted) data clone on the server.
+An entry added here only exists on the website until you import a new clone, which replaces it.
+
+With `BabyTrackerSync__Enabled=true` the profile page gets an experimental **Baby Tracker app sync** card. When it is switched on,
+the website logs in to the sync service of the app with your Baby Tracker account and sends every new entry as a transaction of
+its own device, so the phones pick it up. This uses an unofficial, undocumented service: see
+[docs/baby-tracker-sync-api.md](docs/baby-tracker-sync-api.md) for what is known, and try it with a spare account first.
 
 ## Requirements
 - Auth0 account

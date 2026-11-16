@@ -7,6 +7,7 @@ using BabyTracker.Jobs;
 using BabyTracker.Policies;
 using BabyTracker.Repositories;
 using BabyTracker.Services;
+using BabyTracker.Sync;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -82,8 +83,32 @@ builder.Services
 	.AddSingleton<IDataEncryptionService, DataEncryptionService>()
 	.AddScoped<IPictureService, PictureService>()
     .AddScoped<ICacheEvictionService, CacheEvictionService>()
+    .AddScoped<IAddEntryService, AddEntryService>()
+    .AddScoped<IImageService, ImageService>()
+    .AddScoped<ISyncAccountStore, SyncAccountStore>()
+    .AddScoped<ISyncService, SyncService>()
     .AddScoped<IEmailRepository, EmailRepository>()
     .AddScoped<RequireDataCloneFilter>();
+
+builder.Services.Configure<BabyTrackerSyncOptions>(
+	builder.Configuration.GetSection(BabyTrackerSyncOptions.SectionName));
+
+// The session cookie is kept per sync session, so the handler must not share cookies between users
+builder.Services
+	.AddHttpClient(SyncService.HttpClientName, (serviceProvider, client) =>
+	{
+		var syncOptions = serviceProvider
+			.GetRequiredService<Microsoft.Extensions.Options.IOptions<BabyTrackerSyncOptions>>().Value;
+
+		client.BaseAddress = new Uri(syncOptions.BaseUrl.TrimEnd('/') + "/");
+		client.Timeout = TimeSpan.FromSeconds(30);
+		client.DefaultRequestHeaders.UserAgent.ParseAdd("BabyTracker-website");
+	})
+	.ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.SocketsHttpHandler
+	{
+		UseCookies = false,
+		PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+	});
 
 var app = builder.Build();
 

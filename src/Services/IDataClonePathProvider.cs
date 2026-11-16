@@ -33,6 +33,12 @@ public interface IDataClonePathProvider
     /// </summary>
     string GetAssociatedData(string userId, string relativePath);
 
+    /// <summary>
+    /// The (encrypted) file with the Baby Tracker sync account of the user. It lives next to the root
+    /// directory of the clones, so importing a clone does not remove it.
+    /// </summary>
+    string GetSyncAccountPath(string userId);
+
     /// <summary>User ids that have a data clone directory (excludes staging/backup leftovers).</summary>
     IEnumerable<string> EnumerateUserIds();
 
