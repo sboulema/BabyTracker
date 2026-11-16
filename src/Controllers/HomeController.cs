@@ -268,9 +268,10 @@ public class HomeController(
 
 		ProcessedPicture? picture = null;
 
-		if (model.Type == EntryTypeEnum.Picture && ModelState.IsValid)
-		{
-			picture = await imageService.CreateJpegAndThumbnailAsync(model.PictureFile!);
+        // Only the entry types that can have a photo use the file. It is optional.
+        if (model.Type.SupportsPicture() && model.PictureFile is { Length: > 0 } && ModelState.IsValid)
+        {
+			picture = await imageService.CreateJpegAndThumbnailAsync(model.PictureFile);
 
 			if (picture == null)
 			{
@@ -358,10 +359,6 @@ public class HomeController(
 
 			case EntryTypeEnum.Milestone when model.MilestoneSelectionId is null:
 				ModelState.AddModelError(nameof(model.MilestoneSelectionId), "Choose a milestone.");
-				break;
-
-			case EntryTypeEnum.Picture when model.PictureFile is not { Length: > 0 }:
-				ModelState.AddModelError(nameof(model.PictureFile), "Choose a photo.");
 				break;
 
 			case EntryTypeEnum.Medication when model.MedicationSelectionId is null:

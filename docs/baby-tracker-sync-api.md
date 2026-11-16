@@ -249,7 +249,8 @@ payloads before it ever talks to the server.
 Code: `src/Sync/`. The feature is off unless `BabyTrackerSync:Enabled` is `true`, and then per user on the profile page.
 
 - `SyncTransactionBuilder` builds the transaction JSON of section 4 for diapers, formula, sleep, joy (also with a photo),
-  activities, growth, temperature, milestones, medication, vaccines and supplements (`OtherFeed`).
+  activities, growth, temperature, milestones, medication, vaccines and supplements (`OtherFeed`). Joy, activities and
+  milestones can carry a photo (`pictureNote`), like in the app.
   Dates are `yyyy-MM-dd HH:mm:ss +0000` in GMT, enums are written by name, insert transactions have `newFlage` true,
   and the selections and the baby are embedded as full objects read from the clone.
 - `BabyTrackerSyncSession` logs in (`POST /session`), keeps the session cookies, uploads transactions

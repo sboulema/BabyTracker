@@ -70,12 +70,6 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
 
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> WriteLocks = new();
 
-    /// <summary>
-    /// Writes Guids as lowercase text. The app generates its ids with Java's UUID.toString(), which is
-    /// lowercase, and it compares ids as text, while Microsoft.Data.Sqlite would write them uppercase.
-    /// </summary>
-    private static readonly MappingSchema WriteMappingSchema = CreateWriteMappingSchema();
-
     private DataConnection? _db;
 
     public async Task OpenDataConnectionAsync(ClaimsPrincipal user)
@@ -191,8 +185,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                     .UseConnection(
                         SQLiteTools.GetDataProvider(SQLiteProvider.Microsoft),
                         connection,
-                        disposeConnection: false)
-                    .UseMappingSchema(WriteMappingSchema)))
+                        disposeConnection: false)))
             {
                 // Disposing the transaction without committing rolls the changes back
                 using var transaction = await db.BeginTransactionAsync();
@@ -228,19 +221,6 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
 
             writeLock.Release();
         }
-    }
-
-    private static MappingSchema CreateWriteMappingSchema()
-    {
-        var schema = new MappingSchema();
-
-        schema.SetConverter<Guid, DataParameter>(guid => new DataParameter
-        {
-            DataType = DataType.NVarChar,
-            Value = guid.ToString("D")
-        });
-
-        return schema;
     }
 
     private static DataConnection CreateReadOnlyMemoryConnection(byte[] plaintextDatabase)

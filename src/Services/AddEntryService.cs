@@ -8,8 +8,11 @@ using BabyTracker.Extensions;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
 using BabyTracker.Sync;
+using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using LinqToDB;
 using LinqToDB.Async;
+using LinqToDB.Metrics;
 
 namespace BabyTracker.Services;
 
@@ -19,7 +22,7 @@ public sealed record AddEntryResult(SyncResult Sync);
 public interface IAddEntryService
 {
     /// <param name="userId">The active user id: the owner of the data clone to write to.</param>
-    /// <param name="picture">The processed photo; required for a Picture entry.</param>
+    /// <param name="picture">The processed photo of the entry. Only used by the entry types that can have a photo.</param>
     /// <exception cref="KeyNotFoundException">There is no baby with this name in the data clone.</exception>
     Task<AddEntryResult> AddEntryAsync(string userId, string babyName, AddEntryViewModel model, ProcessedPicture? picture = null);
 }
@@ -42,10 +45,8 @@ public class AddEntryService(
 
         try
         {
-            if (model.Type == EntryTypeEnum.Picture)
+            if (picture is not null && model.Type.SupportsPicture())
             {
-                ArgumentNullException.ThrowIfNull(picture);
-
                 // A new picture of the app is named after its own id
                 pictureId = Guid.NewGuid();
                 pictureFileName = pictureId.Value.ToString("D");
@@ -86,7 +87,7 @@ public class AddEntryService(
         Guid? pictureId, string? pictureFileName, ProcessedPicture? picture, bool buildSyncEntry)
     {
         var baby = await db.GetTable<Baby>()
-            .Where(candidate => candidate.Name == babyName)
+            .Where(candidate => candidate.Name.ToLower() == babyName.ToLower())
             .FirstOrDefaultAsync();
 
         if (baby is null || baby.Id == Guid.Empty)
@@ -114,6 +115,16 @@ public class AddEntryService(
                 baby.DueDate,
                 baby.Gender != 0,
                 string.IsNullOrEmpty(baby.PictureFileName) ? null : baby.PictureFileName));
+
+        // A photo belongs to the entry: a Picture row that points at it, and HasPicture on the entry
+        var hasPicture = picture is not null && pictureId is not null && pictureFileName is not null;
+        
+        if (hasPicture)
+        {
+            common = common with { Picture = new SyncPictureSnapshot(pictureId!.Value, pictureFileName!) };
+        }
+        
+        var hasPictureFlag = hasPicture ? 1 : 0;
 
         async Task<SyncSelectionSnapshot?> ReadSelection(string table, string? selectionId)
             => buildSyncEntry
@@ -160,7 +171,10 @@ public class AddEntryService(
             case EntryTypeEnum.Joy:
                 await db.InsertAsync(new Joy
                 {
-                    Id = id, Timestamp = timestamp, HasPicture = 0, BabyId = babyId,
+                    Id = id,
+                    Timestamp = timestamp,
+                    HasPicture = hasPictureFlag,
+                    BabyId = babyId,
                     Time = time, Note = note
                 });
 
@@ -173,7 +187,10 @@ public class AddEntryService(
 
                 await db.InsertAsync(new Activity
                 {
-                    Id = id, Timestamp = timestamp, HasPicture = 0, BabyId = babyId,
+                    Id = id,
+                    Timestamp = timestamp,
+                    HasPicture = hasPictureFlag,
+                    BabyId = babyId,
                     Time = time, Note = note,
                     DescriptionId = model.ActivityDescriptionId ?? string.Empty,
                     Duration = model.ActivityMinutes ?? 0
@@ -219,7 +236,10 @@ public class AddEntryService(
 
                 await db.InsertAsync(new Milestone
                 {
-                    Id = id, Timestamp = timestamp, HasPicture = 0, BabyId = babyId,
+                    Id = id,
+                    Timestamp = timestamp,
+                    HasPicture = hasPictureFlag,
+                    BabyId = babyId,
                     Time = time, Note = note,
                     MilestoneSelectionId = model.MilestoneSelectionId,
                 });
@@ -297,34 +317,19 @@ public class AddEntryService(
                 break;
             }
 
-            case EntryTypeEnum.Picture:
-            {
-                ArgumentNullException.ThrowIfNull(pictureId);
-                ArgumentNullException.ThrowIfNull(pictureFileName);
-                ArgumentNullException.ThrowIfNull(picture);
-
-                // A photo is a Joy that has a Picture
-                await db.InsertAsync(new Joy
-                {
-                    Id = id, Timestamp = timestamp, HasPicture = 1, BabyId = babyId,
-                    Time = time, Note = note
-                });
-
-                await db.InsertAsync(new Picture
-                {
-                    Id = pictureId.Value, Timestamp = timestamp, ActivityId = id,
-                    Type = 0, // MediaTypePicture
-                    FileName = pictureFileName,
-                    Thumbnail = picture.Thumbnail
-                });
-
-                transaction = SyncTransactionBuilder.Joy(
-                    common with { Picture = new SyncPictureSnapshot(pictureId.Value, pictureFileName) });
-                break;
-            }
-
             default:
                 throw new InvalidOperationException($"Unsupported entry type {model.Type}.");
+        }
+
+        if (hasPicture)
+        {
+            await db.InsertAsync(new Picture
+            {
+                Id = pictureId!.Value, Timestamp = timestamp, ActivityId = id,
+                Type = 0, // MediaTypePicture
+                FileName = pictureFileName!,
+                Thumbnail = picture!.Thumbnail
+            });
         }
 
         if (!buildSyncEntry || transaction is null)
@@ -334,9 +339,7 @@ public class AddEntryService(
 
         return new SyncEntry(
             SyncTransactionBuilder.Encode(transaction),
-            model.Type == EntryTypeEnum.Picture && picture is not null && pictureFileName is not null
-                ? new SyncPictureFiles(pictureFileName, picture.Jpeg, picture.Thumbnail)
-                : null);
+            hasPicture ? new SyncPictureFiles(pictureFileName!, picture!.Jpeg, picture.Thumbnail) : null);
     }
 
     private static string ToSyncDiaperStatus(DiaperStatusEnum status)

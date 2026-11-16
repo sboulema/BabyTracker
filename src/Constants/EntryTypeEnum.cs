@@ -14,5 +14,4 @@ public enum EntryTypeEnum
     Medication,
     Vaccine,
     Supplement,
-    Picture
 }

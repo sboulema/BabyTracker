@@ -24,7 +24,9 @@ public sealed class ImageService : IImageService
 {
     private const long MaxPixels = 80_000_000;
     private const int MaxSide = 2560;
-    private const int ThumbnailSide = 512;
+    private const int MaxSideQuality = 85;
+    private const int ThumbnailSide = 1024;
+    private const int ThumbnailQuality = 90;
 
     public async Task<ProcessedPicture?> CreateJpegAndThumbnailAsync(IFormFile file)
     {
@@ -51,8 +53,8 @@ public sealed class ImageService : IImageService
             image.Metadata.IptcProfile = null;
 
             return new ProcessedPicture(
-                await EncodeAsync(image, MaxSide, 85),
-                await EncodeAsync(image, ThumbnailSide, 75));
+                await EncodeAsync(image, MaxSide, MaxSideQuality),
+                await EncodeAsync(image, ThumbnailSide, ThumbnailQuality));
         }
         catch (Exception e) when (e is UnknownImageFormatException or InvalidImageContentException or NotSupportedException)
         {
@@ -70,7 +72,8 @@ public sealed class ImageService : IImageService
                 context.Resize(new ResizeOptions
                 {
                     Size = new Size(maxSide, maxSide),
-                    Mode = ResizeMode.Max
+                    Mode = ResizeMode.Max,
+                    Sampler = KnownResamplers.Lanczos3
                 });
             }
         });

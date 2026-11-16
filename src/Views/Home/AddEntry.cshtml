@@ -73,12 +73,6 @@
                 <span asp-validation-for="MilestoneSelectionId" class="text-danger"></span>
             </div>
 
-            <div class="mb-3 entry-field" data-type="Picture">
-                <label asp-for="PictureFile" class="form-label">Photo</label>
-                <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
-                <span asp-validation-for="PictureFile" class="text-danger"></span>
-            </div>
-
             <div class="mb-3 entry-field" data-type="Medication">
                 <label asp-for="MedicationSelectionId" class="form-label">Medication</label>
                 <select asp-for="MedicationSelectionId" asp-items="Model.MedicationSelections" class="form-select">
@@ -87,6 +81,12 @@
                 <span asp-validation-for="MedicationSelectionId" class="text-danger"></span>
                 <label asp-for="MedicationAmount" class="form-label mt-2">Amount (leave empty for the usual dose)</label>
                 <input asp-for="MedicationAmount" type="number" step="0.01" min="0" class="form-control" />
+            </div>
+
+            <div class="mb-3 entry-field" data-types="Joy Activity Milestone">
+                <label asp-for="PictureFile" class="form-label">Photo (optional)</label>
+                <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
+                <span asp-validation-for="PictureFile" class="text-danger"></span>
             </div>
 
             <div class="mb-3 entry-field" data-type="Vaccine">
@@ -131,7 +131,9 @@
             const selected = entryType.selectedOptions[0].text;
 
             document.querySelectorAll(".entry-field").forEach(field => {
-                field.style.display = field.dataset.type === selected ? "" : "none";
+                const types = (field.dataset.types ?? field.dataset.type).split(" ");
+
+                field.style.display = types.includes(selected) ? "" : "none";
             });
         }
 
