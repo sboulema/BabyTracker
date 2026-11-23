@@ -342,7 +342,7 @@ public class AddEntryService(
             hasPicture ? new SyncPictureFiles(pictureFileName!, picture!.Jpeg, picture.Thumbnail) : null);
     }
 
-    private static string ToSyncDiaperStatus(DiaperStatusEnum status)
+    internal static string ToSyncDiaperStatus(DiaperStatusEnum status)
         => status switch
         {
             DiaperStatusEnum.Wet => "DiaperStatusWet",

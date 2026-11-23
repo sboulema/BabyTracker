@@ -25,6 +25,7 @@ public class HomeController(
 	IChartService chartService,
 	IAccountService accountService,
 	IAddEntryService addEntryService,
+	IDeleteEntryService deleteEntryService,
 	ICacheEvictionService cacheEvictionService,
 	IImageService imageService) : Controller
 {
@@ -124,6 +125,7 @@ public class HomeController(
 		model.UseCards = userMetaData?.UseCards ?? false;
 		ViewBag.Theme = userMetaData?.Theme;
 		ViewBag.UseFullCardImages = userMetaData?.UseFullCardImages;
+		ViewBag.CanDelete = true;
 
 		if ((date == null || date.Value == DateOnly.FromDateTime(lastEntryDateTime)) &&
 			userMetaData?.LastViewedDate != null &&
@@ -329,6 +331,61 @@ public class HomeController(
 		{
 			babyName,
 			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
+		});
+	}
+
+	[Authorize]
+	[ServiceFilter<RequireDataCloneFilter>]
+	[HttpPost("{babyName}/delete/{type}/{id:guid}")]
+	[ValidateAntiForgeryToken]
+	public async Task<IActionResult> DeleteEntry(string babyName, EntryTypeEnum type, Guid id, DateOnly? date)
+	{
+		var activeUserId = User.FindFirstValue("activeUserId");
+
+		if (string.IsNullOrEmpty(activeUserId))
+		{
+			return Forbid();
+		}
+
+		if (!Enum.IsDefined(type) || id == Guid.Empty)
+		{
+			return NotFound();
+		}
+
+		var result = await deleteEntryService.DeleteEntryAsync(activeUserId, type, id);
+
+		if (!result.Deleted)
+		{
+			return NotFound();
+		}
+
+		// The Diary is output-cached: drop the pages of everyone viewing this clone
+		await cacheEvictionService.EvictClonePagesAsync(activeUserId);
+		await cacheEvictionService.EvictUserPagesAsync(User);
+
+		switch (result.Sync.Status)
+		{
+			case SyncStatus.Sent:
+				TempData["notificationMessage"] = $"{type} entry deleted and removed from the Baby Tracker app.";
+				TempData["notificationType"] = "success";
+				break;
+
+			case SyncStatus.Failed:
+				TempData["notificationMessage"] =
+					$"{type} entry deleted, but the Baby Tracker app could not be told: {WebUtility.HtmlEncode(result.Sync.Message ?? "unknown error")}";
+				TempData["notificationType"] = "warning";
+				break;
+
+			default:
+				TempData["notificationMessage"] = $"{type} entry deleted.";
+				TempData["notificationType"] = "success";
+				break;
+		}
+
+		return RedirectToAction(nameof(Diary), new
+		{
+			babyName,
+			date = date?.ToString("yyyy-MM-dd")
 		});
 	}
 

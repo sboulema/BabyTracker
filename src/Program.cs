@@ -84,6 +84,7 @@ builder.Services
 	.AddScoped<IPictureService, PictureService>()
     .AddScoped<ICacheEvictionService, CacheEvictionService>()
     .AddScoped<IAddEntryService, AddEntryService>()
+    .AddScoped<IDeleteEntryService, DeleteEntryService>()
     .AddScoped<IImageService, ImageService>()
     .AddScoped<ISyncAccountStore, SyncAccountStore>()
     .AddScoped<ISyncService, SyncService>()

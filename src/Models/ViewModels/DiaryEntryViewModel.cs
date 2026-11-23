@@ -1,14 +1,23 @@
-﻿using BabyTracker.Extensions;
+﻿using System;
+using BabyTracker.Constants;
+using BabyTracker.Extensions;
 
 namespace BabyTracker.Models.ViewModels;
 
 public class DiaryEntryViewModel
 {
+    public Guid Id { get; set; }
+
+    /// <summary>The kind of entry. Null for an entry that cannot be deleted.</summary>
+    public EntryTypeEnum? Type { get; set; }
+
     public string IconURL { get; set; } = string.Empty;
 
     public string Time => TimeStamp.ToDateTimeLocal().ToShortTimeString();
 
     public string Date => TimeStamp.ToDateTimeLocal().ToString("dd-MM-yyyy");
+
+    public string DateIso => TimeStamp.ToDateTimeLocal().ToString("yyyy-MM-dd");
 
     public long TimeStamp { get; set; }
 

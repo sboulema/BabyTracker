@@ -263,6 +263,14 @@ Code: `src/Sync/`. The feature is off unless `BabyTrackerSync:Enabled` is `true`
   key, in `Sync/{userId}.json.enc` next to the clone directories, so an import does not remove it.
 - Guids are written to the clone as lowercase text, like the ids the Android app generates.
 
+- Deleting an entry uploads a transaction with `OPCode` `TransactionLogOpCodeDelete` and the next `SyncID`
+  (`SyncDeleteEntryBuilder`). The payload is the entry as it is in the clone, built like an insert but with `newFlage`
+  false. The delete opcode is documented above; the payload shape is an **assumption**: the merge code for deletes was
+  not decompiled, so it is not known whether the phones want the whole object, only its `objectID`, or a `deleted` flag.
+  When the entry has a photo, a second delete transaction follows with the next `SyncID`: the `Picture` object itself
+  (`BCObjectType` `Picture`, `newFlage` false, `deleted` true), again an **assumption**. The API in section 3 has no
+  endpoint to delete a photo file, so the file stays on the server; only the `Picture` object is deleted.
+
 What is verified: the code builds, and `Check` style tests against a fake server confirm the requests, cookies, `SyncID`
 counter, JSON shape and Base64 encoding described above.
 What is **not** verified: anything against the real server or a real phone. In particular the enum encoding of `OPCode`,

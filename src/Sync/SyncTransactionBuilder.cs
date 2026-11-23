@@ -125,6 +125,22 @@ public static class SyncTransactionBuilder
         return json;
     }
 
+    /// <summary>
+    /// The photo of an entry as an object of its own, for the transaction that deletes the photo
+    /// together with its entry.
+    /// </summary>
+    public static JsonObject PictureDelete(Guid activityId, SyncPictureSnapshot picture)
+    {
+        // The nested form already has objectID, activityID, attached, fileName and mediaType
+        var json = Picture(activityId, picture, false);
+
+        json["BCObjectType"] = "Picture";
+        json["timestamp"] = FormatDate(picture.Timestamp ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        json["deleted"] = true;
+
+        return json;
+    }
+
     /// <summary>The fields of BCObject, Activity and BabyActivity, which every entry has.</summary>
     private static JsonObject Activity(string objectType, SyncCommon common)
     {
@@ -132,7 +148,7 @@ public static class SyncTransactionBuilder
         {
             ["BCObjectType"] = objectType,
             // Serialized while the object is still new, which is why this is true for an insert
-            ["newFlage"] = true,
+            ["newFlage"] = common.IsNew,
             ["objectID"] = common.Id.ToString("D"),
             ["timestamp"] = FormatDate(common.Timestamp),
             ["note"] = common.Note,
@@ -145,7 +161,7 @@ public static class SyncTransactionBuilder
 
         if (common.Picture is { } picture)
         {
-            json["pictureNote"] = new JsonArray(Picture(common.Id, picture));
+            json["pictureNote"] = new JsonArray(Picture(common.Id, picture, common.IsNew));
         }
 
         return json;
@@ -172,10 +188,10 @@ public static class SyncTransactionBuilder
         return json;
     }
 
-    private static JsonObject Picture(Guid activityId, SyncPictureSnapshot picture)
+    private static JsonObject Picture(Guid activityId, SyncPictureSnapshot picture, bool isNew)
         => new()
         {
-            ["newFlage"] = true,
+            ["newFlage"] = isNew,
             ["objectID"] = picture.Id.ToString("D"),
             ["activityID"] = activityId.ToString("D"),
             ["attached"] = true,

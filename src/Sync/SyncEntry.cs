@@ -29,13 +29,21 @@ public sealed record SyncSelectionSnapshot(
     int? Interval = null,
     string? Unit = null);
 
+/// <summary>The <c>OPCode</c> values of an uploaded transaction, see docs/baby-tracker-sync-api.md.</summary>
+public static class SyncOpCodes
+{
+    public const string Insert = "TransactionLogOpCodeInsert";
+    public const string Delete = "TransactionLogOpCodeDelete";
+}
+
 /// <summary>A photo that belongs to an entry. The file name is the id of the picture, without extension.</summary>
-public sealed record SyncPictureSnapshot(Guid Id, string FileName);
+public sealed record SyncPictureSnapshot(Guid Id, string FileName, long? Timestamp = null);
 
 /// <summary>What every entry has in common.</summary>
 /// <param name="Id">The id of the entry.</param>
 /// <param name="Timestamp">When the entry was saved, in Unix seconds.</param>
 /// <param name="Time">When the entry happened, in Unix seconds.</param>
+/// <param name="IsNew">True for an entry that is being inserted, false for one that already exists (a delete).</param>
 /// <param name="TimezoneOffsetSeconds">The raw offset of the time zone of the clone, without daylight saving time.</param>
 public sealed record SyncCommon(
     Guid Id,
@@ -44,11 +52,21 @@ public sealed record SyncCommon(
     string Note,
     int TimezoneOffsetSeconds,
     SyncBabySnapshot Baby,
-    SyncPictureSnapshot? Picture = null);
+    SyncPictureSnapshot? Picture = null,
+    bool IsNew = true);
 
 /// <summary>An entry that was added to the clone, ready to be sent to the Baby Tracker server.</summary>
 /// <param name="Transaction">Base64 of the JSON of the entry, as it goes in <c>TransactionItem.Transaction</c>.</param>
 /// <param name="Picture">The photo and thumbnail files that belong to the entry, if any.</param>
-public sealed record SyncEntry(string Transaction, SyncPictureFiles? Picture = null);
+/// <param name="OpCode">The <see cref="SyncOpCodes"/> value to upload the transaction with.</param>
+/// <param name="PictureTransaction">
+/// A second transaction for the photo of a deleted entry, uploaded right after <paramref name="Transaction"/>
+/// with the same opcode. Base64 of the JSON, like <paramref name="Transaction"/>.
+/// </param>
+public sealed record SyncEntry(
+    string Transaction,
+    SyncPictureFiles? Picture = null,
+    string OpCode = SyncOpCodes.Insert,
+    string? PictureTransaction = null);
 
 public sealed record SyncPictureFiles(string FileName, byte[] Jpeg, byte[] Thumbnail);

@@ -26,8 +26,6 @@ public sealed record SyncDevice(string DeviceUUID, int LastSyncID);
 /// </summary>
 public sealed class BabyTrackerSyncSession
 {
-    private const string UploadTransactionOpCode = "TransactionLogOpCodeInsert";
-
     private readonly HttpClient httpClient;
     private readonly Dictionary<string, string> cookies = new(StringComparer.Ordinal);
 
@@ -102,14 +100,15 @@ public sealed class BabyTrackerSyncSession
         return devices ?? [];
     }
 
-    /// <summary>Uploads one insert transaction. The server answers 201.</summary>
+    /// <summary>Uploads one transaction. The server answers 201.</summary>
     /// <param name="syncId">The id of the transaction in the log of this device.</param>
     /// <param name="transaction">Base64 of the JSON, see <see cref="SyncTransactionBuilder.Encode"/>.</param>
-    public async Task UploadTransactionAsync(int syncId, string transaction, CancellationToken cancellationToken = default)
+    /// <param name="opCode">One of <see cref="SyncOpCodes"/>.</param>
+    public async Task UploadTransactionAsync(int syncId, string transaction, string opCode, CancellationToken cancellationToken = default)
     {
         var body = new JsonObject
         {
-            ["OPCode"] = UploadTransactionOpCode,
+            ["OPCode"] = opCode,
             ["SyncID"] = syncId,
             ["Transaction"] = transaction
         };
@@ -119,7 +118,7 @@ public sealed class BabyTrackerSyncSession
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
 
-        EnsureStatus(response, HttpStatusCode.Created, "Uploading the entry");
+        EnsureStatus(response, HttpStatusCode.Created, "Uploading the transaction");
     }
 
     /// <summary>Uploads one photo file. <paramref name="fileName"/> includes the extension.</summary>

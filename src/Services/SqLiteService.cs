@@ -507,6 +507,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (supplement, supplementSelection) => supplement.TypeId == supplementSelection.Id,
                 (supplement, supplementSelection) => new Supplement
                 {
+                    Id = supplement.Id,
                     Time = supplement.Time,
                     Note = supplement.Note,
                     Title = $"{supplementSelection.Name} {supplement.Amount} {supplement.Unit}"
@@ -526,6 +527,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (medication, medicationSelection) => medication.MedicineSelectionId == medicationSelection.Id,
                 (medication, medicationSelection) => new Medication
                 {
+                    Id = medication.Id,
                     Time = medication.Time,
                     Note = medication.Note,
                     MedicationName = medicationSelection.Name,
@@ -548,6 +550,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (vaccine, vaccineSelection) => vaccine.VaccineId == vaccineSelection.Id,
                 (vaccine, vaccineSelection) => new Vaccine
                 {
+                    Id = vaccine.Id,
                     Time = vaccine.Time,
                     BabyName = babyName,
                     Note = vaccine.Note,
@@ -615,6 +618,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (joy, picture) => joy.Id == picture.ActivityId,
                 (joy, picture) => new Joy
                 {
+                    Id = joy.Id,
                     Time = joy.Time,
                     Note = joy.Note,
                     FileName = picture.FileName
@@ -633,6 +637,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (joy, picture) => joy.Id == picture.ActivityId,
                 (joy, picture) => new Joy
                 {
+                    Id = joy.Id,
                     Time = joy.Time,
                     Note = joy.Note,
                     FileName = picture.FileName
@@ -677,6 +682,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (result, picture) => result.Activity.Id == picture.ActivityId,
                 (result, picture) => new Activity
                 {
+                    Id = result.Activity.Id,
                     Time = result.Activity.Time,
                     Note = result.Activity.Note,
                     FileName = picture.FileName,
@@ -703,6 +709,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (result, picture) => result.Activity.Id == picture.ActivityId,
                 (result, picture) => new Activity
                 {
+                    Id = result.Activity.Id,
                     Time = result.Activity.Time,
                     Note = result.Activity.Note,
                     FileName = picture.FileName,
@@ -750,6 +757,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (result, picture) => result.Milestone.Id == picture.ActivityId,
                 (result, picture) => new Milestone
                 {
+                    Id = result.Milestone.Id,
                     Time = result.Milestone.Time,
                     Note = result.Milestone.Note,
                     Name = result.MilestoneSelection.Name,
@@ -777,6 +785,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
                 (result, picture) => result.Milestone.Id == picture.ActivityId,
                 (result, picture) => new Milestone
                 {
+                    Id = result.Milestone.Id,
                     Time = result.Milestone.Time,
                     Note = result.Milestone.Note,
                     Name = result.MilestoneSelection.Name,

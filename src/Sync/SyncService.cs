@@ -83,11 +83,21 @@ public sealed class SyncService(
 
             var syncId = account!.LastSyncId + 1;
 
-            await session.UploadTransactionAsync(syncId, entry.Transaction, cancellationToken);
+            await session.UploadTransactionAsync(syncId, entry.Transaction, entry.OpCode, cancellationToken);
 
             // Remember it at once: a SyncID that the server has seen must not be used again
             account.LastSyncId = syncId;
             await accountStore.SaveAsync(userId, account);
+
+            if (entry.PictureTransaction is not null)
+            {
+                var pictureSyncId = syncId + 1;
+
+                await session.UploadTransactionAsync(pictureSyncId, entry.PictureTransaction, entry.OpCode, cancellationToken);
+
+                account.LastSyncId = pictureSyncId;
+                await accountStore.SaveAsync(userId, account);
+            }
 
             if (entry.Picture is { } picture)
             {

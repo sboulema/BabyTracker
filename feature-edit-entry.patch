@@ -1,0 +1,1089 @@
+From 92731cd12a5280a28ec4d67be74e73e33f3c07e8 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 17 Nov 2026 06:55:10 +0000
+Subject: [PATCH] feat: Edit a diary entry and sync the change
+
+- Diary entries get an edit link, /{baby}/edit/{type}/{id} reuses the add entry page
+- AddEntryService.GetEntryAsync/UpdateEntryAsync update the row in the encrypted clone
+- The change is sent as a TransactionLogOpCodeUpdate transaction when sync is enabled
+---
+ docs/baby-tracker-sync-api.md                |   4 +
+ src/Controllers/HomeController.cs            | 122 +++++-
+ src/Models/Database/IDbEntry.cs              |  10 +-
+ src/Models/ViewModels/AddEntryViewModel.cs   |   5 +
+ src/Models/ViewModels/DiaryEntryViewModel.cs |   3 +
+ src/Services/AddEntryService.cs              | 412 ++++++++++++++++++-
+ src/Services/DiaryService.cs                 |  43 +-
+ src/Services/SqLiteService.cs                |  25 ++
+ src/Sync/BabyTrackerSyncSession.cs           |  12 +-
+ src/Sync/SyncEntry.cs                        |  19 +-
+ src/Sync/SyncService.cs                      |   6 +-
+ src/Sync/SyncTransactionBuilder.cs           |   8 +-
+ src/Views/Home/AddEntry.cshtml               |  21 +-
+ src/Views/Shared/_DiaryEntryCard.cshtml      |   6 +
+ src/Views/Shared/_DiaryEntryList.cshtml      |   6 +
+ 15 files changed, 644 insertions(+), 58 deletions(-)
+
+diff --git a/docs/baby-tracker-sync-api.md b/docs/baby-tracker-sync-api.md
+index 73cdaed..67b6a4f 100644
+--- a/docs/baby-tracker-sync-api.md
++++ b/docs/baby-tracker-sync-api.md
+@@ -262,6 +262,10 @@ Code: `src/Sync/`. The feature is off unless `BabyTrackerSync:Enabled` is `true`
+ - `SyncAccountStore` keeps the email address, password, device id and `SyncID` counter encrypted with the user's data
+   key, in `Sync/{userId}.json.enc` next to the clone directories, so an import does not remove it.
+ - Guids are written to the clone as lowercase text, like the ids the Android app generates.
++- Editing an entry (`/{baby}/edit/{type}/{id}`) updates its row in the clone and uploads the same JSON as for an insert, with
++  `OPCode` `TransactionLogOpCodeUpdate`, the `objectID` of the existing entry, `newFlage` false and a new `timestamp`.
++  The photo of an entry is not changed by an edit, `pictureNote` only refers to the existing photo. Which fields the
++  phones read from an update, and whether a newer `timestamp` is what makes them accept it, is **not** verified.
+ 
+ What is verified: the code builds, and `Check` style tests against a fake server confirm the requests, cookies, `SyncID`
+ counter, JSON shape and Base64 encoding described above.
+diff --git a/src/Controllers/HomeController.cs b/src/Controllers/HomeController.cs
+index 98b73ad..da30470 100644
+--- a/src/Controllers/HomeController.cs
++++ b/src/Controllers/HomeController.cs
+@@ -97,7 +97,7 @@ public class HomeController(
+ 			entries = await sqLiteService.GetEntriesFromDb(date.Value, babyName);
+ 		}
+ 
+-		var model = DiaryService.GetDays(entries);
++		var model = DiaryService.GetDays(entries, babyName);
+ 
+ 		var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
+ 		var datePrevious = availableDates.TakeWhile(availableDate => availableDate != date).LastOrDefault();
+@@ -306,30 +306,130 @@ public class HomeController(
+ 		await cacheEvictionService.EvictClonePagesAsync(activeUserId);
+ 		await cacheEvictionService.EvictUserPagesAsync(User);
+ 
+-		switch (result.Sync.Status)
++		SetSavedNotification(model.Type, "added", result.Sync);
++
++		return RedirectToAction(nameof(Diary), new
++		{
++			babyName,
++			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
++		});
++	}
++
++	[Authorize]
++    [ServiceFilter<RequireDataCloneFilter>]
++    [HttpGet("{babyName}/edit/{entryType}/{id:guid}")]
++	public async Task<IActionResult> EditEntry(string babyName, string entryType, Guid id)
++	{
++		if (!TryParseEntryType(entryType, out var type))
++		{
++			return NotFound();
++		}
++
++		await sqLiteService.OpenDataConnectionAsync(User);
++
++		var entry = await addEntryService.GetEntryAsync(babyName, type, id);
++
++		await sqLiteService.CloseDataConnection();
++
++		if (entry == null)
++		{
++			return NotFound();
++		}
++
++		var model = await PrepareAddEntryViewModel(entry, babyName);
++
++		if (model == null)
++		{
++			return NotFound();
++		}
++
++		return View("AddEntry", model);
++	}
++
++	[Authorize]
++    [ServiceFilter<RequireDataCloneFilter>]
++    [HttpPost("{babyName}/edit/{entryType}/{id:guid}")]
++	[ValidateAntiForgeryToken]
++	public async Task<IActionResult> EditEntry(string babyName, string entryType, Guid id, AddEntryViewModel model)
++	{
++		if (!TryParseEntryType(entryType, out var type))
++		{
++			return NotFound();
++		}
++
++		var activeUserId = User.FindFirstValue("activeUserId");
++
++		if (string.IsNullOrEmpty(activeUserId))
++		{
++			return Forbid();
++		}
++
++		// The kind of entry and which entry come from the address, never from the form
++		model.Type = type;
++		model.Id = id;
++
++		ValidateEntry(model);
++
++		if (!ModelState.IsValid)
++		{
++			var invalidModel = await PrepareAddEntryViewModel(model, babyName);
++
++			if (invalidModel == null)
++			{
++				return NotFound();
++			}
++
++			return View("AddEntry", invalidModel);
++		}
++
++		AddEntryResult result;
++
++		try
++		{
++			result = await addEntryService.UpdateEntryAsync(activeUserId, babyName, id, model);
++		}
++		catch (KeyNotFoundException)
++		{
++			return NotFound();
++		}
++
++		// The Diary is output-cached: drop the pages of everyone viewing this clone
++		await cacheEvictionService.EvictClonePagesAsync(activeUserId);
++		await cacheEvictionService.EvictUserPagesAsync(User);
++
++		SetSavedNotification(model.Type, "updated", result.Sync);
++
++		return RedirectToAction(nameof(Diary), new
++		{
++			babyName,
++			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
++		});
++	}
++
++	private static bool TryParseEntryType(string value, out EntryTypeEnum type)
++		=> Enum.TryParse(value, ignoreCase: true, out type) && Enum.IsDefined(type);
++
++	/// <param name="action">What happened to the entry, in the past tense: "added" or "updated".</param>
++	private void SetSavedNotification(EntryTypeEnum type, string action, SyncResult sync)
++	{
++		switch (sync.Status)
+ 		{
+ 			case SyncStatus.Sent:
+-				TempData["notificationMessage"] = $"{model.Type} entry added and sent to the Baby Tracker app.";
++				TempData["notificationMessage"] = $"{type} entry {action} and sent to the Baby Tracker app.";
+ 				TempData["notificationType"] = "success";
+ 				break;
+ 
+ 			case SyncStatus.Failed:
+ 				TempData["notificationMessage"] =
+-					$"{model.Type} entry added, but it could not be sent to the Baby Tracker app: {WebUtility.HtmlEncode(result.Sync.Message ?? "unknown error")}";
++					$"{type} entry {action}, but it could not be sent to the Baby Tracker app: {WebUtility.HtmlEncode(sync.Message ?? "unknown error")}";
+ 				TempData["notificationType"] = "warning";
+ 				break;
+ 
+ 			default:
+-				TempData["notificationMessage"] = $"{model.Type} entry added.";
++				TempData["notificationMessage"] = $"{type} entry {action}.";
+ 				TempData["notificationType"] = "success";
+ 				break;
+ 		}
+-
+-		return RedirectToAction(nameof(Diary), new
+-		{
+-			babyName,
+-			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
+-		});
+ 	}
+ 
+ 	private void ValidateEntry(AddEntryViewModel model)
+diff --git a/src/Models/Database/IDbEntry.cs b/src/Models/Database/IDbEntry.cs
+index 4fe72d0..69ba9ae 100644
+--- a/src/Models/Database/IDbEntry.cs
++++ b/src/Models/Database/IDbEntry.cs
+@@ -1,6 +1,14 @@
+-﻿namespace BabyTracker.Models.Database;
++﻿using System;
++
++namespace BabyTracker.Models.Database;
+ 
+ public interface IDbEntry
+ {
++    Guid Id { get; set; }
++
++    Guid BabyId { get; set; }
++
+     long Time { get; set; }
++
++    string Note { get; set; }
+ }
+diff --git a/src/Models/ViewModels/AddEntryViewModel.cs b/src/Models/ViewModels/AddEntryViewModel.cs
+index 77e6299..60e77be 100644
+--- a/src/Models/ViewModels/AddEntryViewModel.cs
++++ b/src/Models/ViewModels/AddEntryViewModel.cs
+@@ -9,6 +9,11 @@ namespace BabyTracker.Models.ViewModels;
+ 
+ public class AddEntryViewModel : BaseViewModel
+ {
++    /// <summary>The id of the entry that is being edited, null when a new entry is being added.</summary>
++    public Guid? Id { get; set; }
++
++    public bool IsEdit => Id.HasValue;
++
+     public EntryTypeEnum Type { get; set; }
+ 
+     /// <summary>Wall-clock time in the time zone of the data clone.</summary>
+diff --git a/src/Models/ViewModels/DiaryEntryViewModel.cs b/src/Models/ViewModels/DiaryEntryViewModel.cs
+index 5b0b732..b4ca991 100644
+--- a/src/Models/ViewModels/DiaryEntryViewModel.cs
++++ b/src/Models/ViewModels/DiaryEntryViewModel.cs
+@@ -21,4 +21,7 @@ public class DiaryEntryViewModel
+     public string Note { get; set; } = string.Empty;
+ 
+     public string PictureFileName { get; set; } = string.Empty;
++
++    /// <summary>The address of the page to edit the entry. Empty when the entry cannot be edited.</summary>
++    public string EditUrl { get; set; } = string.Empty;
+ }
+diff --git a/src/Services/AddEntryService.cs b/src/Services/AddEntryService.cs
+index c11f10a..e6fca86 100644
+--- a/src/Services/AddEntryService.cs
++++ b/src/Services/AddEntryService.cs
+@@ -25,6 +25,18 @@ public interface IAddEntryService
+     /// <param name="picture">The processed photo of the entry. Only used by the entry types that can have a photo.</param>
+     /// <exception cref="KeyNotFoundException">There is no baby with this name in the data clone.</exception>
+     Task<AddEntryResult> AddEntryAsync(string userId, string babyName, AddEntryViewModel model, ProcessedPicture? picture = null);
++
++    /// <summary>Reads an entry of the baby into the form model. The data connection of <see cref="ISqLiteService"/> must be open.</summary>
++    /// <returns>The model with the values of the entry, or null when the baby or the entry does not exist.</returns>
++    Task<AddEntryViewModel?> GetEntryAsync(string babyName, EntryTypeEnum type, Guid id);
++
++    /// <summary>
++    /// Saves the values of <paramref name="model"/> over the entry <paramref name="id"/> of the type <c>model.Type</c>.
++    /// The type, the baby and the photo of an entry do not change.
++    /// </summary>
++    /// <param name="userId">The active user id: the owner of the data clone to write to.</param>
++    /// <exception cref="KeyNotFoundException">There is no baby with this name, or the baby has no such entry.</exception>
++    Task<AddEntryResult> UpdateEntryAsync(string userId, string babyName, Guid id, AddEntryViewModel model);
+ }
+ 
+ public class AddEntryService(
+@@ -86,14 +98,7 @@ public class AddEntryService(
+     private static async Task<SyncEntry?> InsertEntryAsync(LinqToDB.Data.DataConnection db, string babyName, AddEntryViewModel model,
+         Guid? pictureId, string? pictureFileName, ProcessedPicture? picture, bool buildSyncEntry)
+     {
+-        var baby = await db.GetTable<Baby>()
+-            .Where(candidate => candidate.Name.ToLower() == babyName.ToLower())
+-            .FirstOrDefaultAsync();
+-
+-        if (baby is null || baby.Id == Guid.Empty)
+-        {
+-            throw new KeyNotFoundException($"Baby '{babyName}' was not found in the data clone.");
+-        }
++        var baby = await GetBabyAsync(db, babyName);
+ 
+         var babyId = baby.Id;
+         var id = Guid.NewGuid();
+@@ -107,14 +112,7 @@ public class AddEntryService(
+             time,
+             note,
+             TimeExtensions.GetCloneTimeZoneRawOffsetSeconds(),
+-            new SyncBabySnapshot(
+-                baby.Id,
+-                baby.Timestamp,
+-                baby.Name,
+-                baby.DOB,
+-                baby.DueDate,
+-                baby.Gender != 0,
+-                string.IsNullOrEmpty(baby.PictureFileName) ? null : baby.PictureFileName));
++            ToSyncBaby(baby));
+ 
+         // A photo belongs to the entry: a Picture row that points at it, and HasPicture on the entry
+         var hasPicture = picture is not null && pictureId is not null && pictureFileName is not null;
+@@ -342,6 +340,388 @@ public class AddEntryService(
+             hasPicture ? new SyncPictureFiles(pictureFileName!, picture!.Jpeg, picture.Thumbnail) : null);
+     }
+ 
++    public async Task<AddEntryViewModel?> GetEntryAsync(string babyName, EntryTypeEnum type, Guid id)
++    {
++        var babies = await sqLiteService.GetBabiesFromDb();
++
++        var baby = babies.FirstOrDefault(candidate =>
++            string.Equals(candidate.Name, babyName, StringComparison.OrdinalIgnoreCase));
++
++        if (baby is null)
++        {
++            return null;
++        }
++
++        IDbEntry? entry = type switch
++        {
++            EntryTypeEnum.Diaper => await sqLiteService.GetEntryAsync<Diaper>(id),
++            EntryTypeEnum.Formula => await sqLiteService.GetEntryAsync<Formula>(id),
++            EntryTypeEnum.Sleep => await sqLiteService.GetEntryAsync<Sleep>(id),
++            EntryTypeEnum.Joy => await sqLiteService.GetEntryAsync<Joy>(id),
++            EntryTypeEnum.Activity => await sqLiteService.GetEntryAsync<Activity>(id),
++            EntryTypeEnum.Growth => await sqLiteService.GetEntryAsync<Growth>(id),
++            EntryTypeEnum.Temperature => await sqLiteService.GetEntryAsync<Temperature>(id),
++            EntryTypeEnum.Milestone => await sqLiteService.GetEntryAsync<Milestone>(id),
++            EntryTypeEnum.Medication => await sqLiteService.GetEntryAsync<Medication>(id),
++            EntryTypeEnum.Vaccine => await sqLiteService.GetEntryAsync<Vaccine>(id),
++            EntryTypeEnum.Supplement => await sqLiteService.GetEntryAsync<Supplement>(id),
++            _ => null
++        };
++
++        // An entry of another baby is not found through this baby
++        if (entry is null || entry.BabyId != baby.Id)
++        {
++            return null;
++        }
++
++        var model = new AddEntryViewModel
++        {
++            Id = id,
++            Type = type,
++            Time = entry.Time.ToDateTimeLocal(),
++            Note = entry.Note
++        };
++
++        switch (entry)
++        {
++            case Diaper diaper:
++                model.DiaperStatus = diaper.Status;
++                break;
++
++            case Formula formula:
++                model.FormulaAmount = formula.Amount;
++                break;
++
++            case Sleep sleep:
++                model.SleepMinutes = sleep.Duration;
++                break;
++
++            case Activity activity:
++                model.ActivityDescriptionId = activity.DescriptionId;
++                model.ActivityMinutes = activity.Duration;
++                break;
++
++            case Growth growth:
++                // The app stores 0 for a measurement that was not filled in
++                model.GrowthWeight = growth.Weight == 0 ? null : growth.Weight;
++                model.GrowthLength = growth.Length == 0 ? null : growth.Length;
++                model.GrowthHeadSize = growth.HeadSize == 0 ? null : growth.HeadSize;
++                break;
++
++            case Temperature temperature:
++                model.TemperatureCelsius = temperature.Temp;
++                break;
++
++            case Milestone milestone:
++                model.MilestoneSelectionId = milestone.MilestoneSelectionId;
++                break;
++
++            case Medication medication:
++                model.MedicationSelectionId = medication.MedicineSelectionId;
++                model.MedicationAmount = medication.Amount;
++                break;
++
++            case Vaccine vaccine:
++                model.VaccineSelectionId = vaccine.VaccineId;
++                break;
++
++            case Supplement supplement:
++                model.SupplementSelectionId = supplement.TypeId;
++                model.SupplementAmount = supplement.Amount;
++                model.SupplementUnit = supplement.Unit;
++                break;
++        }
++
++        return model;
++    }
++
++    public async Task<AddEntryResult> UpdateEntryAsync(string userId, string babyName, Guid id, AddEntryViewModel model)
++    {
++        var syncEnabled = await syncService.IsEnabledAsync(userId);
++
++        SyncEntry? syncEntry = null;
++
++        await sqLiteService.AddEntryAsync(userId, async db =>
++        {
++            syncEntry = await UpdateEntryRowAsync(db, babyName, id, model, syncEnabled);
++        });
++
++        if (syncEntry is null)
++        {
++            return new AddEntryResult(new SyncResult(SyncStatus.Skipped));
++        }
++
++        // The change is in the clone now, so a problem with the Baby Tracker server is only reported
++        return new AddEntryResult(await syncService.PublishAsync(userId, syncEntry));
++    }
++
++    /// <returns>The change as a transaction for the Baby Tracker server, or null when <paramref name="buildSyncEntry"/> is false.</returns>
++    private static async Task<SyncEntry?> UpdateEntryRowAsync(LinqToDB.Data.DataConnection db, string babyName, Guid id,
++        AddEntryViewModel model, bool buildSyncEntry)
++    {
++        var baby = await GetBabyAsync(db, babyName);
++
++        var babyId = baby.Id;
++        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
++        var time = model.Time.ToUnixTimestampFromLocal();
++        var note = model.Note ?? string.Empty;
++
++        // The photo of an entry is not changed here, the transaction only refers to it
++        SyncPictureSnapshot? picture = null;
++
++        if (model.Type.SupportsPicture())
++        {
++            var existingPicture = await db.GetTable<Picture>()
++                .Where(candidate => candidate.ActivityId == id)
++                .Select(candidate => new Picture { Id = candidate.Id, FileName = candidate.FileName })
++                .FirstOrDefaultAsync();
++
++            if (existingPicture is not null)
++            {
++                picture = new SyncPictureSnapshot(existingPicture.Id, existingPicture.FileName);
++            }
++        }
++
++        var common = new SyncCommon(
++            id,
++            timestamp,
++            time,
++            note,
++            TimeExtensions.GetCloneTimeZoneRawOffsetSeconds(),
++            ToSyncBaby(baby),
++            picture,
++            IsNew: false);
++
++        async Task<SyncSelectionSnapshot?> ReadSelection(string table, string? selectionId)
++            => buildSyncEntry
++                ? await SyncSnapshotReader.ReadSelectionAsync(db, table, selectionId ?? string.Empty)
++                : null;
++
++        JsonObject? transaction = null;
++        var updatedRows = 0;
++
++        switch (model.Type)
++        {
++            case EntryTypeEnum.Diaper:
++            {
++                var status = model.DiaperStatus;
++
++                updatedRows = await db.GetTable<Diaper>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Diaper { Timestamp = timestamp, Time = time, Note = note, Status = status });
++
++                transaction = SyncTransactionBuilder.Diaper(common, ToSyncDiaperStatus(status));
++                break;
++            }
++
++            case EntryTypeEnum.Formula:
++            {
++                var amount = model.FormulaAmount ?? 0;
++
++                updatedRows = await db.GetTable<Formula>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Formula { Timestamp = timestamp, Time = time, Note = note, Amount = amount });
++
++                transaction = SyncTransactionBuilder.Formula(common, amount);
++                break;
++            }
++
++            case EntryTypeEnum.Sleep:
++            {
++                var duration = model.SleepMinutes ?? 0;
++
++                updatedRows = await db.GetTable<Sleep>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Sleep { Timestamp = timestamp, Time = time, Note = note, Duration = duration });
++
++                transaction = SyncTransactionBuilder.Sleep(common, duration);
++                break;
++            }
++
++            case EntryTypeEnum.Joy:
++                updatedRows = await db.GetTable<Joy>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Joy { Timestamp = timestamp, Time = time, Note = note });
++
++                transaction = SyncTransactionBuilder.Joy(common);
++                break;
++
++            case EntryTypeEnum.Activity:
++            {
++                var descriptionId = model.ActivityDescriptionId ?? string.Empty;
++                var duration = model.ActivityMinutes ?? 0;
++                var description = await ReadSelection(SyncSnapshotReader.ActivityDescriptionTable, model.ActivityDescriptionId);
++
++                updatedRows = await db.GetTable<Activity>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Activity
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, DescriptionId = descriptionId, Duration = duration
++                    });
++
++                transaction = description is null
++                    ? null
++                    : SyncTransactionBuilder.OtherActivity(common, description, duration);
++                break;
++            }
++
++            case EntryTypeEnum.Growth:
++            {
++                var weight = model.GrowthWeight ?? 0;
++                var length = model.GrowthLength ?? 0;
++                var headSize = model.GrowthHeadSize ?? 0;
++
++                updatedRows = await db.GetTable<Growth>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Growth
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, Weight = weight, Length = length, HeadSize = headSize
++                    });
++
++                transaction = SyncTransactionBuilder.Growth(common, weight, length, headSize);
++                break;
++            }
++
++            case EntryTypeEnum.Temperature:
++            {
++                var celsius = model.TemperatureCelsius ?? 0;
++
++                updatedRows = await db.GetTable<Temperature>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Temperature { Timestamp = timestamp, Time = time, Note = note, Temp = celsius });
++
++                transaction = SyncTransactionBuilder.Temperature(common, celsius);
++                break;
++            }
++
++            case EntryTypeEnum.Milestone:
++            {
++                var selectionId = model.MilestoneSelectionId;
++                var selection = await ReadSelection(SyncSnapshotReader.MilestoneSelectionTable, selectionId);
++
++                updatedRows = await db.GetTable<Milestone>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Milestone
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, MilestoneSelectionId = selectionId ?? string.Empty
++                    });
++
++                transaction = selection is null ? null : SyncTransactionBuilder.Milestone(common, selection);
++                break;
++            }
++
++            case EntryTypeEnum.Medication:
++            {
++                var selectionId = model.MedicationSelectionId ?? Guid.Empty;
++
++                // Default to the dose that is set up for the medication
++                var amount = model.MedicationAmount ?? await db.GetTable<MedicationSelection>()
++                    .Where(candidate => candidate.Id == selectionId)
++                    .Select(candidate => candidate.AmountPerTime)
++                    .FirstOrDefaultAsync();
++
++                var selection = await ReadSelection(SyncSnapshotReader.MedicineSelectionTable, selectionId.ToString("D"));
++
++                updatedRows = await db.GetTable<Medication>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Medication
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, MedicineSelectionId = selectionId, Amount = amount
++                    });
++
++                transaction = selection is null ? null : SyncTransactionBuilder.Medication(common, selection, amount);
++                break;
++            }
++
++            case EntryTypeEnum.Vaccine:
++            {
++                var vaccineId = model.VaccineSelectionId ?? string.Empty;
++                var selection = await ReadSelection(SyncSnapshotReader.VaccineSelectionTable, model.VaccineSelectionId);
++
++                var doctorVisitId = await db.GetTable<Vaccine>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .Select(entry => entry.DocVisitId)
++                    .FirstOrDefaultAsync();
++
++                updatedRows = await db.GetTable<Vaccine>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Vaccine
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, VaccineId = vaccineId
++                    });
++
++                // The doctor visit that was recorded with the vaccine moves along with it
++                if (updatedRows > 0)
++                {
++                    await db.GetTable<DoctorVisit>()
++                        .Where(visit => visit.Id == doctorVisitId)
++                        .UpdateAsync(visit => new DoctorVisit { Timestamp = timestamp, Time = time });
++                }
++
++                transaction = selection is null ? null : SyncTransactionBuilder.Vaccine(common, selection);
++                break;
++            }
++
++            case EntryTypeEnum.Supplement:
++            {
++                var typeId = model.SupplementSelectionId ?? string.Empty;
++                var amount = model.SupplementAmount ?? 0;
++                var unit = string.IsNullOrWhiteSpace(model.SupplementUnit) ? "ml" : model.SupplementUnit.Trim();
++                var selection = await ReadSelection(SyncSnapshotReader.FeedSelectionTable, model.SupplementSelectionId);
++
++                updatedRows = await db.GetTable<Supplement>()
++                    .Where(entry => entry.Id == id && entry.BabyId == babyId)
++                    .UpdateAsync(entry => new Supplement
++                    {
++                        Timestamp = timestamp, Time = time, Note = note, TypeId = typeId, Amount = amount, Unit = unit
++                    });
++
++                transaction = selection is null ? null : SyncTransactionBuilder.OtherFeed(common, selection, amount, unit);
++                break;
++            }
++
++            default:
++                throw new InvalidOperationException($"Unsupported entry type {model.Type}.");
++        }
++
++        // Nothing is saved when the entry is not there: the transaction of the write is rolled back
++        if (updatedRows == 0)
++        {
++            throw new KeyNotFoundException($"The {model.Type} entry {id} of baby '{babyName}' was not found in the data clone.");
++        }
++
++        if (!buildSyncEntry || transaction is null)
++        {
++            return null;
++        }
++
++        return new SyncEntry(SyncTransactionBuilder.Encode(transaction), OpCode: SyncOpCodes.Update);
++    }
++
++    private static async Task<Baby> GetBabyAsync(LinqToDB.Data.DataConnection db, string babyName)
++    {
++        var baby = await db.GetTable<Baby>()
++            .Where(candidate => candidate.Name.ToLower() == babyName.ToLower())
++            .FirstOrDefaultAsync();
++
++        if (baby is null || baby.Id == Guid.Empty)
++        {
++            throw new KeyNotFoundException($"Baby '{babyName}' was not found in the data clone.");
++        }
++
++        return baby;
++    }
++
++    private static SyncBabySnapshot ToSyncBaby(Baby baby)
++        => new(
++            baby.Id,
++            baby.Timestamp,
++            baby.Name,
++            baby.DOB,
++            baby.DueDate,
++            baby.Gender != 0,
++            string.IsNullOrEmpty(baby.PictureFileName) ? null : baby.PictureFileName);
++
+     private static string ToSyncDiaperStatus(DiaperStatusEnum status)
+         => status switch
+         {
+diff --git a/src/Services/DiaryService.cs b/src/Services/DiaryService.cs
+index c67e48f..181d6f1 100644
+--- a/src/Services/DiaryService.cs
++++ b/src/Services/DiaryService.cs
+@@ -1,5 +1,7 @@
+-﻿using BabyTracker.Models.Database;
++﻿using BabyTracker.Constants;
++using BabyTracker.Models.Database;
+ using BabyTracker.Models.ViewModels;
++using System;
+ using System.Collections.Generic;
+ using System.Linq;
+ 
+@@ -7,16 +9,49 @@ namespace BabyTracker.Services;
+ 
+ public static class DiaryService
+ {
+-    public static DiaryViewModel GetDays(List<IDbEntry> entries)
++    /// <param name="babyName">The baby the entries belong to. Needed for the entries to get a link to edit them.</param>
++    public static DiaryViewModel GetDays(List<IDbEntry> entries, string? babyName = null)
+         => new()
+         {
+-            Entries = entries.OrderByDescending(e => e.Time).Select(Map)
++            Entries = entries.OrderByDescending(e => e.Time).Select(entry => Map(entry, babyName))
+         };
+ 
+     public static DiaryViewModel GetDays(List<IMemoryEntry> entries)
+         => GetDays(entries.Cast<IDbEntry>().ToList());
+ 
+-    private static DiaryEntryViewModel Map(IDbEntry entry)
++    private static DiaryEntryViewModel Map(IDbEntry entry, string? babyName)
++    {
++        var model = MapEntry(entry);
++
++        var type = GetEntryType(entry);
++
++        // Entries of the memories and of the search do not always have an id: those cannot be edited
++        if (type is not null && entry.Id != Guid.Empty && !string.IsNullOrEmpty(babyName))
++        {
++            model.EditUrl = $"/{Uri.EscapeDataString(babyName)}/edit/{type}/{entry.Id:D}";
++        }
++
++        return model;
++    }
++
++    private static EntryTypeEnum? GetEntryType(IDbEntry entry)
++        => entry switch
++        {
++            Diaper => EntryTypeEnum.Diaper,
++            Formula => EntryTypeEnum.Formula,
++            Sleep => EntryTypeEnum.Sleep,
++            Joy => EntryTypeEnum.Joy,
++            Activity => EntryTypeEnum.Activity,
++            Growth => EntryTypeEnum.Growth,
++            Temperature => EntryTypeEnum.Temperature,
++            Milestone => EntryTypeEnum.Milestone,
++            Medication => EntryTypeEnum.Medication,
++            Vaccine => EntryTypeEnum.Vaccine,
++            Supplement => EntryTypeEnum.Supplement,
++            _ => null
++        };
++
++    private static DiaryEntryViewModel MapEntry(IDbEntry entry)
+     {
+         if (entry is Diaper diaper)
+         {
+diff --git a/src/Services/SqLiteService.cs b/src/Services/SqLiteService.cs
+index 682573c..21a998a 100644
+--- a/src/Services/SqLiteService.cs
++++ b/src/Services/SqLiteService.cs
+@@ -35,6 +35,9 @@ public interface ISqLiteService
+     /// <param name="userId">userId without prefix (the active user id)</param>
+     Task AddEntryAsync(string userId, Func<DataConnection, Task> write);
+ 
++    /// <summary>Reads one entry of type <typeparamref name="T"/> by its id, or null when there is none.</summary>
++    Task<T?> GetEntryAsync<T>(Guid id) where T : class, IDbEntry;
++
+     Task<List<ActivityDescription>> GetActivityDescriptionsFromDb();
+ 
+     Task<List<MilestoneSelection>> GetMilestoneSelectionsFromDb();
+@@ -372,6 +375,19 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+         return babies;
+     }
+ 
++    public async Task<T?> GetEntryAsync<T>(Guid id) where T : class, IDbEntry
++    {
++        if (_db == null)
++        {
++            return null;
++        }
++
++        // Sql.Property: the Id column is looked up by name, which also works through the generic parameter
++        return await _db.GetTable<T>()
++            .Where(entry => Sql.Property<Guid>(entry, nameof(IDbEntry.Id)) == id)
++            .FirstOrDefaultAsync();
++    }
++
+     public async Task<List<ActivityDescription>> GetActivityDescriptionsFromDb()
+     {
+         if (_db == null)
+@@ -507,6 +523,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (supplement, supplementSelection) => supplement.TypeId == supplementSelection.Id,
+                 (supplement, supplementSelection) => new Supplement
+                 {
++                    Id = supplement.Id,
+                     Time = supplement.Time,
+                     Note = supplement.Note,
+                     Title = $"{supplementSelection.Name} {supplement.Amount} {supplement.Unit}"
+@@ -526,6 +543,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (medication, medicationSelection) => medication.MedicineSelectionId == medicationSelection.Id,
+                 (medication, medicationSelection) => new Medication
+                 {
++                    Id = medication.Id,
+                     Time = medication.Time,
+                     Note = medication.Note,
+                     MedicationName = medicationSelection.Name,
+@@ -548,6 +566,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (vaccine, vaccineSelection) => vaccine.VaccineId == vaccineSelection.Id,
+                 (vaccine, vaccineSelection) => new Vaccine
+                 {
++                    Id = vaccine.Id,
+                     Time = vaccine.Time,
+                     BabyName = babyName,
+                     Note = vaccine.Note,
+@@ -615,6 +634,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (joy, picture) => joy.Id == picture.ActivityId,
+                 (joy, picture) => new Joy
+                 {
++                    Id = joy.Id,
+                     Time = joy.Time,
+                     Note = joy.Note,
+                     FileName = picture.FileName
+@@ -633,6 +653,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (joy, picture) => joy.Id == picture.ActivityId,
+                 (joy, picture) => new Joy
+                 {
++                    Id = joy.Id,
+                     Time = joy.Time,
+                     Note = joy.Note,
+                     FileName = picture.FileName
+@@ -677,6 +698,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (result, picture) => result.Activity.Id == picture.ActivityId,
+                 (result, picture) => new Activity
+                 {
++                    Id = result.Activity.Id,
+                     Time = result.Activity.Time,
+                     Note = result.Activity.Note,
+                     FileName = picture.FileName,
+@@ -703,6 +725,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (result, picture) => result.Activity.Id == picture.ActivityId,
+                 (result, picture) => new Activity
+                 {
++                    Id = result.Activity.Id,
+                     Time = result.Activity.Time,
+                     Note = result.Activity.Note,
+                     FileName = picture.FileName,
+@@ -750,6 +773,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (result, picture) => result.Milestone.Id == picture.ActivityId,
+                 (result, picture) => new Milestone
+                 {
++                    Id = result.Milestone.Id,
+                     Time = result.Milestone.Time,
+                     Note = result.Milestone.Note,
+                     Name = result.MilestoneSelection.Name,
+@@ -777,6 +801,7 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
+                 (result, picture) => result.Milestone.Id == picture.ActivityId,
+                 (result, picture) => new Milestone
+                 {
++                    Id = result.Milestone.Id,
+                     Time = result.Milestone.Time,
+                     Note = result.Milestone.Note,
+                     Name = result.MilestoneSelection.Name,
+diff --git a/src/Sync/BabyTrackerSyncSession.cs b/src/Sync/BabyTrackerSyncSession.cs
+index 779707c..8f25a8c 100644
+--- a/src/Sync/BabyTrackerSyncSession.cs
++++ b/src/Sync/BabyTrackerSyncSession.cs
+@@ -26,8 +26,6 @@ public sealed record SyncDevice(string DeviceUUID, int LastSyncID);
+ /// </summary>
+ public sealed class BabyTrackerSyncSession
+ {
+-    private const string UploadTransactionOpCode = "TransactionLogOpCodeInsert";
+-
+     private readonly HttpClient httpClient;
+     private readonly Dictionary<string, string> cookies = new(StringComparer.Ordinal);
+ 
+@@ -102,14 +100,16 @@ public sealed class BabyTrackerSyncSession
+         return devices ?? [];
+     }
+ 
+-    /// <summary>Uploads one insert transaction. The server answers 201.</summary>
++    /// <summary>Uploads one transaction. The server answers 201.</summary>
+     /// <param name="syncId">The id of the transaction in the log of this device.</param>
+     /// <param name="transaction">Base64 of the JSON, see <see cref="SyncTransactionBuilder.Encode"/>.</param>
+-    public async Task UploadTransactionAsync(int syncId, string transaction, CancellationToken cancellationToken = default)
++    /// <param name="opCode">One of <see cref="SyncOpCodes"/>.</param>
++    public async Task UploadTransactionAsync(int syncId, string transaction, string opCode = SyncOpCodes.Insert,
++        CancellationToken cancellationToken = default)
+     {
+         var body = new JsonObject
+         {
+-            ["OPCode"] = UploadTransactionOpCode,
++            ["OPCode"] = opCode,
+             ["SyncID"] = syncId,
+             ["Transaction"] = transaction
+         };
+@@ -119,7 +119,7 @@ public sealed class BabyTrackerSyncSession
+ 
+         using var response = await httpClient.SendAsync(request, cancellationToken);
+ 
+-        EnsureStatus(response, HttpStatusCode.Created, "Uploading the entry");
++        EnsureStatus(response, HttpStatusCode.Created, opCode == SyncOpCodes.Update ? "Uploading the change" : "Uploading the entry");
+     }
+ 
+     /// <summary>Uploads one photo file. <paramref name="fileName"/> includes the extension.</summary>
+diff --git a/src/Sync/SyncEntry.cs b/src/Sync/SyncEntry.cs
+index 18dd9d8..3c033ec 100644
+--- a/src/Sync/SyncEntry.cs
++++ b/src/Sync/SyncEntry.cs
+@@ -37,6 +37,7 @@ public sealed record SyncPictureSnapshot(Guid Id, string FileName);
+ /// <param name="Timestamp">When the entry was saved, in Unix seconds.</param>
+ /// <param name="Time">When the entry happened, in Unix seconds.</param>
+ /// <param name="TimezoneOffsetSeconds">The raw offset of the time zone of the clone, without daylight saving time.</param>
++/// <param name="IsNew">True for an insert (<c>newFlage</c> is true), false for an update of an existing entry.</param>
+ public sealed record SyncCommon(
+     Guid Id,
+     long Timestamp,
+@@ -44,11 +45,21 @@ public sealed record SyncCommon(
+     string Note,
+     int TimezoneOffsetSeconds,
+     SyncBabySnapshot Baby,
+-    SyncPictureSnapshot? Picture = null);
++    SyncPictureSnapshot? Picture = null,
++    bool IsNew = true);
+ 
+-/// <summary>An entry that was added to the clone, ready to be sent to the Baby Tracker server.</summary>
++/// <summary>The operation of a transaction, as the <c>OPCode</c> of a <c>TransactionItem</c>.</summary>
++public static class SyncOpCodes
++{
++    public const string Insert = "TransactionLogOpCodeInsert";
++
++    public const string Update = "TransactionLogOpCodeUpdate";
++}
++
++/// <summary>An entry that was added to or changed in the clone, ready to be sent to the Baby Tracker server.</summary>
+ /// <param name="Transaction">Base64 of the JSON of the entry, as it goes in <c>TransactionItem.Transaction</c>.</param>
+-/// <param name="Picture">The photo and thumbnail files that belong to the entry, if any.</param>
+-public sealed record SyncEntry(string Transaction, SyncPictureFiles? Picture = null);
++/// <param name="Picture">The photo and thumbnail files that belong to the entry, if any. Only for a new photo.</param>
++/// <param name="OpCode">One of <see cref="SyncOpCodes"/>.</param>
++public sealed record SyncEntry(string Transaction, SyncPictureFiles? Picture = null, string OpCode = SyncOpCodes.Insert);
+ 
+ public sealed record SyncPictureFiles(string FileName, byte[] Jpeg, byte[] Thumbnail);
+diff --git a/src/Sync/SyncService.cs b/src/Sync/SyncService.cs
+index 52f0c4c..58a2061 100644
+--- a/src/Sync/SyncService.cs
++++ b/src/Sync/SyncService.cs
+@@ -25,8 +25,8 @@ public interface ISyncService
+     Task<bool> IsEnabledAsync(string userId);
+ 
+     /// <summary>
+-    /// Sends the entry as a new transaction of this website's device. Never throws: the entry is already
+-    /// in the clone, so a failure is reported in the result.
++    /// Sends the entry (a new one or a change of an existing one) as a new transaction of this website's device.
++    /// Never throws: the entry is already in the clone, so a failure is reported in the result.
+     /// </summary>
+     Task<SyncResult> PublishAsync(string userId, SyncEntry entry, CancellationToken cancellationToken = default);
+ 
+@@ -83,7 +83,7 @@ public sealed class SyncService(
+ 
+             var syncId = account!.LastSyncId + 1;
+ 
+-            await session.UploadTransactionAsync(syncId, entry.Transaction, cancellationToken);
++            await session.UploadTransactionAsync(syncId, entry.Transaction, entry.OpCode, cancellationToken);
+ 
+             // Remember it at once: a SyncID that the server has seen must not be used again
+             account.LastSyncId = syncId;
+diff --git a/src/Sync/SyncTransactionBuilder.cs b/src/Sync/SyncTransactionBuilder.cs
+index c4688a8..b5f8303 100644
+--- a/src/Sync/SyncTransactionBuilder.cs
++++ b/src/Sync/SyncTransactionBuilder.cs
+@@ -132,7 +132,7 @@ public static class SyncTransactionBuilder
+         {
+             ["BCObjectType"] = objectType,
+             // Serialized while the object is still new, which is why this is true for an insert
+-            ["newFlage"] = true,
++            ["newFlage"] = common.IsNew,
+             ["objectID"] = common.Id.ToString("D"),
+             ["timestamp"] = FormatDate(common.Timestamp),
+             ["note"] = common.Note,
+@@ -145,7 +145,7 @@ public static class SyncTransactionBuilder
+ 
+         if (common.Picture is { } picture)
+         {
+-            json["pictureNote"] = new JsonArray(Picture(common.Id, picture));
++            json["pictureNote"] = new JsonArray(Picture(common.Id, picture, common.IsNew));
+         }
+ 
+         return json;
+@@ -172,10 +172,10 @@ public static class SyncTransactionBuilder
+         return json;
+     }
+ 
+-    private static JsonObject Picture(Guid activityId, SyncPictureSnapshot picture)
++    private static JsonObject Picture(Guid activityId, SyncPictureSnapshot picture, bool isNew)
+         => new()
+         {
+-            ["newFlage"] = true,
++            ["newFlage"] = isNew,
+             ["objectID"] = picture.Id.ToString("D"),
+             ["activityID"] = activityId.ToString("D"),
+             ["attached"] = true,
+diff --git a/src/Views/Home/AddEntry.cshtml b/src/Views/Home/AddEntry.cshtml
+index bb812be..9a13c0f 100644
+--- a/src/Views/Home/AddEntry.cshtml
++++ b/src/Views/Home/AddEntry.cshtml
+@@ -3,17 +3,17 @@
+ @model BabyTracker.Models.ViewModels.AddEntryViewModel
+ 
+ @{
+-    ViewData["Title"] = "Add entry - BabyTracker";
++    ViewData["Title"] = (Model.IsEdit ? "Edit entry" : "Add entry") + " - BabyTracker";
+ }
+ 
+ <div class="row">
+     <div class="col-12 col-lg-6 offset-lg-3">
+-        <h1 class="h3 mb-4">Add entry</h1>
++        <h1 class="h3 mb-4">@(Model.IsEdit ? "Edit entry" : "Add entry")</h1>
+ 
+         <form method="post" enctype="multipart/form-data">
+             <div class="mb-3">
+                 <label asp-for="Type" class="form-label"></label>
+-                <select asp-for="Type" asp-items="Html.GetEnumSelectList<EntryTypeEnum>()" class="form-select" id="entryType"></select>
++                <select asp-for="Type" asp-items="Html.GetEnumSelectList<EntryTypeEnum>()" class="form-select" id="entryType" disabled="@Model.IsEdit"></select>
+             </div>
+ 
+             <div class="mb-3">
+@@ -83,11 +83,14 @@
+                 <input asp-for="MedicationAmount" type="number" step="0.01" min="0" class="form-control" />
+             </div>
+ 
+-            <div class="mb-3 entry-field" data-types="Joy Activity Milestone">
+-                <label asp-for="PictureFile" class="form-label">Photo (optional)</label>
+-                <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
+-                <span asp-validation-for="PictureFile" class="text-danger"></span>
+-            </div>
++            @if (!Model.IsEdit)
++            {
++                <div class="mb-3 entry-field" data-types="Joy Activity Milestone">
++                    <label asp-for="PictureFile" class="form-label">Photo (optional)</label>
++                    <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
++                    <span asp-validation-for="PictureFile" class="text-danger"></span>
++                </div>
++            }
+ 
+             <div class="mb-3 entry-field" data-type="Vaccine">
+                 <label asp-for="VaccineSelectionId" class="form-label">Vaccine</label>
+@@ -115,7 +118,7 @@
+                 <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+             </div>
+ 
+-            <button type="submit" class="btn btn-primary">Add</button>
++            <button type="submit" class="btn btn-primary">@(Model.IsEdit ? "Save" : "Add")</button>
+             <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Diary"
+                asp-route-babyName="@Model.BabyName" asp-route-date="@Model.Time.ToString("yyyy-MM-dd")">Cancel</a>
+         </form>
+diff --git a/src/Views/Shared/_DiaryEntryCard.cshtml b/src/Views/Shared/_DiaryEntryCard.cshtml
+index b0cac52..68b66a4 100644
+--- a/src/Views/Shared/_DiaryEntryCard.cshtml
++++ b/src/Views/Shared/_DiaryEntryCard.cshtml
+@@ -12,6 +12,12 @@
+     </div>
+ 
+     <div class="btn-group card-buttons" role="group">
++        @if (!string.IsNullOrEmpty(Model.EditUrl))
++        {
++            <a href="@Model.EditUrl" class="btn btn-secondary">
++                <i class="fas fa-pen"></i> Edit
++            </a>
++        }
+         <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;">
+             <i class="fas fa-camera"></i> Screenshot
+         </a>
+diff --git a/src/Views/Shared/_DiaryEntryList.cshtml b/src/Views/Shared/_DiaryEntryList.cshtml
+index d6b3a47..fda5cc9 100644
+--- a/src/Views/Shared/_DiaryEntryList.cshtml
++++ b/src/Views/Shared/_DiaryEntryList.cshtml
+@@ -18,6 +18,12 @@
+                 }
+             </div>
+             <div class="card-footer text-body-secondary bg-transparent border-0 text-end py-0">
++                @if (!string.IsNullOrEmpty(Model.EditUrl))
++                {
++                    <a href="@Model.EditUrl" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
++                        <i class="fas fa-pen"></i> Edit
++                    </a>
++                }
+                 @Model.Date @Model.Time
+             </div>
+         </div>
+-- 
+2.43.0
+

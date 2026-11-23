@@ -1,4 +1,5 @@
-﻿using BabyTracker.Models.Database;
+﻿using BabyTracker.Constants;
+using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = diaper.Id,
+                Type = EntryTypeEnum.Diaper,
                 CssClass = "diaper",
                 CssColor = "blue",
                 IconURL = "/img/icon_review_diaper.png",
@@ -34,6 +37,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = formula.Id,
+                Type = EntryTypeEnum.Formula,
                 CssClass = "formula",
                 CssColor = "orange",
                 IconURL = "/img/icon_review_formula.png",
@@ -46,6 +51,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = joy.Id,
+                Type = EntryTypeEnum.Joy,
                 CssClass = "joy",
                 CssColor = "green",
                 IconURL = "/img/icon_review_joy.png",
@@ -59,6 +66,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = growth.Id,
+                Type = EntryTypeEnum.Growth,
                 CssClass = "growth",
                 CssColor = "green",
                 IconURL = "/img/icon_review_growth.png",
@@ -71,6 +80,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = medication.Id,
+                Type = EntryTypeEnum.Medication,
                 CssClass = "medication",
                 CssColor = "green",
                 IconURL = "/img/icon_review_medication.png",
@@ -83,6 +94,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = milestone.Id,
+                Type = EntryTypeEnum.Milestone,
                 CssClass = "milestone",
                 CssColor = "green",
                 IconURL = "/img/icon_review_milestone.png",
@@ -96,6 +109,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = activity.Id,
+                Type = EntryTypeEnum.Activity,
                 CssClass = "activity",
                 CssColor = "green",
                 IconURL = "/img/icon_review_activity.png",
@@ -109,6 +124,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = sleep.Id,
+                Type = EntryTypeEnum.Sleep,
                 CssClass = "sleep",
                 CssColor = "dark-green",
                 IconURL = "/img/icon_review_sleep.png",
@@ -121,6 +138,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = supplement.Id,
+                Type = EntryTypeEnum.Supplement,
                 CssClass = "supplement",
                 CssColor = "orange",
                 IconURL = "/img/icon_review_supplement.png",
@@ -133,6 +152,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = temperature.Id,
+                Type = EntryTypeEnum.Temperature,
                 CssClass = "temperature",
                 CssColor = "green",
                 IconURL = "/img/icon_review_temperature.png",
@@ -145,6 +166,8 @@ public static class DiaryService
         {
             return new()
             {
+                Id = vaccine.Id,
+                Type = EntryTypeEnum.Vaccine,
                 CssClass = "vaccine",
                 CssColor = "dark-green",
                 IconURL = "/img/icon_review_vaccine.png",
