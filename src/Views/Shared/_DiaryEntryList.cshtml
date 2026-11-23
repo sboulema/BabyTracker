@@ -1,4 +1,7 @@
 ﻿@model BabyTracker.Models.ViewModels.DiaryEntryViewModel
+@{
+    var babyName = ViewContext.RouteData.Values["babyName"]?.ToString();
+}
 
 <div class="card mb-3 border-0 border-top @Model.CssClass">
     <div class="row g-0">
@@ -18,7 +21,23 @@
                 }
             </div>
             <div class="card-footer text-body-secondary bg-transparent border-0 text-end py-0">
+                @if (!string.IsNullOrEmpty(Model.EditUrl))
+                {
+                    <a href="@Model.EditUrl" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                }
                 @Model.Date @Model.Time
+                @if (ViewBag.CanDelete == true && Model.Type is not null && Model.Id != Guid.Empty)
+                {
+                    <form method="post" class="d-inline" asp-controller="Home" asp-action="DeleteEntry" asp-route-babyName="@babyName"
+                          asp-route-type="@Model.Type" asp-route-id="@Model.Id" asp-route-date="@Model.DateIso"
+                          onsubmit="return confirm('Delete this entry? This cannot be undone.');">
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0 ms-2" title="Delete entry">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>

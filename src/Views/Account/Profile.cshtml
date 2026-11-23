@@ -55,7 +55,10 @@
           <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-share-nodes me-2"></i>Data clone sharing</h2></div>
           <div class="card-body">
             <label asp-for="ShareList" class="form-label">Share with other users</label>
-            <textarea asp-for="ShareList" class="form-control" rows="3"></textarea>
+            <textarea asp-for="ShareList" class="form-control" rows="3" aria-describedby="shareListHelp"></textarea>
+            <div id="shareListHelp" class="form-text">
+              Sharing gives the other user both view and edit permissions: they can see all entries and add new ones to this data clone.
+            </div>
           </div>
         </div>
 
@@ -79,6 +82,61 @@
           <button type="submit" class="btn btn-primary px-5">Save</button>
         </div>
       </form>
+
+      @if (Model.SyncAvailable)
+      {
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="h5 mb-0"><i class="fa-solid fa-rotate me-2"></i>Baby Tracker app sync <span class="badge text-bg-warning">Experimental</span></h2>
+          </div>
+          <div class="card-body">
+            <p class="text-body-secondary">
+              Send the entries you add on this website to the Baby Tracker app on your phone. This website then
+              takes part in the sync group of your Baby Tracker account as one more device.
+            </p>
+            <ul class="small text-body-secondary">
+              <li>This uses the unofficial sync service of the app. It can stop working after an app update.</li>
+              <li>The email address and password of your Baby Tracker account are stored encrypted on this server.</li>
+              <li>Entries added by users you share your data clone with are sent to your account too.</li>
+              <li>Try it with a spare Baby Tracker account first. A wrong entry on your own account is hard to undo.</li>
+            </ul>
+
+            <form asp-action="SyncSave" asp-controller="Account" method="post">
+              <div class="form-check form-switch mb-3">
+                <input type="hidden" name="Enabled" value="false" />
+                <input class="form-check-input" type="checkbox" id="syncEnabled" name="Enabled" value="true" @(Model.SyncEnabled ? "checked" : "") />
+                <label class="form-check-label" for="syncEnabled">Send new entries to the Baby Tracker app</label>
+              </div>
+
+              <div class="mb-3">
+                <label for="syncEmail" class="form-label">Baby Tracker account email address</label>
+                <input type="email" class="form-control" id="syncEmail" name="EmailAddress" value="@Model.SyncEmailAddress" autocomplete="off" />
+              </div>
+
+              <div class="mb-3">
+                <label for="syncPassword" class="form-label">Baby Tracker account password</label>
+                <input type="password" class="form-control" id="syncPassword" name="Password" autocomplete="new-password"
+                       placeholder="@(Model.SyncHasPassword ? "Leave empty to keep the saved password" : "")" />
+              </div>
+
+              <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+
+            @if (Model.SyncHasPassword)
+            {
+              <div class="d-flex gap-2 mt-3">
+                <form asp-action="SyncTest" asp-controller="Account" method="post">
+                  <button type="submit" class="btn btn-outline-secondary">Test connection</button>
+                </form>
+                <form asp-action="SyncRemove" asp-controller="Account" method="post">
+                  <button type="submit" class="btn btn-outline-danger">Remove account</button>
+                </form>
+              </div>
+              <div class="form-text mt-2">Testing logs in and lists the devices of the group. It does not send any entries.</div>
+            }
+          </div>
+        </div>
+      }
 
       <div class="card mb-4">
         <div class="card-header"><h2 class="h5 mb-0"><i class="fa-solid fa-user me-2"></i>Account</h2></div>

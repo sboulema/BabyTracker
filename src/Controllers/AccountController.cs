@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using BabyTracker.Models.ViewModels;
 using BabyTracker.Services;
+using BabyTracker.Sync;
+using Microsoft.Extensions.Options;
 using BabyTracker.Models.Account;
 using System.Security.Claims;
 using BabyTracker.Constants;
@@ -18,6 +21,9 @@ namespace BabyTracker.Controllers;
 public class AccountController(IAccountService accountService,
 	IImportService importService,
     ICacheEvictionService cacheEvictionService,
+	ISyncAccountStore syncAccountStore,
+	ISyncService syncService,
+	IOptions<BabyTrackerSyncOptions> syncOptions,
 	ILogger<AccountController> logger) : Controller
 {
 	[HttpGet("[action]")]
@@ -145,7 +151,119 @@ public class AccountController(IAccountService accountService,
 
 		ViewBag.Theme = userMetaData?.Theme;
 
+		if (syncOptions.Value.Enabled)
+		{
+			var syncAccount = await syncAccountStore.GetAsync(model.UserId);
+
+			model.SyncAvailable = true;
+			model.SyncEnabled = syncAccount?.Enabled ?? false;
+			model.SyncEmailAddress = syncAccount?.EmailAddress ?? string.Empty;
+			model.SyncHasPassword = !string.IsNullOrEmpty(syncAccount?.Password);
+			model.SyncDeviceId = syncAccount?.DeviceId ?? string.Empty;
+		}
+
 		return View(model);
+	}
+
+	[Authorize]
+	[HttpPost("[action]")]
+	[ValidateAntiForgeryToken]
+	public async Task<IActionResult> SyncSave(SyncSettingsViewModel model)
+	{
+		var userId = User.FindFirstValue("userId");
+
+		if (!syncOptions.Value.Enabled || string.IsNullOrEmpty(userId))
+		{
+			return NotFound();
+		}
+
+		var emailAddress = (model.EmailAddress ?? string.Empty).Trim();
+		var account = await syncAccountStore.GetAsync(userId) ?? new SyncAccount();
+
+		if (model.Enabled && emailAddress.Length == 0)
+		{
+			TempData["notificationMessage"] = "Enter the email address of your Baby Tracker account.";
+			TempData["notificationType"] = "danger";
+
+			return RedirectToAction(nameof(Profile));
+		}
+
+		if (model.Enabled && string.IsNullOrEmpty(model.Password) && string.IsNullOrEmpty(account.Password))
+		{
+			TempData["notificationMessage"] = "Enter the password of your Baby Tracker account.";
+			TempData["notificationType"] = "danger";
+
+			return RedirectToAction(nameof(Profile));
+		}
+
+		// Another account is another group: this website starts over as a new device in it
+		if (!string.Equals(account.EmailAddress, emailAddress, StringComparison.OrdinalIgnoreCase))
+		{
+			account.AccountId = null;
+			account.LastSyncId = 0;
+			account.DeviceId = Guid.NewGuid().ToString("D");
+		}
+
+		account.Enabled = model.Enabled;
+		account.EmailAddress = emailAddress;
+
+		if (!string.IsNullOrEmpty(model.Password))
+		{
+			if (!string.IsNullOrEmpty(account.Password) && account.Password != model.Password)
+			{
+				// A new password can belong to another account: check the account id again at the next login
+				account.AccountId = null;
+			}
+
+			account.Password = model.Password;
+		}
+
+		await syncAccountStore.SaveAsync(userId, account);
+
+		TempData["notificationMessage"] = "Baby Tracker app sync settings saved.";
+		TempData["notificationType"] = "success";
+
+		return RedirectToAction(nameof(Profile));
+	}
+
+	[Authorize]
+	[HttpPost("[action]")]
+	[ValidateAntiForgeryToken]
+	public async Task<IActionResult> SyncTest()
+	{
+		var userId = User.FindFirstValue("userId");
+
+		if (!syncOptions.Value.Enabled || string.IsNullOrEmpty(userId))
+		{
+			return NotFound();
+		}
+
+		var result = await syncService.TestConnectionAsync(userId);
+
+		TempData["notificationMessage"] = WebUtility.HtmlEncode(result.Message ?? "Done.");
+		TempData["notificationType"] = result.Status == SyncStatus.Failed ? "danger" : "success";
+
+		return RedirectToAction(nameof(Profile));
+	}
+
+	[Authorize]
+	[HttpPost("[action]")]
+	[ValidateAntiForgeryToken]
+	public async Task<IActionResult> SyncRemove()
+	{
+		var userId = User.FindFirstValue("userId");
+
+		if (string.IsNullOrEmpty(userId))
+		{
+			return NotFound();
+		}
+
+		await syncAccountStore.DeleteAsync(userId);
+
+		TempData["notificationMessage"] = "The Baby Tracker account was removed from this website.";
+		TempData["notificationType"] = "success";
+
+		return RedirectToAction(nameof(Profile));
 	}
 
 	[Authorize]
@@ -207,10 +325,17 @@ public class AccountController(IAccountService accountService,
 	[HttpPost("[action]")]
 	public async Task<IActionResult> RemoveAccountConfirm()
 	{
+		var userId = User.FindFirstValue("userId");
+
 		var success = await accountService.RemoveAccount(User);
 
 		if (success)
 		{
+			if (!string.IsNullOrEmpty(userId))
+			{
+				await syncAccountStore.DeleteAsync(userId);
+			}
+
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 			TempData["notificationMessage"] = "Your account has been successfully removed.";
 			TempData["notificationType"] = "success";

@@ -20,4 +20,6 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: false
+          secrets: |
+            SIXLABORS_LICENSE_KEY=${{ secrets.SIXLABORS_LICENSE_KEY }}
           tags: babytracker:local

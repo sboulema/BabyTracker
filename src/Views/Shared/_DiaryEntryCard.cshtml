@@ -1,4 +1,7 @@
 ﻿@model BabyTracker.Models.ViewModels.DiaryEntryViewModel
+@{
+    var babyName = ViewContext.RouteData.Values["babyName"]?.ToString();
+}
 
 <div class="card mb-3 @Model.CssClass" id="activity_@Model.TimeStamp">
     @if (!string.IsNullOrEmpty(Model.PictureFileName))
@@ -12,6 +15,12 @@
     </div>
 
     <div class="btn-group card-buttons" role="group">
+        @if (!string.IsNullOrEmpty(Model.EditUrl))
+        {
+            <a href="@Model.EditUrl" class="btn btn-secondary">
+                <i class="fas fa-pen"></i> Edit
+            </a>
+        }
         <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;">
             <i class="fas fa-camera"></i> Screenshot
         </a>
@@ -19,5 +28,15 @@
             <i class="fas fa-expand"></i>
             <span>Expand</span>
         </a>
+        @if (ViewBag.CanDelete == true && Model.Type is not null && Model.Id != Guid.Empty)
+        {
+            <form method="post" class="d-inline-flex" asp-controller="Home" asp-action="DeleteEntry" asp-route-babyName="@babyName"
+                  asp-route-type="@Model.Type" asp-route-id="@Model.Id" asp-route-date="@Model.DateIso"
+                  onsubmit="return confirm('Delete this entry? This cannot be undone.');">
+                <button type="submit" class="btn btn-danger btn-delete" title="Delete entry">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </form>
+        }
     </div>
 </div>

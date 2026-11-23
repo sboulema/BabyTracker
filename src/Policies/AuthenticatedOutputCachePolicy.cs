@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using BabyTracker.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Primitives;
@@ -43,6 +44,12 @@ public sealed class AuthenticatedOutputCachePolicy : IOutputCachePolicy
 
         // Tag by user so all of their entries can be evicted at once
         context.Tags.Add(userId);
+
+        // Tag by clone, so a change to a (shared) clone evicts the pages of everyone viewing it
+        if (!string.IsNullOrEmpty(activeUserId))
+        {
+            context.Tags.Add(CacheTags.Clone(activeUserId));
+        }
 
         return ValueTask.CompletedTask;
     }

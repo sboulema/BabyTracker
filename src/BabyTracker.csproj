@@ -3,6 +3,7 @@
     <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UserSecretsId>cdd039dd-6e1f-42ee-95de-d149916af726</UserSecretsId>
+	<SixLaborsLicenseKey>$(SIXLABORS_LICENSE_KEY)</SixLaborsLicenseKey>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
     <PackageReference Include="Razor.Templating.Core" Version="3.1.0" />
     <PackageReference Include="tusdotnet" Version="2.12.0" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="4.1.3" />
     <PackageReference Include="Quartz.AspNetCore" Version="4.7.3" />
   </ItemGroup>
 
