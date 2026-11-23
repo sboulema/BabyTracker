@@ -262,6 +262,10 @@ Code: `src/Sync/`. The feature is off unless `BabyTrackerSync:Enabled` is `true`
 - `SyncAccountStore` keeps the email address, password, device id and `SyncID` counter encrypted with the user's data
   key, in `Sync/{userId}.json.enc` next to the clone directories, so an import does not remove it.
 - Guids are written to the clone as lowercase text, like the ids the Android app generates.
+- Editing an entry (`/{baby}/edit/{type}/{id}`) updates its row in the clone and uploads the same JSON as for an insert, with
+  `OPCode` `TransactionLogOpCodeUpdate`, the `objectID` of the existing entry, `newFlage` false and a new `timestamp`.
+  An edit can replace the photo (a new picture is uploaded, `pictureNote` holds it with `newFlage` true) or keep it (`pictureNote` only refers to the existing one); the old photo is not deleted on the phones. Which fields the
+  phones read from an update, and whether a newer `timestamp` is what makes them accept it, is **not** verified.
 
 - Deleting an entry uploads a transaction with `OPCode` `TransactionLogOpCodeDelete` and the next `SyncID`
   (`SyncDeleteEntryBuilder`). The payload is the entry as it is in the clone, built like an insert but with `newFlage`

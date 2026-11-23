@@ -33,17 +33,19 @@ public sealed record SyncSelectionSnapshot(
 public static class SyncOpCodes
 {
     public const string Insert = "TransactionLogOpCodeInsert";
+    public const string Update = "TransactionLogOpCodeUpdate";
     public const string Delete = "TransactionLogOpCodeDelete";
 }
 
 /// <summary>A photo that belongs to an entry. The file name is the id of the picture, without extension.</summary>
-public sealed record SyncPictureSnapshot(Guid Id, string FileName, long? Timestamp = null);
+/// <param name="IsNew">Overrides <see cref="SyncCommon.IsNew"/> for this photo: a new photo on an entry that already exists.</param>
+public sealed record SyncPictureSnapshot(Guid Id, string FileName, long? Timestamp = null, bool? IsNew = null);
 
 /// <summary>What every entry has in common.</summary>
 /// <param name="Id">The id of the entry.</param>
 /// <param name="Timestamp">When the entry was saved, in Unix seconds.</param>
 /// <param name="Time">When the entry happened, in Unix seconds.</param>
-/// <param name="IsNew">True for an entry that is being inserted, false for one that already exists (a delete).</param>
+/// <param name="IsNew">True for an entry that is being inserted, false for one that already exists (an update or a delete).</param>
 /// <param name="TimezoneOffsetSeconds">The raw offset of the time zone of the clone, without daylight saving time.</param>
 public sealed record SyncCommon(
     Guid Id,
@@ -55,7 +57,7 @@ public sealed record SyncCommon(
     SyncPictureSnapshot? Picture = null,
     bool IsNew = true);
 
-/// <summary>An entry that was added to the clone, ready to be sent to the Baby Tracker server.</summary>
+/// <summary>An entry that was added to or changed in the clone, ready to be sent to the Baby Tracker server.</summary>
 /// <param name="Transaction">Base64 of the JSON of the entry, as it goes in <c>TransactionItem.Transaction</c>.</param>
 /// <param name="Picture">The photo and thumbnail files that belong to the entry, if any.</param>
 /// <param name="OpCode">The <see cref="SyncOpCodes"/> value to upload the transaction with.</param>

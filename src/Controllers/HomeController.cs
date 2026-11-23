@@ -98,7 +98,7 @@ public class HomeController(
 			entries = await sqLiteService.GetEntriesFromDb(date.Value, babyName);
 		}
 
-		var model = DiaryService.GetDays(entries);
+		var model = DiaryService.GetDays(entries, babyName);
 
 		var dateNext = availableDates.SkipWhile(availableDate => availableDate != date).Skip(1).FirstOrDefault();
 		var datePrevious = availableDates.TakeWhile(availableDate => availableDate != date).LastOrDefault();
@@ -308,30 +308,143 @@ public class HomeController(
 		await cacheEvictionService.EvictClonePagesAsync(activeUserId);
 		await cacheEvictionService.EvictUserPagesAsync(User);
 
-		switch (result.Sync.Status)
-		{
-			case SyncStatus.Sent:
-				TempData["notificationMessage"] = $"{model.Type} entry added and sent to the Baby Tracker app.";
-				TempData["notificationType"] = "success";
-				break;
-
-			case SyncStatus.Failed:
-				TempData["notificationMessage"] =
-					$"{model.Type} entry added, but it could not be sent to the Baby Tracker app: {WebUtility.HtmlEncode(result.Sync.Message ?? "unknown error")}";
-				TempData["notificationType"] = "warning";
-				break;
-
-			default:
-				TempData["notificationMessage"] = $"{model.Type} entry added.";
-				TempData["notificationType"] = "success";
-				break;
-		}
+		SetSavedNotification(model.Type, "added", result.Sync);
 
 		return RedirectToAction(nameof(Diary), new
 		{
 			babyName,
 			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
 		});
+	}
+
+	[Authorize]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpGet("{babyName}/edit/{entryType}/{id:guid}")]
+	public async Task<IActionResult> EditEntry(string babyName, string entryType, Guid id)
+	{
+		if (!TryParseEntryType(entryType, out var type))
+		{
+			return NotFound();
+		}
+
+		await sqLiteService.OpenDataConnectionAsync(User);
+
+		var entry = await addEntryService.GetEntryAsync(babyName, type, id);
+
+		await sqLiteService.CloseDataConnection();
+
+		if (entry == null)
+		{
+			return NotFound();
+		}
+
+		var model = await PrepareAddEntryViewModel(entry, babyName);
+
+		if (model == null)
+		{
+			return NotFound();
+		}
+
+		return View("AddEntry", model);
+	}
+
+	[Authorize]
+    [ServiceFilter<RequireDataCloneFilter>]
+    [HttpPost("{babyName}/edit/{entryType}/{id:guid}")]
+	[ValidateAntiForgeryToken]
+	public async Task<IActionResult> EditEntry(string babyName, string entryType, Guid id, AddEntryViewModel model)
+	{
+		if (!TryParseEntryType(entryType, out var type))
+		{
+			return NotFound();
+		}
+
+		var activeUserId = User.FindFirstValue("activeUserId");
+
+		if (string.IsNullOrEmpty(activeUserId))
+		{
+			return Forbid();
+		}
+
+		// The kind of entry and which entry come from the address, never from the form
+		model.Type = type;
+		model.Id = id;
+
+		ValidateEntry(model);
+
+		ProcessedPicture? picture = null;
+
+		// A new photo replaces the current one, without a file the current photo stays
+		if (model.Type.SupportsPicture() && model.PictureFile is { Length: > 0 } && ModelState.IsValid)
+		{
+			picture = await imageService.CreateJpegAndThumbnailAsync(model.PictureFile);
+
+			if (picture == null)
+			{
+				ModelState.AddModelError(nameof(model.PictureFile), "This is not a supported image. Use a JPEG, PNG or WebP photo.");
+			}
+		}
+
+		if (!ModelState.IsValid)
+		{
+			var invalidModel = await PrepareAddEntryViewModel(model, babyName);
+
+			if (invalidModel == null)
+			{
+				return NotFound();
+			}
+
+			return View("AddEntry", invalidModel);
+		}
+
+		AddEntryResult result;
+
+		try
+		{
+			result = await addEntryService.UpdateEntryAsync(activeUserId, babyName, id, model, picture);
+		}
+		catch (KeyNotFoundException)
+		{
+			return NotFound();
+		}
+
+		// The Diary is output-cached: drop the pages of everyone viewing this clone
+		await cacheEvictionService.EvictClonePagesAsync(activeUserId);
+		await cacheEvictionService.EvictUserPagesAsync(User);
+
+		SetSavedNotification(model.Type, "updated", result.Sync);
+
+		return RedirectToAction(nameof(Diary), new
+		{
+			babyName,
+			date = DateOnly.FromDateTime(model.Time).ToString("yyyy-MM-dd")
+		});
+	}
+
+	private static bool TryParseEntryType(string value, out EntryTypeEnum type)
+		=> Enum.TryParse(value, ignoreCase: true, out type) && Enum.IsDefined(type);
+
+	/// <param name="action">What happened to the entry, in the past tense: "added" or "updated".</param>
+	private void SetSavedNotification(EntryTypeEnum type, string action, SyncResult sync)
+	{
+		switch (sync.Status)
+		{
+			case SyncStatus.Sent:
+				TempData["notificationMessage"] = $"{type} entry {action} and sent to the Baby Tracker app.";
+				TempData["notificationType"] = "success";
+				break;
+
+			case SyncStatus.Failed:
+				TempData["notificationMessage"] =
+					$"{type} entry {action}, but it could not be sent to the Baby Tracker app: {WebUtility.HtmlEncode(sync.Message ?? "unknown error")}";
+				TempData["notificationType"] = "warning";
+				break;
+
+			default:
+				TempData["notificationMessage"] = $"{type} entry {action}.";
+				TempData["notificationType"] = "success";
+				break;
+		}
 	}
 
 	[Authorize]

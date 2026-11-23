@@ -3,17 +3,17 @@
 @model BabyTracker.Models.ViewModels.AddEntryViewModel
 
 @{
-    ViewData["Title"] = "Add entry - BabyTracker";
+    ViewData["Title"] = (Model.IsEdit ? "Edit entry" : "Add entry") + " - BabyTracker";
 }
 
 <div class="row">
     <div class="col-12 col-lg-6 offset-lg-3">
-        <h1 class="h3 mb-4">Add entry</h1>
+        <h1 class="h3 mb-4">@(Model.IsEdit ? "Edit entry" : "Add entry")</h1>
 
         <form method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label asp-for="Type" class="form-label"></label>
-                <select asp-for="Type" asp-items="Html.GetEnumSelectList<EntryTypeEnum>()" class="form-select" id="entryType"></select>
+                <select asp-for="Type" asp-items="Html.GetEnumSelectList<EntryTypeEnum>()" class="form-select" id="entryType" disabled="@Model.IsEdit"></select>
             </div>
 
             <div class="mb-3">
@@ -84,7 +84,7 @@
             </div>
 
             <div class="mb-3 entry-field" data-types="Joy Activity Milestone">
-                <label asp-for="PictureFile" class="form-label">Photo (optional)</label>
+                <label asp-for="PictureFile" class="form-label">@(Model.IsEdit ? "Photo (leave empty to keep the current photo)" : "Photo (optional)")</label>
                 <input asp-for="PictureFile" type="file" accept="image/*" class="form-control" />
                 <span asp-validation-for="PictureFile" class="text-danger"></span>
             </div>
@@ -115,7 +115,7 @@
                 <textarea asp-for="Note" class="form-control" rows="3"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="submit" class="btn btn-primary">@(Model.IsEdit ? "Save" : "Add")</button>
             <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="Diary"
                asp-route-babyName="@Model.BabyName" asp-route-date="@Model.Time.ToString("yyyy-MM-dd")">Cancel</a>
         </form>

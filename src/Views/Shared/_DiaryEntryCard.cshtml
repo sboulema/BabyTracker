@@ -15,6 +15,12 @@
     </div>
 
     <div class="btn-group card-buttons" role="group">
+        @if (!string.IsNullOrEmpty(Model.EditUrl))
+        {
+            <a href="@Model.EditUrl" class="btn btn-secondary">
+                <i class="fas fa-pen"></i> Edit
+            </a>
+        }
         <a href="#" class="btn btn-primary btn-screenshot" onclick="saveCard('activity_@Model.TimeStamp');return false;">
             <i class="fas fa-camera"></i> Screenshot
         </a>

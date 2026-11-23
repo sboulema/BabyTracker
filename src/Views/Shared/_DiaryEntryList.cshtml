@@ -21,6 +21,12 @@
                 }
             </div>
             <div class="card-footer text-body-secondary bg-transparent border-0 text-end py-0">
+                @if (!string.IsNullOrEmpty(Model.EditUrl))
+                {
+                    <a href="@Model.EditUrl" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                }
                 @Model.Date @Model.Time
                 @if (ViewBag.CanDelete == true && Model.Type is not null && Model.Id != Guid.Empty)
                 {

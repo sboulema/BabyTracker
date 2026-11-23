@@ -30,4 +30,7 @@ public class DiaryEntryViewModel
     public string Note { get; set; } = string.Empty;
 
     public string PictureFileName { get; set; } = string.Empty;
+
+    /// <summary>The address of the page to edit the entry. Empty when the entry cannot be edited.</summary>
+    public string EditUrl { get; set; } = string.Empty;
 }

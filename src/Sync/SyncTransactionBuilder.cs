@@ -161,7 +161,7 @@ public static class SyncTransactionBuilder
 
         if (common.Picture is { } picture)
         {
-            json["pictureNote"] = new JsonArray(Picture(common.Id, picture, common.IsNew));
+            json["pictureNote"] = new JsonArray(Picture(common.Id, picture, picture.IsNew ?? common.IsNew));
         }
 
         return json;

@@ -25,8 +25,8 @@ public interface ISyncService
     Task<bool> IsEnabledAsync(string userId);
 
     /// <summary>
-    /// Sends the entry as a new transaction of this website's device. Never throws: the entry is already
-    /// in the clone, so a failure is reported in the result.
+    /// Sends the entry (a new one or a change of an existing one) as a new transaction of this website's device.
+    /// Never throws: the entry is already in the clone, so a failure is reported in the result.
     /// </summary>
     Task<SyncResult> PublishAsync(string userId, SyncEntry entry, CancellationToken cancellationToken = default);
 

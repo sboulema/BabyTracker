@@ -1,6 +1,7 @@
 ﻿using BabyTracker.Constants;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,16 +9,30 @@ namespace BabyTracker.Services;
 
 public static class DiaryService
 {
-    public static DiaryViewModel GetDays(List<IDbEntry> entries)
+    /// <param name="babyName">The baby the entries belong to. Needed for the entries to get a link to edit them.</param>
+    public static DiaryViewModel GetDays(List<IDbEntry> entries, string? babyName = null)
         => new()
         {
-            Entries = entries.OrderByDescending(e => e.Time).Select(Map)
+            Entries = entries.OrderByDescending(e => e.Time).Select(entry => Map(entry, babyName))
         };
 
     public static DiaryViewModel GetDays(List<IMemoryEntry> entries)
         => GetDays(entries.Cast<IDbEntry>().ToList());
 
-    private static DiaryEntryViewModel Map(IDbEntry entry)
+    private static DiaryEntryViewModel Map(IDbEntry entry, string? babyName)
+    {
+        var model = MapEntry(entry);
+
+        // Entries of the memories do not have an id, and have no baby name: those cannot be edited
+        if (model.Type is not null && model.Id != Guid.Empty && !string.IsNullOrEmpty(babyName))
+        {
+            model.EditUrl = $"/{Uri.EscapeDataString(babyName)}/edit/{model.Type}/{model.Id:D}";
+        }
+
+        return model;
+    }
+
+    private static DiaryEntryViewModel MapEntry(IDbEntry entry)
     {
         if (entry is Diaper diaper)
         {

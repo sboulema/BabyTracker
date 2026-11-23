@@ -9,6 +9,11 @@ namespace BabyTracker.Models.ViewModels;
 
 public class AddEntryViewModel : BaseViewModel
 {
+    /// <summary>The id of the entry that is being edited, null when a new entry is being added.</summary>
+    public Guid? Id { get; set; }
+
+    public bool IsEdit => Id.HasValue;
+
     public EntryTypeEnum Type { get; set; }
 
     /// <summary>Wall-clock time in the time zone of the data clone.</summary>

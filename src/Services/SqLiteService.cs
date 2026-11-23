@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,13 @@ public interface ISqLiteService
     /// </summary>
     /// <param name="userId">userId without prefix (the active user id)</param>
     Task AddEntryAsync(string userId, Func<DataConnection, Task> write);
+
+    /// <summary>Reads one entry of type <typeparamref name="T"/> by its id, or null when there is none.</summary>
+    /// <param name="columns">
+    /// Which columns to read. Needed for the types that map properties which are not columns of their own
+    /// table (the name and file name that come from a join), as selecting the whole entity would fail on those.
+    /// </param>
+    Task<T?> GetEntryAsync<T>(Guid id, Expression<Func<T, T>>? columns = null) where T : class, IDbEntry;
 
     Task<List<ActivityDescription>> GetActivityDescriptionsFromDb();
 
@@ -370,6 +378,25 @@ public class SqLiteService(IDataClonePathProvider pathProvider,
             .ToListAsync();
 
         return babies;
+    }
+
+    public async Task<T?> GetEntryAsync<T>(Guid id, Expression<Func<T, T>>? columns = null) where T : class, IDbEntry
+    {
+        if (_db == null)
+        {
+            return null;
+        }
+
+        // Sql.Property: the Id column is looked up by name, which also works through the generic parameter
+        var query = _db.GetTable<T>()
+            .Where(entry => Sql.Property<Guid>(entry, nameof(IDbEntry.Id)) == id);
+
+        if (columns is not null)
+        {
+            return await query.Select(columns).FirstOrDefaultAsync();
+        }
+
+        return await query.FirstOrDefaultAsync();
     }
 
     public async Task<List<ActivityDescription>> GetActivityDescriptionsFromDb()
