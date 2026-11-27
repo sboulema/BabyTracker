@@ -10,12 +10,12 @@ namespace BabyTracker.Repositories;
 
 public interface IEmailRepository
 {
-    Task<bool> SendEmail(string mjml, UserResponseSchema user, string userId, string babyName);
+    Task<bool> SendEmail(string mjml, string plainText, UserResponseSchema user, string userId, string babyName);
 }
 
 public class EmailRepository(IConfiguration configuration) : IEmailRepository
 {
-    public async Task<bool> SendEmail(string mjml, UserResponseSchema user, string userId, string babyName)
+    public async Task<bool> SendEmail(string mjml, string plainText, UserResponseSchema user, string userId, string babyName)
     {
         var userMetaData = AccountService.GetUserMetaData(user);
 
@@ -29,6 +29,7 @@ public class EmailRepository(IConfiguration configuration) : IEmailRepository
             To = userMetaData.MemoriesAddresses,
             From = $"{configuration["MEMORIES_FROM_NAME"]} <{configuration["MEMORIES_FROM_EMAIL"]}>",
             Subject = $"BabyTracker - Memories {DateTime.Now:dd-MM-yyyy}",
+            TextBody = plainText,
             HtmlBody = GetHTML(mjml),
         };
 

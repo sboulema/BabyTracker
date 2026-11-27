@@ -6,9 +6,13 @@ using BabyTracker.Extensions;
 using BabyTracker.Models.Database;
 using BabyTracker.Models.ViewModels;
 using BabyTracker.Repositories;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Vml;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Razor.Templating.Core;
+using static Quartz.Diagnostics.OperationName;
 
 namespace BabyTracker.Services;
 
@@ -52,7 +56,8 @@ public class MemoriesService(IConfiguration configuration,
                     if (memories.Any())
                     {
                         var mjml = await GetMJML(memories, userId, baby.Name);
-                        await emailRepository.SendEmail(mjml, user, userId, baby.Name);
+                        var plainText = await GetPlainText(memories, userId, baby.Name);
+                        await emailRepository.SendEmail(mjml, plainText, user, userId, baby.Name);
                     }
                 }
             }
@@ -84,5 +89,36 @@ public class MemoriesService(IConfiguration configuration,
         var mjml = await RazorTemplateEngine.RenderAsync("/Views/Emails/MemoriesEmail.cshtml", model);
 
         return mjml;
+    }
+
+    private async Task<string> GetPlainText(List<IMemoryEntry> memories, string userId, string babyName)
+    {
+        var model = new MemoriesEmailViewModel
+        {
+            BabyName = babyName,
+            BaseUrl = configuration["BASE_URL"] ?? string.Empty,
+            UserId = userId,
+            Entries = memories
+                .OrderByDescending(entry => entry.Time.ToDateTimeUTC().Year)
+                .ThenBy(entry => entry.Time.ToDateTimeUTC().TimeOfDay)
+                .GroupBy(entry => entry.Time.ToDateTimeUTC().Year)
+                .OrderBy(entry => entry.Key)
+        };
+
+        var plainText = "You have memories waiting for you!";
+
+        foreach(var yearGroup in model.Entries)
+        {
+            var yearsAgo = DateTime.UtcNow.Year - yearGroup.Key;
+            plainText += $"\n\n{yearsAgo} {(yearsAgo == 1 ? "year" : "years")} ago";
+
+            foreach(var memory in yearGroup)
+            {
+                plainText += $"\n\n{memory.GetType()}";
+                plainText += $"\n{memory.Note}";
+            }
+        }
+
+        return plainText;
     }
 }
